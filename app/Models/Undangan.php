@@ -11,4 +11,9 @@ class Undangan extends Model {
 
     protected $table = 'undangan';
     protected $guarded = ['id'];
+
+    // TRIK JSON ARRAY UNTUK KOLOM DINAMIS
+    protected $casts = [
+        'data_tambahan' => 'array',
+    ];
 }

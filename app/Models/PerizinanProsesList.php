@@ -15,4 +15,9 @@ class PerizinanProsesList extends Model
 
     protected $table = 'perizinan_proses_list';
     protected $guarded = [];
+
+    // Trik JSON
+    protected $casts = [
+        'data_tambahan' => 'array',
+    ];
 }

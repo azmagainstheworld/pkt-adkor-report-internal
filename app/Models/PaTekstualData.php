@@ -12,6 +12,12 @@ class PaTekstualData extends Model {
     protected $table = 'pa_tekstual_data';
     protected $guarded = ['id'];
 
+    // Sama seperti PemeliharaanRutinData — supaya kolom JSON data_tambahan
+    // otomatis diterjemahkan Laravel jadi array PHP, bukan string JSON mentah.
+    protected $casts = [
+        'data_tambahan' => 'array',
+    ];
+
     public function masterTekstual() {
         return $this->belongsTo(PaTekstualMaster::class, 'master_id');
     }

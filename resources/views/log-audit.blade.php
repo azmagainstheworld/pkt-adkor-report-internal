@@ -46,7 +46,7 @@
     </div>
 
     <!-- ================= DATA TABLE SECTION (READ-ONLY) ================= -->
-    <x-card class="!rounded-xl overflow-hidden !p-0 shadow-sm border border-gray-100 bg-white">
+    <x-card class="!rounded-xl overflow-visible !p-0 shadow-sm border border-gray-100 bg-white">
 
         <div class="p-5 border-b border-gray-100 flex justify-between items-center bg-white">
             <div>

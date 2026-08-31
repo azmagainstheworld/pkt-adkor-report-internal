@@ -27,7 +27,7 @@ class StrukturOrganisasiController extends Controller
         // Validasi input
         $request->validate([
             'deskripsi' => 'required|string',
-            'gambar'    => 'nullable|image|mimes:jpeg,png,jpg,svg|max:5120', // Maks 5MB
+            'gambar'    => 'nullable|image|mimes:jpeg,png,jpg,svg|max:51200', // Maks 5MB
         ]);
 
         $struktur = StrukturOrganisasi::first();

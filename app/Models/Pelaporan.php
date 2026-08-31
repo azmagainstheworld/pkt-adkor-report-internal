@@ -11,4 +11,9 @@ class Pelaporan extends Model {
 
     protected $table = 'pelaporan';
     protected $guarded = ['id'];
+    
+    // Trik sakti agar JSON otomatis jadi Array
+    protected $casts = [
+        'data_tambahan' => 'array',
+    ];
 }

@@ -43,7 +43,7 @@
     </div>
 
     <!-- TABEL REKAP OTOMATIS -->
-    <x-card class="!rounded-xl overflow-hidden !p-0 shadow-sm border border-gray-100 bg-white mb-8">
+    <x-card class="!rounded-xl overflow-visible !p-0 shadow-sm border border-gray-100 bg-white mb-8">
         <div class="p-4 border-b border-gray-100 bg-orange-50 flex justify-between items-center gap-3">
             <h3 class="font-bold text-gray-800 text-sm ml-2">Tabel Rekapitulasi</h3>
             <span class="text-xs text-orange-600 font-medium italic hidden sm:inline-block">Data pada tabel ini tersinkronisasi otomatis dengan menu lain.</span>

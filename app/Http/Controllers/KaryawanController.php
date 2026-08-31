@@ -117,7 +117,20 @@ class KaryawanController extends Controller
             'alamat'           => 'required|string',
             'ukuran_kaos'      => 'required|string|max:10',
             'status'           => 'nullable|string|max:50',
+        ], [
+            'npk.unique' => 'NPK telah tersedia.'
         ]);
+
+        // Tangkap data tambahan dari kolom dinamis
+        $kolomDinamis = \Illuminate\Support\Facades\DB::table('dynamic_columns')->where('modul', 'karyawan_tabel')->pluck('nama_kolom');
+        $dataTambahan = [];
+        foreach ($kolomDinamis as $kolom) {
+            $key = str_replace(' ', '_', $kolom);
+            if ($request->has($key)) {
+                $dataTambahan[$kolom] = $request->input($key);
+            }
+        }
+        $validated['data_tambahan'] = $dataTambahan;
 
         Karyawan::create($validated);
         return redirect()->route('karyawan.index')->with('success', 'Data karyawan berhasil ditambahkan!');
@@ -152,6 +165,76 @@ class KaryawanController extends Controller
 
         $karyawan->update($validated);
         return redirect()->route('karyawan.index')->with('success', 'Data karyawan berhasil diperbarui!');
+    }
+    public function import(Request $request)
+    {
+        set_time_limit(0);
+        $request->validate(['file' => 'required|mimes:xlsx,xls,csv|max:51200']);
+        try {
+            \Maatwebsite\Excel\Facades\Excel::import(new \App\Imports\KaryawanImport, $request->file('file'));
+            
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['success' => true]);
+            }
+            return redirect()->back()->with('success', 'Data Karyawan berhasil di-import!');
+        } catch (\Exception $e) {
+            $msg = $e->getMessage();
+            if (strpos($msg, 'Data truncated') !== false || strpos($msg, 'Incorrect date value') !== false) {
+                $msg = 'Format data Excel ada yang tidak sesuai (contoh: teks terlalu panjang atau format tanggal/dropdown salah). Mohon periksa kembali kesesuaian isi dengan template.';
+            } else if (strpos($msg, 'Duplicate entry') !== false) {
+                $msg = 'Ada data ganda (duplikat) yang tidak diperbolehkan sistem.';
+            } else if (strpos($msg, 'Column') !== false && strpos($msg, 'cannot be null') !== false) {
+                $msg = 'Ada kolom wajib (seperti NPK/Nama) yang dibiarkan kosong di Excel.';
+            } else {
+                $msg = 'Terjadi kesalahan sistem saat memproses Excel. Pastikan Anda menggunakan template terbaru.';
+            }
+
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['error' => $msg], 500);
+            }
+            return redirect()->back()->with('error_modal', $msg);
+        }
+    }
+
+    public function importKeluarga(Request $request)
+    {
+        set_time_limit(0);
+        $request->validate(['file' => 'required|mimes:xlsx,xls,csv|max:51200']);
+        try {
+            $import = new \App\Imports\KeluargaKaryawanImport;
+            \Maatwebsite\Excel\Facades\Excel::import($import, $request->file('file'));
+            
+            $skipped = !empty($import->skippedNpk) ? implode(', ', array_unique($import->skippedNpk)) : null;
+            $warningMsg = $skipped ? "Import sebagian berhasil. Terdapat baris keluarga yang diabaikan karena NPK berikut tidak ditemukan di master karyawan: " . $skipped : null;
+
+            if ($request->ajax() || $request->wantsJson()) {
+                if ($warningMsg) {
+                    return response()->json(['success' => true, 'warning' => $warningMsg]);
+                }
+                return response()->json(['success' => true]);
+            }
+            
+            if ($warningMsg) {
+                return redirect()->back()->with('warning', $warningMsg);
+            }
+            return redirect()->back()->with('success', 'Data Keluarga Karyawan berhasil di-import!');
+        } catch (\Exception $e) {
+            $msg = $e->getMessage();
+            if (strpos($msg, 'Data truncated') !== false || strpos($msg, 'Incorrect date value') !== false) {
+                $msg = 'Format data Excel ada yang tidak sesuai (contoh: teks terlalu panjang atau format tanggal salah). Mohon periksa kembali kesesuaian isi dengan template.';
+            } else if (strpos($msg, 'Duplicate entry') !== false) {
+                $msg = 'Ada data ganda (duplikat) yang tidak diperbolehkan sistem.';
+            } else if (strpos($msg, 'Column') !== false && strpos($msg, 'cannot be null') !== false) {
+                $msg = 'Ada kolom wajib (seperti NIK/Nama) yang dibiarkan kosong di Excel.';
+            } else {
+                $msg = 'Terjadi kesalahan sistem saat memproses Excel. Pastikan Anda menggunakan template terbaru.';
+            }
+
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['error' => $msg], 500);
+            }
+            return redirect()->back()->with('error_modal', $msg);
+        }
     }
 
     public function destroy(Karyawan $karyawan)
@@ -223,5 +306,32 @@ class KaryawanController extends Controller
         $keluarga->delete();
 
         return redirect()->route('karyawan.show', $karyawanId)->with('success', 'Data anggota keluarga berhasil dihapus!');
+    }
+
+    public function exportExcel(Request $request)
+    {
+        $type = $request->query('type', 'ringkasan');
+        $isTemplate = false;
+        $namaFile = 'Data_Karyawan_' . date('Ymd_His') . '.xlsx';
+        return \Maatwebsite\Excel\Facades\Excel::download(new \App\Exports\KaryawanExport($isTemplate, $type), $namaFile);
+    }
+
+    public function exportPdf(Request $request)
+    {
+        $type = $request->query('type', 'ringkasan');
+        
+        $karyawan = \App\Models\Karyawan::orderBy('nama', 'asc')->get();
+        if ($type === 'lengkap') {
+            $karyawan->load('keluarga');
+        }
+        
+        $kolomDinamis = \Illuminate\Support\Facades\DB::table('dynamic_columns')->where('modul', 'karyawan_tabel')->get();
+        $kolomProfil = \Illuminate\Support\Facades\DB::table('dynamic_columns')->where('modul', 'karyawan_profil')->get();
+        $kolomKeluarga = \Illuminate\Support\Facades\DB::table('dynamic_columns')->where('modul', 'karyawan_keluarga')->get();
+        
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.karyawan', compact('karyawan', 'type', 'kolomDinamis', 'kolomProfil', 'kolomKeluarga'))
+                ->setPaper('a4', 'landscape');
+                
+        return $pdf->download('Data_Karyawan_' . date('Ymd_His') . '.pdf');
     }
 }

@@ -13,6 +13,11 @@ class JasaKurirData extends Model
     protected $table = 'jasa_kurir_data';
     protected $guarded = ['id'];
 
+    // TRIK JSON ARRAY UNTUK KOLOM DINAMIS
+    protected $casts = [
+        'data_tambahan' => 'array',
+    ];
+
     public function jasaKurirMaster()
     {
         return $this->belongsTo(JasaKurirMaster::class, 'jasa_kurir_id');

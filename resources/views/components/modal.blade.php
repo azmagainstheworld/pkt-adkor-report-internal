@@ -5,7 +5,7 @@
     <div class="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity" onclick="document.getElementById('{{ $id }}').classList.add('hidden')"></div>
     
     <!-- Modal Content -->
-    <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-3xl overflow-hidden flex flex-col max-h-[90vh]">
+    <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-3xl overflow-visible flex flex-col max-h-[90vh]">
         
         <!-- Modal Header -->
         <div class="flex items-center justify-between p-6 border-b border-gray-100">

@@ -32,11 +32,13 @@ class Karyawan extends Model
         'alamat',
         'ukuran_kaos',
         'status',
+        'data_tambahan', // <-- TAMBAHKAN INI AGAR BISA DISIMPAN
     ];
 
     protected $casts = [
         'tanggal_lahir' => 'date',
         'mpp_pbp' => 'date',
+        'data_tambahan' => 'array', // <-- TAMBAHKAN INI AGAR OTOMATIS JADI ARRAY
     ];
 
     protected $appends = [];
@@ -44,5 +46,10 @@ class Karyawan extends Model
     public function keluarga()
     {
         return $this->hasMany(KeluargaKaryawan::class, 'karyawan_id');
+    }
+
+    public function ketidakhadiran()
+    {
+        return $this->hasMany(Ketidakhadiran::class, 'karyawan_id');
     }
 }

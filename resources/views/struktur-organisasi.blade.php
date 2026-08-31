@@ -29,7 +29,7 @@
     </div>
 
     <!-- Teks Deskripsi (Dinamis) -->
-    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 md:p-8 mb-8 relative overflow-hidden">
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 md:p-8 mb-8 relative overflow-visible">
         <!-- Aksen Garis Kiri -->
         <div class="absolute left-0 top-0 bottom-0 w-1.5 bg-blue-600 rounded-l-2xl"></div>
         
@@ -68,7 +68,7 @@
 @if(auth()->user()->role === 'admin')
 <div id="modalEditStruktur" class="fixed inset-0 z-50 flex items-center justify-center hidden">
     <div class="absolute inset-0 bg-gray-900/50 backdrop-blur-sm" onclick="document.getElementById('modalEditStruktur').classList.add('hidden')"></div>
-    <div class="relative bg-white rounded-2xl shadow-xl w-full max-w-3xl overflow-hidden flex flex-col max-h-[90vh]">
+    <div class="relative bg-white rounded-2xl shadow-xl w-full max-w-3xl overflow-visible flex flex-col max-h-[90vh]">
         
         <!-- Modal Header -->
         <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">

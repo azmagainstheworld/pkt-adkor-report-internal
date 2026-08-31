@@ -15,6 +15,10 @@ class AnggaranAdministrasi extends Model
     protected $table = 'anggaran_administrasi';
 
     protected $fillable = [
-        'tahun', 'bulan', 'kategori', 'detail_anggaran', 'rkap', 'komitmen', 'realisasi', 'keterangan'
+        'tahun', 'bulan', 'kategori', 'detail_anggaran', 'rkap', 'komitmen', 'realisasi', 'keterangan', 'data_tambahan'
+    ];
+
+    protected $casts = [
+        'data_tambahan' => 'array', // Trik Sakti JSON
     ];
 }

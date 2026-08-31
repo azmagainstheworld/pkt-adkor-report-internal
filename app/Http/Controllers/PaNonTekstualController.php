@@ -3,10 +3,13 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Imports\PaNonTekstualImport;
 use App\Models\PaNonTekstualType;
 use App\Models\PaNonTekstualValue;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 class PaNonTekstualController extends Controller
 {
@@ -37,7 +40,7 @@ class PaNonTekstualController extends Controller
             $parts = explode('_', $key);
             $tahun = $parts[0]; $bulan = $parts[1];
 
-            $rowData = ['tahun' => $tahun, 'bulan' => $bulan, 'items' => []];
+            $rowData = ['tahun' => $tahun, 'bulan' => $bulan, 'items' => [], 'data_tambahan' => []];
 
             foreach($items as $item) {
                 $type = $item->type;
@@ -45,9 +48,18 @@ class PaNonTekstualController extends Controller
                     $rowData['items'][$type->id] = $item->jumlah;
                     $grandTotals[$type->id] += $item->jumlah;
                 }
+                
+                if (!empty($item->data_tambahan)) {
+                    $tambahan = is_string($item->data_tambahan) ? json_decode($item->data_tambahan, true) : $item->data_tambahan;
+                    if (is_array($tambahan)) {
+                        foreach ($tambahan as $k => $v) {
+                            $rowData['data_tambahan'][$k] = $v;
+                        }
+                    }
+                }
             }
             
-            if (count($rowData['items']) > 0) $dataPa[] = $rowData;
+            if (count($rowData['items']) > 0 || count($rowData['data_tambahan']) > 0) $dataPa[] = $rowData;
         }
 
         $monthsOrder = ['Januari'=>1,'Februari'=>2,'Maret'=>3,'April'=>4,'Mei'=>5,'Juni'=>6,'Juli'=>7,'Agustus'=>8,'September'=>9,'Oktober'=>10,'November'=>11,'Desember'=>12];
@@ -57,9 +69,18 @@ class PaNonTekstualController extends Controller
         };
         usort($dataPa, $sorter);
 
+        $perPage = 10;
+        $currentPage = LengthAwarePaginator::resolveCurrentPage();
+        $currentItems = array_slice($dataPa, ($currentPage - 1) * $perPage, $perPage);
+        $paginatedDataPa = new LengthAwarePaginator($currentItems, count($dataPa), $perPage, $currentPage, ['path' => LengthAwarePaginator::resolveCurrentPath()]);
+        $paginatedDataPa->appends($request->all());
+
+
+        $kolomDinamis = DB::table('dynamic_columns')->where('modul', 'pa_non_tekstual')->get();
+
         return view('non-teknik-non-tekstual', compact(
             'tanggalToday', 'filterTahun', 'filterBulan', 'tahunTersedia',
-            'availableTypes', 'dataPa', 'grandTotals'
+            'availableTypes', 'paginatedDataPa', 'dataPa', 'grandTotals', 'kolomDinamis'
         ));
     }
 
@@ -150,4 +171,21 @@ class PaNonTekstualController extends Controller
         PaNonTekstualValue::where('tahun', $request->tahun)->where('bulan', $request->bulan)->delete();
         return back()->with('success', 'Seluruh data di bulan tersebut berhasil dihapus.');
     }
+
+    public function importExcel(Request $request)
+    {
+        $request->validate([
+            'file_excel' => 'required|mimes:xlsx,xls'
+        ]);
+        try {
+            Excel::import(new PaNonTekstualImport, $request->file('file_excel'));
+            return redirect()->back()->with('success', 'Data berhasil di-import dari Excel.');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Gagal meng-import: ' . $e->getMessage());
+        }
+    }
+
+    public function exportExcel(Request $request) { /* TODO */ }
+    public function exportPdf(Request $request) { /* TODO */ }
+
 }

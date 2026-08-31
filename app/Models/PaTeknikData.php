@@ -12,6 +12,11 @@ class PaTeknikData extends Model {
     protected $table = 'pa_teknik_data';
     protected $guarded = ['id'];
 
+    // TRIK JSON ARRAY UNTUK KOLOM DINAMIS
+    protected $casts = [
+        'data_tambahan' => 'array',
+    ];
+
     public function masterTeknik() {
         return $this->belongsTo(PaTeknikMaster::class, 'master_id');
     }

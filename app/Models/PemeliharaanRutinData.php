@@ -11,8 +11,14 @@ class PemeliharaanRutinData extends Model {
 
     protected $auditModuleKey = 'pemeliharaan-rutin';
 
-    protected $table = 'pemeliharaan_rutin_data';
+    // KEMBALIKAN KE NAMA TABEL YANG BENAR!
+    protected $table = 'pemeliharaan_rutin_data'; 
+    
     protected $guarded = ['id'];
+
+    protected $casts = [
+        'data_tambahan' => 'array',
+    ];
 
     public function pemeliharaanRutinMaster() {
         return $this->belongsTo(PemeliharaanRutinMaster::class, 'rutin_id');

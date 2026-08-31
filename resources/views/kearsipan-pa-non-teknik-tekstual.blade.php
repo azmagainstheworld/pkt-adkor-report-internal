@@ -55,7 +55,7 @@
                 $headTabel1[] = 'Aksi';
             @endphp
             <x-table :headers="$headTabel1">
-                @forelse($dataTable1 as $row)
+                @forelse($paginatedTable1 as $row)
                     <tr class="hover:bg-gray-50 transition-colors text-xs whitespace-nowrap">
                         <td class="px-4 py-3 text-gray-700 font-medium text-center">{{ $row['tahun'] }}</td>
                         <td class="px-4 py-3 text-gray-900 font-medium text-center">{{ $row['bulan'] }}</td>
@@ -89,6 +89,9 @@
                 </tr>
                 @endif
             </x-table>
+            <div class="px-6 py-4 border-t border-gray-100 bg-gray-50">
+                {{ $paginatedTable1->links('pagination::tailwind') }}
+            </div>
         </div>
     </x-card>
 
@@ -104,7 +107,7 @@
                 $headTabel2[] = 'Aksi';
             @endphp
             <x-table :headers="$headTabel2">
-                @forelse($dataTable2 as $row)
+                @forelse($paginatedTable2 as $row)
                     <tr class="hover:bg-gray-50 transition-colors text-xs whitespace-nowrap">
                         <td class="px-4 py-3 text-gray-700 font-medium text-center">{{ $row['tahun'] }}</td>
                         <td class="px-4 py-3 text-gray-900 font-medium text-center">{{ $row['bulan'] }}</td>
@@ -138,6 +141,9 @@
                 </tr>
                 @endif
             </x-table>
+            <div class="px-6 py-4 border-t border-gray-100 bg-gray-50">
+                {{ $paginatedTable1->links('pagination::tailwind') }}
+            </div>
         </div>
     </x-card>
 

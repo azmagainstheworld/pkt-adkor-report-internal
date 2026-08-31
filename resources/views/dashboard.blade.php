@@ -11,11 +11,7 @@
     <!-- Section: Ringkasan Bulan Ini -->
     <div class="mb-8">
         <div class="flex items-end justify-end mb-4">
-            <!-- <div>
-                <h3 class="text-lg font-bold text-gray-900 mb-1">Ringkasan Bulan Ini</h3>
-                <p class="text-sm text-gray-500">Ringkasan Bulan Ini</p>
-            </div> -->
-            <a href="#" class="text-sm font-semibold text-blue-600 hover:text-blue-800 flex items-center gap-1">
+            <a href="#" class="text-sm font-semibold text-blue-600 hover:text-blue-800 flex items-center gap-1 transition-colors">
                 Lihat Semua Laporan
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
             </a>
@@ -25,140 +21,106 @@
         <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-5">
             
             <!-- Card 1: Karyawan -->
-            <x-card class="p-5 flex flex-col justify-between h-full">
+            <x-card class="p-5 flex flex-col justify-between h-full bg-white border border-gray-100 hover:border-blue-200 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 cursor-pointer group">
                 <div class="flex justify-between items-start mb-4">
-                    <div class="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-500">
+                    <div class="w-10 h-10 rounded-xl bg-gray-50 group-hover:bg-blue-50 transition-colors flex items-center justify-center text-gray-400 group-hover:text-blue-600">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
                     </div>
-                    <span class="px-2 py-1 bg-orange-100 text-orange-600 text-xs font-bold rounded-full">+5%</span>
                 </div>
                 <div>
-                    <p class="text-sm font-medium text-gray-500 mb-1">Karyawan</p>
-                    <p class="text-3xl font-bold text-gray-900 mb-2">21</p>
-                    <p class="text-[11px] text-gray-400">Organik: 6 | Non Organik: 15</p>
+                    <p class="text-sm font-medium text-gray-500 mb-1 group-hover:text-gray-700 transition-colors">Karyawan</p>
+                    <p class="text-3xl font-bold text-gray-900 mb-2">{{ $totalKaryawan }}</p>
+                    <p class="text-[11px] text-gray-400">Organik: {{ $karyawanOrganik }} | Non Organik: {{ $karyawanNonOrganik }}</p>
                 </div>
             </x-card>
 
             <!-- Card 2: Ketidakhadiran -->
-            <x-card class="p-5 flex flex-col justify-between h-full">
+            <x-card class="p-5 flex flex-col justify-between h-full bg-white border border-gray-100 hover:border-blue-200 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 cursor-pointer group">
                 <div class="flex justify-between items-start mb-4">
-                    <div class="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-500">
+                    <div class="w-10 h-10 rounded-xl bg-gray-50 group-hover:bg-blue-50 transition-colors flex items-center justify-center text-gray-400 group-hover:text-blue-600">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                     </div>
-                    <span class="px-2 py-1 bg-orange-100 text-orange-600 text-xs font-bold rounded-full">-2%</span>
                 </div>
                 <div>
-                    <p class="text-sm font-medium text-gray-500 mb-1">Ketidakhadiran</p>
-                    <p class="text-3xl font-bold text-gray-900 mb-2">8</p>
+                    <p class="text-sm font-medium text-gray-500 mb-1 group-hover:text-gray-700 transition-colors">Ketidakhadiran</p>
+                    <p class="text-3xl font-bold text-gray-900 mb-2">{{ $totalKetidakhadiran }}</p>
                     <p class="text-[11px] text-gray-400">Total hari bulan berjalan</p>
                 </div>
             </x-card>
 
-            <!-- Card 3: Anggaran (Blue Card) -->
-            <x-card class="!bg-pkt-biru !border-blue-800 shadow-md p-5 flex flex-col justify-between relative overflow-hidden h-full">
-                <!-- Background Decoration Circle -->
-                <div class="absolute -bottom-6 -right-6 w-24 h-24 bg-white/5 rounded-full"></div>
-                
-                <div class="flex justify-between items-start mb-4 relative z-10">
-                    <div class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white">
+            <!-- Card 3: Anggaran -->
+            <x-card class="p-5 flex flex-col justify-between h-full bg-white border border-gray-100 hover:border-blue-200 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 cursor-pointer group">
+                <div class="flex justify-between items-start mb-4">
+                    <div class="w-10 h-10 rounded-xl bg-gray-50 group-hover:bg-blue-50 transition-colors flex items-center justify-center text-gray-400 group-hover:text-blue-600">
                         <span class="text-lg font-semibold">$</span>
                     </div>
-                    <span class="px-2 py-1 bg-orange-500 text-white text-xs font-bold rounded-full">+3%</span>
                 </div>
-                <div class="relative z-10">
-                    <p class="text-sm font-medium text-blue-100 mb-1">Anggaran</p>
-                    <p class="text-3xl font-bold text-white mb-2">74%</p>
-                    <!-- Progress Bar -->
-                    <div class="w-full bg-black/20 rounded-full h-1.5 mb-2">
-                        <div class="bg-green-400 h-1.5 rounded-full" style="width: 74%"></div>
+                <div>
+                    <p class="text-sm font-medium text-gray-500 mb-1 group-hover:text-gray-700 transition-colors">Anggaran</p>
+                    <p class="text-3xl font-bold text-gray-900 mb-2">{{ $persenAnggaran }}%</p>
+                    <!-- Progress Bar Dinamis -->
+                    <div class="w-full bg-gray-100 rounded-full h-1.5 mb-2 overflow-visible">
+                        <div class="bg-blue-500 h-1.5 rounded-full" style="width: {{ $persenAnggaran }}%"></div>
                     </div>
-                    <p class="text-[11px] text-blue-200">Realisasi anggaran bulan ini</p>
+                    <p class="text-[11px] text-gray-400">Realisasi anggaran bulan ini</p>
                 </div>
             </x-card>
 
             <!-- Card 4: Perizinan Perkantoran -->
-            <x-card class="p-5 flex flex-col justify-between h-full">
+            <x-card class="p-5 flex flex-col justify-between h-full bg-white border border-gray-100 hover:border-blue-200 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 cursor-pointer group">
                 <div class="flex justify-between items-start mb-4">
-                    <div class="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-500">
+                    <div class="w-10 h-10 rounded-xl bg-gray-50 group-hover:bg-blue-50 transition-colors flex items-center justify-center text-gray-400 group-hover:text-blue-600">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                     </div>
-                    <span class="px-2 py-1 bg-orange-100 text-orange-600 text-xs font-bold rounded-full">+1</span>
                 </div>
                 <div>
-                    <p class="text-sm font-medium text-gray-500 mb-1">Perizinan Perkantoran</p>
-                    <p class="text-3xl font-bold text-gray-900 mb-2">12</p>
+                    <p class="text-sm font-medium text-gray-500 mb-1 group-hover:text-gray-700 transition-colors">Perizinan Perkantoran</p>
+                    <p class="text-3xl font-bold text-gray-900 mb-2">{{ $perizinanBulanIni }}</p>
                     <p class="text-[11px] text-gray-400">Perizinan terbit bulan ini</p>
                 </div>
             </x-card>
 
             <!-- Card 5: Pelaporan -->
-            <x-card class="p-5 flex flex-col justify-between h-full">
+            <x-card class="p-5 flex flex-col justify-between h-full bg-white border border-gray-100 hover:border-blue-200 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 cursor-pointer group">
                 <div class="flex justify-between items-start mb-4">
-                    <div class="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-500">
+                    <div class="w-10 h-10 rounded-xl bg-gray-50 group-hover:bg-blue-50 transition-colors flex items-center justify-center text-gray-400 group-hover:text-blue-600">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                     </div>
-                    <span class="px-2 py-1 bg-orange-100 text-orange-600 text-xs font-bold rounded-full">+8%</span>
                 </div>
                 <div>
-                    <p class="text-sm font-medium text-gray-500 mb-1">Pelaporan</p>
-                    <p class="text-3xl font-bold text-gray-900 mb-2">34</p>
-                    <p class="text-[11px] text-gray-400">Eksternal: 14 | Internal: 20</p>
+                    <p class="text-sm font-medium text-gray-500 mb-1 group-hover:text-gray-700 transition-colors">Pelaporan</p>
+                    <p class="text-3xl font-bold text-gray-900 mb-2">{{ $totalPelaporan }}</p>
+                    <p class="text-[11px] text-gray-400">Eksternal: {{ $pelaporanEksternal }} | Internal: {{ $pelaporanInternal }}</p>
                 </div>
             </x-card>
             
-            <!-- Card 6: Kearsipan (Blue Card) -->
-            <x-card class="!bg-pkt-biru !border-blue-800 shadow-md p-5 flex flex-col justify-between relative overflow-hidden h-full">
-                <div class="absolute -bottom-6 -right-6 w-24 h-24 bg-white/5 rounded-full"></div>
-                <div class="flex justify-between items-start mb-4 relative z-10">
-                    <div class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white">
+            <!-- Card 6: Kearsipan -->
+            <x-card class="p-5 flex flex-col justify-between h-full bg-white border border-gray-100 hover:border-blue-200 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 cursor-pointer group">
+                <div class="flex justify-between items-start mb-4">
+                    <div class="w-10 h-10 rounded-xl bg-gray-50 group-hover:bg-blue-50 transition-colors flex items-center justify-center text-gray-400 group-hover:text-blue-600">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path></svg>
                     </div>
-                    <span class="px-2 py-1 bg-orange-500 text-white text-xs font-bold rounded-full">+12</span>
                 </div>
-                <div class="relative z-10">
-                    <p class="text-sm font-medium text-blue-100 mb-1">Kearsipan</p>
-                    <p class="text-3xl font-bold text-white mb-2">156</p>
-                    <p class="text-[11px] text-blue-200">Rekap total kearsipan</p>
+                <div>
+                    <p class="text-sm font-medium text-gray-500 mb-1 group-hover:text-gray-700 transition-colors">Kearsipan</p>
+                    <p class="text-3xl font-bold text-gray-900 mb-2">{{ $totalKearsipan }}</p>
+                    <p class="text-[11px] text-gray-400">Rekap total kearsipan</p>
                 </div>
             </x-card>
 
             <!-- Card 7: Administrasi -->
-            <x-card class="p-5 flex flex-col justify-between h-full">
+            <x-card class="p-5 flex flex-col justify-between h-full bg-white border border-gray-100 hover:border-blue-200 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 cursor-pointer group">
                 <div class="flex justify-between items-start mb-4">
-                    <div class="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-500">
+                    <div class="w-10 h-10 rounded-xl bg-gray-50 group-hover:bg-blue-50 transition-colors flex items-center justify-center text-gray-400 group-hover:text-blue-600">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                     </div>
-                    <span class="px-2 py-1 bg-orange-100 text-orange-600 text-xs font-bold rounded-full">+6%</span>
                 </div>
                 <div>
-                    <p class="text-sm font-medium text-gray-500 mb-1">Administrasi</p>
-                    <p class="text-3xl font-bold text-gray-900 mb-2">48</p>
+                    <p class="text-sm font-medium text-gray-500 mb-1 group-hover:text-gray-700 transition-colors">Administrasi</p>
+                    <p class="text-3xl font-bold text-gray-900 mb-2">{{ $totalAdministrasi }}</p>
                     <p class="text-[11px] text-gray-400">Total aktivitas bulan ini</p>
                 </div>
             </x-card>
-
-        </div>
-    </div>
-
-    <!-- Section: Akses Cepat -->
-    <div>
-        <h3 class="text-lg font-bold text-gray-900 mb-4">Akses Cepat</h3>
-        <div class="flex flex-wrap gap-4">
-            <x-button variant="outline" class="!text-blue-600 !border-gray-200 hover:!bg-blue-50 hover:!border-blue-300 px-5 py-2.5">
-                Buat Laporan Baru
-            </x-button>
-            
-            <x-button variant="outline" class="!text-blue-600 !border-gray-200 hover:!bg-blue-50 hover:!border-blue-300 px-5 py-2.5">
-                Unggah Dokumen
-            </x-button>
-            
-            <x-button variant="outline" class="!text-blue-600 !border-gray-200 hover:!bg-blue-50 hover:!border-blue-300 px-5 py-2.5">
-                Ajukan Perizinan
-            </x-button>
-            
-            <x-button variant="outline" class="!text-blue-600 !border-gray-200 hover:!bg-blue-50 hover:!border-blue-300 px-5 py-2.5">
-                Input Ketidakhadiran
-            </x-button>
         </div>
     </div>
 
@@ -168,7 +130,7 @@
     <div class="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
         
         <!-- Panel 1: Perizinan Akan Kedaluwarsa -->
-        <x-card class="!p-0 overflow-hidden shadow-sm border border-red-100 flex flex-col h-full">
+        <x-card class="!p-0 overflow-visible shadow-sm border border-red-100 flex flex-col h-full">
             <div class="px-5 py-4 border-b border-gray-100 bg-red-50/50 flex justify-between items-center">
                 <div class="flex items-center gap-2">
                     <div class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
@@ -202,7 +164,7 @@
         </x-card>
 
         <!-- Panel 2: Tugas Rapat/BAR Pending -->
-        <x-card class="!p-0 overflow-hidden shadow-sm border border-amber-100 flex flex-col h-full">
+        <x-card class="!p-0 overflow-visible shadow-sm border border-amber-100 flex flex-col h-full">
             <div class="px-5 py-4 border-b border-gray-100 bg-amber-50/50 flex justify-between items-center">
                 <div class="flex items-center gap-2">
                     <svg class="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>

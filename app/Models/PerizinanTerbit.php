@@ -12,9 +12,11 @@ class PerizinanTerbit extends Model
 
     protected $table = 'perizinan_terbit';
     protected $guarded = ['id'];
+    
+    // Tambahkan array data_tambahan ke dalam casts
     protected $casts = [
         'tanggal_sejak' => 'date',
         'tanggal_akhir' => 'date',
+        'data_tambahan' => 'array', // Trik sakti JSON
     ];
-    // Fungsi public function jenisPerizinan() DIHAPUS saja karena sudah tidak relasi
 }

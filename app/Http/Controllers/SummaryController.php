@@ -133,13 +133,14 @@ class SummaryController extends Controller
             'teknikal_file' => [
                 'label' => 'Pengelolaan Dokumen Teknikal File',
                 'color' => '#D96C6C',
-                'query' => fn () => PaTeknikData::query()
-                    // KONFIRMASI struktur tabel (sama pola dengan dof_data). Menjumlahkan
-                    // SEMUA baris pa_teknik_data sebagai representasi "Teknikal File".
-                    // ⚠️ WASPADA DUPLIKAT: 'rekap_masters' JUGA punya baris "Teknikal File"
-                    // (id 2) yang datanya di rekap_data, terpisah dari tabel pa_teknik_data ini.
-                    // Kalau modul "Teknikal File" input datanya lewat rekap_data (bukan
-                    // pa_teknik_data), kabari saya — sumbernya perlu dipindah.
+                // KONFIRMASI: dicek lewat tinker — ternyata DUA sumber ini sama-sama aktif
+                // terpakai (rekap_data master "Teknikal File" malah update TERAKHIR paling baru),
+                // jadi digabung (SUM) supaya tidak ada data yang hilang dari perhitungan.
+                'query' => fn () => DB::table(DB::raw('(
+                        SELECT tahun, bulan, jumlah FROM pa_teknik_data
+                        UNION ALL
+                        SELECT tahun, bulan, jumlah FROM rekap_data WHERE master_id = 2
+                    ) as gabungan_teknikal_file'))
                     ->selectRaw('tahun, bulan, SUM(jumlah) as total')
                     ->groupBy('tahun', 'bulan'),
             ],
@@ -158,6 +159,7 @@ class SummaryController extends Controller
     public function index(Request $request)
     {
         $selectedYear = $request->input('year', 'all');
+        $selectedMonth = $request->input('month', 'all'); // 'all' atau nama bulan Indonesia
         $bulanIndo = $this->bulanIndo();
         $metrics = $this->metricDefinitions();
 
@@ -178,8 +180,8 @@ class SummaryController extends Controller
                 $tahun = (int) $row->tahun;
 
                 // Normalisasi kolom 'bulan': bisa berupa ANGKA (hasil MONTH() dari query
-                // berbasis tanggal) atau TEKS nama bulan Indonesia (dari PengirimanDokumen,
-                // yang kolom 'bulan'-nya memang berisi string "Januari", "Februari", dst).
+                // berbasis tanggal) atau TEKS nama bulan Indonesia (dari tabel yang sudah
+                // agregat bulanan, misal PengirimanDokumen/Undangan/dof_data/dst).
                 if (is_numeric($row->bulan)) {
                     $bulanAngka = (int) $row->bulan;
                 } else {
@@ -190,6 +192,10 @@ class SummaryController extends Controller
                 }
 
                 if ($selectedYear !== 'all' && $tahun !== (int) $selectedYear) {
+                    continue;
+                }
+
+                if ($selectedMonth !== 'all' && $bulanIndo[$bulanAngka] !== $selectedMonth) {
                     continue;
                 }
 
@@ -221,7 +227,8 @@ class SummaryController extends Controller
             }
         }
 
-        // Total & nilai maksimum per kolom (dipakai untuk lebar bar visual & baris "Total keseluruhan")
+        // Total & nilai maksimum per kolom dihitung dari SELURUH baris (sebelum dipaginate),
+        // supaya "Total Keseluruhan" tetap akurat walau tabelnya dibagi per halaman.
         $totals = [];
         $maxPerColumn = [];
         foreach (array_keys($metrics) as $key) {
@@ -230,13 +237,26 @@ class SummaryController extends Controller
             $maxPerColumn[$key] = max($columnValues->max(), 1); // minimal 1 agar tidak dibagi nol
         }
 
+        // Pagination manual dari Collection (data sudah di-assembling di PHP, bukan dari query builder)
+        $perPage = 15;
+        $currentPage = \Illuminate\Pagination\Paginator::resolveCurrentPage('page');
+        $pagedRows = new \Illuminate\Pagination\LengthAwarePaginator(
+            $tableRows->forPage($currentPage, $perPage)->values(),
+            $tableRows->count(),
+            $perPage,
+            $currentPage,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
+
         return view('summary.index', [
             'metrics' => $metrics,
-            'tableRows' => $tableRows,
+            'tableRows' => $pagedRows,
             'totals' => $totals,
             'maxPerColumn' => $maxPerColumn,
             'availableYears' => $availableYears,
+            'bulanIndo' => $bulanIndo,
             'selectedYear' => $selectedYear,
+            'selectedMonth' => $selectedMonth,
         ]);
     }
 }

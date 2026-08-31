@@ -26,7 +26,7 @@
         </div>
     </div>
 
-    <x-card class="!rounded-xl overflow-hidden !p-0 shadow-sm border border-gray-100 bg-white mb-8">
+    <x-card class="!rounded-xl overflow-visible !p-0 shadow-sm border border-gray-100 bg-white mb-8">
         <div class="p-5 border-b border-gray-100 flex justify-between items-center bg-white">
             <div>
                 <h3 class="font-bold text-gray-900 text-lg">Daftar Akun Pengguna</h3>
@@ -138,7 +138,7 @@
 <!-- MODAL KONFIRMASI UBAH STATUS (AKTIF/NONAKTIF) -->
 <div id="toggleModal" class="fixed inset-0 z-50 flex items-center justify-center hidden">
     <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="closeToggleModal()"></div>
-    <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 overflow-hidden">
+    <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 overflow-visible">
         <div class="flex items-center gap-4 mb-4">
             <div class="w-12 h-12 bg-orange-50 text-orange-600 rounded-xl flex items-center justify-center shrink-0">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>

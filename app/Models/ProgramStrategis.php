@@ -11,4 +11,9 @@ class ProgramStrategis extends Model {
 
     protected $table = 'program_strategis';
     protected $guarded = ['id'];
+
+    // TRIK JSON ARRAY UNTUK KOLOM DINAMIS & CAST TANGGAL
+    protected $casts = [
+        'data_tambahan' => 'array',
+    ];
 }

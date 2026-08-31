@@ -14,7 +14,7 @@
 <body class="min-h-screen flex bg-gray-50 antialiased">
 
     <!-- ================= SISI KIRI (60%): BRANDING KORPORAT ================= -->
-    <div class="hidden lg:flex lg:w-[60%] relative overflow-hidden flex-col items-center justify-center p-12">
+    <div class="hidden lg:flex lg:w-[60%] relative overflow-visible flex-col items-center justify-center p-12">
         
         <!-- Background Gradient Utama (Biru Kaltim) -->
         <div class="absolute inset-0 bg-gradient-to-br from-[#003D73] via-[#0056A3] to-[#0056A3] z-0"></div>
@@ -80,6 +80,7 @@
                 <div>
                     <label for="password" class="block text-sm font-medium text-gray-700 mb-2">Kata Sandi</label>
                     <div class="relative">
+                        <!-- ATRIBUT REQUIRED DIKEMBALIKAN -->
                         <input type="password" id="password" name="password" required
                             class="w-full px-4 py-3 rounded-md border {{ $errors->has('email') ? 'border-red-500 text-red-900 bg-red-50/30' : 'border-gray-300 focus:border-[#0056A3]' }} focus:outline-none focus:ring-1 focus:ring-[#0056A3] text-gray-900 shadow-sm transition-colors text-sm pr-12"
                             placeholder="Masukkan kata sandi Anda">
@@ -91,11 +92,6 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
                             </svg>
                         </button>
-                    </div>
-                    
-                    <!-- Indikator Kekuatan Sandi Teks -->
-                    <div id="password-strength-container" class="hidden mt-2">
-                        <p class="text-[12px] font-medium text-gray-600">Password : <span id="strength-text" class="transition-colors"></span></p>
                     </div>
                     
                     @error('email')
@@ -136,49 +132,16 @@
         </div>
     </div>
 
-    <!-- Script untuk Toggle Password & Validasi Kekuatan Sandi -->
+    <!-- Script untuk Toggle Password SAJA -->
     <script>
         document.addEventListener("DOMContentLoaded", function() {
             const passwordInput = document.getElementById('password');
             const toggleBtn = document.getElementById('toggle-password');
-            const strengthContainer = document.getElementById('password-strength-container');
-            const strengthText = document.getElementById('strength-text');
 
             // Fitur Lihat/Sembunyikan Kata Sandi
             toggleBtn.addEventListener('click', () => {
                 const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
                 passwordInput.setAttribute('type', type);
-            });
-
-            // Fitur Cek Kekuatan Kata Sandi
-            passwordInput.addEventListener('input', (e) => {
-                const val = e.target.value;
-                
-                // Sembunyikan indikator jika input kosong
-                if (val === '') {
-                    strengthContainer.classList.add('hidden');
-                    return;
-                }
-                
-                strengthContainer.classList.remove('hidden');
-
-                // Hitung skor kekuatan (1-3)
-                let strength = 0;
-                if (val.length >= 8) strength += 1; // Minimal 8 karakter
-                if (val.match(/(?=.*[a-z])(?=.*[A-Z])/)) strength += 1; // Huruf besar & kecil
-                if (val.match(/(?=.*[0-9])(?=.*[!@#$%^&*])/)) strength += 1; // Angka & Simbol
-
-                // Terapkan teks dan warna berdasarkan skor
-                if (strength === 0 || strength === 1) {
-                    strengthText.textContent = 'Lemah';
-                    strengthText.className = 'text-red-500 font-bold';
-                } else if (strength === 2) {
-                    strengthText.textContent = 'Sedang';
-                    strengthText.className = 'text-yellow-500 font-bold';
-                } else if (strength === 3) {
-                    strengthText.textContent = 'Kuat';
-                    strengthText.className = 'text-green-500 font-bold';
-                }
             });
         });
     </script>

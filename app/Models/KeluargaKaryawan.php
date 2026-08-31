@@ -20,8 +20,13 @@ class KeluargaKaryawan extends Model
         'karyawan_id',
         'nama',
         'hubungan',
-        'tempat_lahir',  // Diperbarui
-        'tanggal_lahir', // Diperbarui
+        'tempat_lahir',
+        'tanggal_lahir',
+        'data_tambahan', // <-- TAMBAHKAN INI
+    ];
+
+    protected $casts = [
+        'data_tambahan' => 'array', // <-- TAMBAHKAN INI
     ];
 
     public function karyawan()

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use App\Models\PaTeknikMaster;
 use App\Models\PaTeknikData;
 use Carbon\Carbon;
@@ -63,9 +64,20 @@ class PaTeknikController extends Controller
         usort($dataTable1, $sorter);
         usort($dataTable2, $sorter);
 
+        $perPage = 10;
+        $currentPage1 = LengthAwarePaginator::resolveCurrentPage('page1');
+        $currentItems1 = array_slice($dataTable1, ($currentPage1 - 1) * $perPage, $perPage);
+        $paginatedTable1 = new LengthAwarePaginator($currentItems1, count($dataTable1), $perPage, $currentPage1, ['path' => LengthAwarePaginator::resolveCurrentPath(), 'pageName' => 'page1']);
+        $paginatedTable1->appends($request->all());
+
+        $currentPage2 = LengthAwarePaginator::resolveCurrentPage('page2');
+        $currentItems2 = array_slice($dataTable2, ($currentPage2 - 1) * $perPage, $perPage);
+        $paginatedTable2 = new LengthAwarePaginator($currentItems2, count($dataTable2), $perPage, $currentPage2, ['path' => LengthAwarePaginator::resolveCurrentPath(), 'pageName' => 'page2']);
+        $paginatedTable2->appends($request->all());
+
         return view('kearsipan-pa-teknik', compact(
             'tanggalToday', 'filterTahun', 'filterBulan', 'tahunTersedia',
-            'masterTabel1', 'masterTabel2', 'dataTable1', 'dataTable2',
+            'masterTabel1', 'masterTabel2', 'paginatedTable1', 'paginatedTable2', 'dataTable1', 'dataTable2',
             'totalsTabel1', 'totalsTabel2'
         ));
     }

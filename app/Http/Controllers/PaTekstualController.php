@@ -3,9 +3,12 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Imports\PaTekstualImport;
 use App\Models\PaTekstualMaster;
 use App\Models\PaTekstualData;
 use Carbon\Carbon;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 class PaTekstualController extends Controller
 {
@@ -63,9 +66,20 @@ class PaTekstualController extends Controller
         usort($dataTable1, $sorter);
         usort($dataTable2, $sorter);
 
-        return view('pa-tekstual', compact(
+        $perPage = 10;
+        $currentPage1 = LengthAwarePaginator::resolveCurrentPage('page1');
+        $currentItems1 = array_slice($dataTable1, ($currentPage1 - 1) * $perPage, $perPage);
+        $paginatedTable1 = new LengthAwarePaginator($currentItems1, count($dataTable1), $perPage, $currentPage1, ['path' => LengthAwarePaginator::resolveCurrentPath(), 'pageName' => 'page1']);
+        $paginatedTable1->appends($request->all());
+
+        $currentPage2 = LengthAwarePaginator::resolveCurrentPage('page2');
+        $currentItems2 = array_slice($dataTable2, ($currentPage2 - 1) * $perPage, $perPage);
+        $paginatedTable2 = new LengthAwarePaginator($currentItems2, count($dataTable2), $perPage, $currentPage2, ['path' => LengthAwarePaginator::resolveCurrentPath(), 'pageName' => 'page2']);
+        $paginatedTable2->appends($request->all());
+
+        return view('kearsipan-pa-non-teknik-tekstual', compact(
             'tanggalToday', 'filterTahun', 'filterBulan', 'tahunTersedia',
-            'masterTabel1', 'masterTabel2', 'dataTable1', 'dataTable2',
+            'masterTabel1', 'masterTabel2', 'paginatedTable1', 'paginatedTable2', 'dataTable1', 'dataTable2',
             'totalsTabel1', 'totalsTabel2'
         ));
     }
@@ -149,4 +163,21 @@ class PaTekstualController extends Controller
         PaTekstualData::where('tahun', $request->tahun)->where('bulan', $request->bulan)->whereIn('master_id', $masterIds)->delete();
         return back()->with('success', 'Seluruh data pada tabel terpilih di bulan tersebut dihapus.');
     }
+
+    public function importExcel(Request $request)
+    {
+        $request->validate([
+            'file_excel' => 'required|mimes:xlsx,xls'
+        ]);
+        try {
+            Excel::import(new PaTekstualImport, $request->file('file_excel'));
+            return redirect()->back()->with('success', 'Data berhasil di-import dari Excel.');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Gagal meng-import: ' . $e->getMessage());
+        }
+    }
+
+    public function exportExcel(Request $request) { /* TODO */ }
+    public function exportPdf(Request $request) { /* TODO */ }
+
 }

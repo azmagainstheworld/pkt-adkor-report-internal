@@ -20,10 +20,12 @@ class KetidakhadiranHarian extends Model
         'tanggal',
         'jenis',
         'keterangan',
+        'data_tambahan', // Tambahan Kolom JSON
     ];
 
     protected $casts = [
         'tanggal' => 'date',
+        'data_tambahan' => 'array', // Trik Sakti JSON
     ];
 
     public function karyawan()
@@ -31,12 +33,10 @@ class KetidakhadiranHarian extends Model
         return $this->belongsTo(Karyawan::class);
     }
 
-    // Label yang lebih informatif untuk log audit, misal "Ahmad Rizki - 2026-08-07"
     public function auditLabel(): string
     {
         $namaKaryawan = $this->karyawan->nama ?? ('Karyawan #' . $this->karyawan_id);
         $tanggal = $this->tanggal ? $this->tanggal->format('Y-m-d') : '-';
-
         return "{$namaKaryawan} - {$tanggal}";
     }
 }

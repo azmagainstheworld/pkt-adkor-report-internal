@@ -7,6 +7,10 @@ use App\Models\DofMaster;
 use App\Models\DofData;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use App\Imports\DofImport;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Maatwebsite\Excel\Facades\Excel;
 
 class DofController extends Controller
 {
@@ -49,17 +53,19 @@ class DofController extends Controller
             $tahun = $parts[0]; 
             $bulan = $parts[1];
 
-            $rowTabel1 = ['tahun' => $tahun, 'bulan' => $bulan, 'items' => []];
-            $rowTabel2 = ['tahun' => $tahun, 'bulan' => $bulan, 'items' => []];
+            $rowTabel1 = ['tahun' => $tahun, 'bulan' => $bulan, 'items' => [], 'data_tambahan' => []];
+            $rowTabel2 = ['tahun' => $tahun, 'bulan' => $bulan, 'items' => [], 'data_tambahan' => []];
 
             foreach($items as $item) {
                 $master = $item->masterDof;
                 if ($master->kelompok_tabel == 1) {
                     $rowTabel1['items'][$master->id] = $item->jumlah;
                     $totalsTabel1[$master->id] += $item->jumlah;
+                    if (!empty($item->data_tambahan)) $rowTabel1['data_tambahan'] = array_merge($rowTabel1['data_tambahan'], is_string($item->data_tambahan) ? json_decode($item->data_tambahan, true) : $item->data_tambahan);
                 } else {
                     $rowTabel2['items'][$master->id] = $item->jumlah;
                     $totalsTabel2[$master->id] += $item->jumlah;
+                    if (!empty($item->data_tambahan)) $rowTabel2['data_tambahan'] = array_merge($rowTabel2['data_tambahan'], is_string($item->data_tambahan) ? json_decode($item->data_tambahan, true) : $item->data_tambahan);
                 }
             }
             if (count($rowTabel1['items']) > 0) {
@@ -79,6 +85,17 @@ class DofController extends Controller
         };
         usort($dataTable1, $sorter);
         usort($dataTable2, $sorter);
+
+        $perPage = 10;
+        $currentPage1 = LengthAwarePaginator::resolveCurrentPage('page1');
+        $currentItems1 = array_slice($dataTable1, ($currentPage1 - 1) * $perPage, $perPage);
+        $paginatedTable1 = new LengthAwarePaginator($currentItems1, count($dataTable1), $perPage, $currentPage1, ['path' => LengthAwarePaginator::resolveCurrentPath(), 'pageName' => 'page1']);
+        $paginatedTable1->appends($request->all());
+
+        $currentPage2 = LengthAwarePaginator::resolveCurrentPage('page2');
+        $currentItems2 = array_slice($dataTable2, ($currentPage2 - 1) * $perPage, $perPage);
+        $paginatedTable2 = new LengthAwarePaginator($currentItems2, count($dataTable2), $perPage, $currentPage2, ['path' => LengthAwarePaginator::resolveCurrentPath(), 'pageName' => 'page2']);
+        $paginatedTable2->appends($request->all());
 
         // 2. QUERY KHUSUS UNTUK CHARTJS (Agregasi Data)
         $regSuratId = $masterTabel1->where('nama_kegiatan', 'Registrasi Surat Masuk via DOF')->first()->id ?? 0;
@@ -141,7 +158,7 @@ class DofController extends Controller
 
         return view('dof', compact(
             'tanggalToday', 'filterTahun', 'filterBulan', 'tahunTersedia',
-            'masterTabel1', 'masterTabel2', 'dataTable1', 'dataTable2',
+            'masterTabel1', 'masterTabel2', 'paginatedTable1', 'paginatedTable2', 'dataTable1', 'dataTable2',
             'totalsTabel1', 'totalsTabel2', 'chartJsonData'
         ));
     }
@@ -224,5 +241,97 @@ class DofController extends Controller
                ->delete();
                
         return back()->with('success', 'Seluruh data pada tabel terpilih di bulan tersebut dihapus.');
+    }
+
+    public function exportExcel(Request $request)
+    {
+        $tahun = $request->query('tahun', 'semua');
+        $bulan = $request->query('bulan', 'semua');
+        // Let's use the old format or new format for Export Excel? 
+        // We can just use DofExport(1) and DofExport(2) but Excel only supports one export class per file unless we use MultipleSheets.
+        // I will recreate DofDataExport that exports the raw data like PaTeknikExport did.
+        return Excel::download(new \App\Exports\DofDataExport($tahun, $bulan), 'Data_DOF_'.$tahun.'_'.$bulan.'.xlsx');
+    }
+
+    public function exportPdf(Request $request)
+    {
+        $filterTahun = $request->query('tahun', 'semua');
+        $filterBulan = $request->query('bulan', 'semua');
+
+        $masterTabel1 = DofMaster::where('kelompok_tabel', 1)->orderBy('id', 'asc')->get();
+        $masterTabel2 = DofMaster::where('kelompok_tabel', 2)->orderBy('id', 'asc')->get();
+
+        $query = DofData::with('masterDof');
+        if ($filterTahun != 'semua') $query->where('tahun', $filterTahun);
+        if ($filterBulan != 'semua') $query->where('bulan', $filterBulan);
+        $rawData = $query->get();
+
+        $groupedData = $rawData->groupBy(function($item) { return $item->tahun . '_' . $item->bulan; });
+
+        $dataTable1 = []; $dataTable2 = [];
+        $totalsTabel1 = array_fill_keys($masterTabel1->pluck('id')->toArray(), 0);
+        $totalsTabel2 = array_fill_keys($masterTabel2->pluck('id')->toArray(), 0);
+
+        foreach($groupedData as $key => $items) {
+            $parts = explode('_', $key);
+            $tahun = $parts[0]; $bulan = $parts[1];
+
+            $rowTabel1 = ['tahun' => $tahun, 'bulan' => $bulan, 'items' => [], 'data_tambahan' => []];
+            $rowTabel2 = ['tahun' => $tahun, 'bulan' => $bulan, 'items' => [], 'data_tambahan' => []];
+
+            foreach($items as $item) {
+                $master = $item->masterDof;
+                if ($master->kelompok_tabel == 1) {
+                    $rowTabel1['items'][$master->id] = $item->jumlah;
+                    $totalsTabel1[$master->id] += $item->jumlah;
+                    if (!empty($item->data_tambahan)) $rowTabel1['data_tambahan'] = array_merge($rowTabel1['data_tambahan'], $item->data_tambahan);
+                } else {
+                    $rowTabel2['items'][$master->id] = $item->jumlah;
+                    $totalsTabel2[$master->id] += $item->jumlah;
+                    if (!empty($item->data_tambahan)) $rowTabel2['data_tambahan'] = array_merge($rowTabel2['data_tambahan'], $item->data_tambahan);
+                }
+            }
+            if (count($rowTabel1['items']) > 0) $dataTable1[] = $rowTabel1;
+            if (count($rowTabel2['items']) > 0) $dataTable2[] = $rowTabel2;
+        }
+
+        $monthsOrder = ['Januari'=>1,'Februari'=>2,'Maret'=>3,'April'=>4,'Mei'=>5,'Juni'=>6,'Juli'=>7,'Agustus'=>8,'September'=>9,'Oktober'=>10,'November'=>11,'Desember'=>12];
+        $sorter = function($a, $b) use ($monthsOrder) {
+            if($a['tahun'] == $b['tahun']) return $monthsOrder[$b['bulan']] <=> $monthsOrder[$a['bulan']];
+            return $b['tahun'] <=> $a['tahun'];
+        };
+        usort($dataTable1, $sorter);
+        usort($dataTable2, $sorter);
+
+        $kolomTabel1 = DB::table('dynamic_columns')->where('modul', 'dof_1')->get();
+        $kolomTabel2 = DB::table('dynamic_columns')->where('modul', 'dof_2')->get();
+
+        $pdf = Pdf::loadView('pdf.dof', compact(
+            'filterTahun', 'filterBulan', 'masterTabel1', 'masterTabel2', 
+            'dataTable1', 'dataTable2', 'totalsTabel1', 'totalsTabel2',
+            'kolomTabel1', 'kolomTabel2'
+        ))->setPaper('a4', 'landscape');
+        
+        return $pdf->download('Laporan_DOF_'.$filterTahun.'_'.$filterBulan.'.pdf');
+    }
+
+        public function importExcel(Request $request)
+    {
+        set_time_limit(0);
+        $request->validate([
+            'file' => 'required|mimes:xlsx,xls,csv',
+            'kelompok' => 'required|in:tabel1,tabel2'
+        ]);
+
+        try {
+            $kelompokInt = $request->kelompok == 'tabel1' ? 1 : 2;
+            $uuid = $request->input('import_uuid', uniqid());
+            
+            Excel::import(new \App\Imports\DofImport($kelompokInt, $uuid), $request->file('file'));
+
+            return response()->json(['success' => true, 'message' => 'Data DOF berhasil diimport.']);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Gagal import: ' . $e->getMessage()], 500);
+        }
     }
 }

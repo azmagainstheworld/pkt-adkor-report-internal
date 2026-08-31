@@ -48,135 +48,390 @@
     </div>
 
     <!-- ================= TABEL PROGRAM STRATEGIS ================= -->
-    <x-card class="!rounded-xl overflow-hidden !p-0 shadow-sm border border-gray-100 bg-white mb-8">
+    <x-card class="!rounded-xl overflow-visible !p-0 shadow-sm border border-gray-100 bg-white mb-8">
         
-        <div class="p-4 border-b border-gray-100 bg-orange-50 flex justify-between items-center">
-            <h3 class="font-bold text-gray-800 text-sm ml-2">Daftar Laporan Progress</h3>
-            <x-button variant="primary" onclick="openModalTambah()" class="!py-1.5 !px-3 text-xs">Tambah Program Baru</x-button>
+        <div class="p-4 border-b border-gray-100 bg-orange-50 flex justify-between items-center gap-3 flex-wrap">
+            <h3 class="font-bold text-gray-800 text-sm ml-2"></h3>
+            
+            <div class="flex gap-2">
+                <!-- DROPDOWN OPSI LANJUTAN -->
+                <div class="relative inline-block text-left">
+                    <button type="button" onclick="toggleDropdown('dropdownOpsiSuper')" class="inline-flex justify-center items-center gap-2 rounded-xl border border-orange-200 shadow-sm px-4 py-1.5 bg-white text-xs font-medium text-orange-700 hover:bg-orange-100 transition-colors">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
+                        Opsi Lanjutan
+                        <svg class="w-3.5 h-3.5 ml-1 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </button>
+                    
+                    <div id="dropdownOpsiSuper" class="hidden origin-top-right absolute right-0 mt-2 w-56 rounded-xl shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-50">
+                        <div class="py-1" role="menu">
+                            
+                            <button type="button" onclick="openModal('modalAturKolom')" class="w-full text-left px-4 py-2.5 text-xs text-gray-700 hover:bg-orange-50 hover:text-orange-700 flex items-center gap-2">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"></path></svg>
+                                Atur Kolom Tambahan
+                            </button>
+                            
+                            <div class="border-t border-gray-100 my-1"></div>
+                            
+                            <a href="{{ route('program-strategis.export.excel', ['tahun' => $filterTahun]) }}" class="w-full text-left px-4 py-2.5 text-xs text-green-700 hover:bg-green-50 flex items-center gap-2">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                                Export ke Excel
+                            </a>
+                            <a href="{{ route('program-strategis.export.pdf', ['tahun' => $filterTahun]) }}" target="_blank" class="w-full text-left px-4 py-2.5 text-xs text-red-700 hover:bg-red-50 flex items-center gap-2">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
+                                Cetak PDF
+                            </a>
+                            
+                            <div class="border-t border-gray-100 my-1"></div>
+                            
+                            <button type="button" onclick="openModal('modalImport')" class="w-full text-left px-4 py-2.5 text-xs text-blue-700 hover:bg-blue-50 flex items-center gap-2">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                                Import dari Excel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <x-button type="button" onclick="openModalTambahMaster()" class="!py-1.5 !px-3 text-xs bg-orange-500 hover:bg-orange-600 text-white border-none font-medium flex items-center gap-1 shadow-sm rounded-xl">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+                    Tambah Sasaran & Program Strategis
+                </x-button>
+
+                <x-button variant="primary" onclick="openModalTambah()" class="!py-1.5 !px-3 text-xs flex items-center gap-1 shadow-sm rounded-xl border-none font-medium text-white">+ Tambah Rincian Data</x-button>
+            </div>
         </div>
 
         <div class="overflow-x-auto w-full">
-            <x-table :headers="['Tahun', 'Program Strategis', 'Deskripsi Kegiatan', 'Target Waktu', 'Realisasi', 'Progress Saat Ini', 'Keterangan', 'Aksi']">
-                @forelse($dataProgram as $index => $row)
-                    <tr class="hover:bg-gray-50 transition-colors text-[13px] border-b border-gray-100">
-                        <td class="p-4 text-gray-700 font-bold text-center border-r border-gray-100">{{ $row->tahun }}</td>
-                        <td class="p-4 text-gray-900 font-medium border-r border-gray-100 w-48">{{ $row->program_strategis }}</td>
-                        <td class="p-4 text-gray-700 border-r border-gray-100 w-56 whitespace-pre-line">{{ $row->deskripsi_kegiatan }}</td>
-                        <td class="p-4 text-gray-700 text-center border-r border-gray-100">{{ $row->target_waktu }}</td>
-                        <td class="p-4 text-gray-700 text-center font-medium border-r border-gray-100">{{ $row->realisasi }}</td>
+            @php
+                $headers = ['Tahun', 'Bulan', 'Sasaran', 'Program Strategis', 'Program Kegiatan', 'Target Waktu', 'Realisasi (%)', 'Progress Saat Ini', 'Kendala'];
+                if(isset($kolomDinamis)) {
+                    foreach($kolomDinamis as $k) {
+                        $headers[] = $k->nama_kolom;
+                    }
+                }
+                $headers[] = 'Keterangan';
+                $headers[] = 'Status';
+                $headers[] = 'Aksi';
+                
+                $bulanIndo = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+            @endphp
+            
+            <x-table :headers="$headers">
+                @forelse($groupedProgram as $group)
+                    @php $rowspan = $group->count(); @endphp
+                    @foreach($group as $index => $row)
+                        @php 
+                            $tambahan = is_string($row->data_tambahan) ? json_decode($row->data_tambahan, true) : ($row->data_tambahan ?? []);
+                            
+                            $statusColor = 'bg-gray-100 text-gray-700';
+                            if(in_array($row->status, ['In Progress', 'Berjalan'])) $statusColor = 'bg-blue-100 text-blue-700';
+                            if(in_array($row->status, ['Selesai', 'Tercapai'])) $statusColor = 'bg-green-100 text-green-700';
+                            if(in_array($row->status, ['Hold', 'Tertunda'])) $statusColor = 'bg-red-100 text-red-700';
+                        @endphp
                         
-                        <!-- whitespace-pre-line sangat penting agar <enter> yang diketik di textarea bisa muncul ke bawah -->
-                        <td class="p-4 text-gray-700 border-r border-gray-100 min-w-[300px] whitespace-pre-line">{!! e($row->progress_saat_ini) !!}</td>
-                        
-                        <td class="p-4 text-gray-500 italic border-r border-gray-100">{{ $row->keterangan_tambahan ?? '-' }}</td>
-                        <td class="p-4 text-center">
-                            <div class="flex flex-col gap-2 justify-start items-center">
-                                @php $rowDataJson = json_encode($row); @endphp
-                                <button type="button" onclick="editData({{ $rowDataJson }})" class="w-full p-1.5 flex justify-center text-amber-500 hover:bg-amber-50 rounded-md border border-amber-200" title="Edit">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
-                                </button>
-                                <button type="button" onclick="openDeleteModal('modalHapus', '{{ route('program-strategis.destroy', $row->id) }}')" class="w-full p-1.5 flex justify-center text-red-500 hover:bg-red-50 rounded-md border border-red-200" title="Hapus">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
+                        <tr class="hover:bg-gray-50 transition-colors text-[13px] border-b border-gray-100">
+                            @if($index === 0)
+                                <td rowspan="{{ $rowspan }}" class="p-4 text-gray-700 font-bold text-center border-r border-gray-100 align-top">{{ $row->tahun }}</td>
+                                <td rowspan="{{ $rowspan }}" class="p-4 text-gray-700 font-bold text-center border-r border-gray-100 align-top">{{ ($row->bulan && is_numeric($row->bulan)) ? $bulanIndo[(int)$row->bulan] : '-' }}</td>
+                                <td rowspan="{{ $rowspan }}" class="p-4 text-gray-900 font-medium border-r border-gray-100 w-48 align-top">{{ $row->sasaran }}</td>
+                                <td rowspan="{{ $rowspan }}" class="p-4 text-gray-900 font-medium border-r border-gray-100 w-48 align-top">{{ $row->program_strategis }}</td>
+                            @endif
+                            
+                            <td class="p-4 text-gray-700 border-r border-gray-100 w-56 whitespace-pre-line">{{ $row->deskripsi_kegiatan }}</td>
+                            
+                            @if($index === 0)
+                                <td rowspan="{{ $rowspan }}" class="p-4 text-gray-700 text-center border-r border-gray-100 align-top">
+                                    @if($row->target_waktu_start && $row->target_waktu_end)
+                                        {{ \Carbon\Carbon::parse($row->target_waktu_start)->format('d/m/Y') }}<br>s.d<br>{{ \Carbon\Carbon::parse($row->target_waktu_end)->format('d/m/Y') }}
+                                    @else
+                                        -
+                                    @endif
+                                </td>
+                            @endif
+                            
+                            <td class="p-4 text-gray-700 text-center font-medium border-r border-gray-100">{{ $row->realisasi }}</td>
+                            <td class="p-4 text-gray-700 border-r border-gray-100 min-w-[300px] whitespace-pre-line">{!! e($row->progress_saat_ini) !!}</td>
+                            
+                            @if($index === 0)
+                                <td rowspan="{{ $rowspan }}" class="p-4 text-gray-700 border-r border-gray-100 align-top">{{ $row->kendala ?? '-' }}</td>
+                            @endif
+                            
+                            @if(isset($kolomDinamis))
+                                @foreach($kolomDinamis as $kolom)
+                                    <td class="p-4 text-gray-700 text-center border-r border-gray-100">{{ $tambahan[$kolom->nama_kolom] ?? '-' }}</td>
+                                @endforeach
+                            @endif
+                            
+                            @if($index === 0)
+                                <td rowspan="{{ $rowspan }}" class="p-4 text-gray-500 italic border-r border-gray-100 align-top">{{ $row->keterangan_tambahan ?? '-' }}</td>
+                                <td rowspan="{{ $rowspan }}" class="p-4 text-center align-top">
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium {{ $statusColor }} whitespace-nowrap">
+                                        {{ $row->status }}
+                                    </span>
+                                </td>
+                            @endif
+                            
+                            <td class="p-4 text-center w-28 whitespace-nowrap min-w-[100px]">
+                                <div class="flex flex-row gap-2 justify-center items-center">
+                                    @php $rowDataJson = json_encode($row); @endphp
+                                    <button type="button" onclick="editData({{ $rowDataJson }})" class="p-1.5 flex justify-center text-amber-500 hover:bg-amber-50 rounded-md border border-amber-200" title="Edit">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                                    </button>
+                                    <button type="button" onclick="openDeleteModal('modalHapus', '{{ route('program-strategis.destroy', $row->id) }}')" class="p-1.5 flex justify-center text-red-500 hover:bg-red-50 rounded-md border border-red-200" title="Hapus">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    @endforeach
                 @empty
-                    <tr><td colspan="8" class="px-6 py-10 text-center text-gray-500 text-sm">Belum ada data program strategis.</td></tr>
+                    <tr><td colspan="{{ count($headers) }}" class="px-6 py-10 text-center text-gray-500 text-sm">Belum ada data program strategis.</td></tr>
                 @endforelse
             </x-table>
         </div>
+        
+        <!-- Paginator -->
+        @if(method_exists($groupedProgram, 'links'))
+            <div class="p-4 border-t border-gray-100 bg-gray-50 flex justify-end">
+                {{ $groupedProgram->links() }}
+            </div>
+        @endif
     </x-card>
 
     <x-delete-modal id="modalHapus" title="Hapus Data" message="Data program strategis ini akan dihapus secara permanen. Lanjutkan?" />
 
-    <!-- MODAL TAMBAH DATA -->
-    <x-modal id="modalTambah" title="Tambah Program Strategis" description="Masukkan detail kegiatan dan progress terkini.">
-        <form action="{{ route('program-strategis.store') }}" method="POST" class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 novalidate-form" novalidate>
+    <!-- MODAL ATUR KOLOM -->
+    <x-modal id="modalAturKolom" title="Pengaturan Kolom Tambahan" description="Tambah atau hapus kolom khusus pada tabel Program Strategis.">
+        <form action="{{ route('program-strategis.kolom.store') }}" method="POST" class="mb-6">
+            @csrf
+            <input type="hidden" name="modul" value="program_strategis">
+            
+            <div class="flex gap-3 items-end">
+                <div class="flex-1">
+                    <label class="block text-xs font-medium text-gray-700 mb-1">Nama Kolom Baru</label>
+                    <input type="text" name="nama_kolom" placeholder="Misal: Catatan Auditor" required class="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:border-orange-500 outline-none">
+                </div>
+                <div class="w-32">
+                    <label class="block text-xs font-medium text-gray-700 mb-1">Tipe Data</label>
+                    <select name="tipe_data" class="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:border-orange-500 outline-none cursor-pointer bg-white">
+                        <option value="text">Teks Pendek</option>
+                        <option value="number">Angka</option>
+                        <option value="date">Tanggal</option>
+                    </select>
+                </div>
+                <x-button variant="primary" type="submit" class="!py-1.5 !px-4">Tambah</x-button>
+            </div>
+        </form>
+
+        <div class="border-t border-gray-100 pt-4">
+            <h4 class="text-xs font-bold text-gray-700 mb-3 uppercase tracking-wider">Kolom Aktif Saat Ini</h4>
+            @if(isset($kolomDinamis) && count($kolomDinamis) > 0)
+                <div class="grid grid-cols-2 gap-3">
+                    @foreach($kolomDinamis as $kol)
+                        <div class="flex justify-between items-center bg-gray-50 px-3 py-2 rounded border border-gray-200">
+                            <div>
+                                <p class="text-sm font-medium text-gray-800">{{ $kol->nama_kolom }}</p>
+                                <p class="text-[10px] text-gray-500 uppercase">{{ $kol->tipe_data }}</p>
+                            </div>
+                            <button type="button" onclick="openDeleteModal('modalHapusKolom', '{{ route('program-strategis.kolom.destroy', $kol->id) }}')" class="text-red-500 hover:text-red-700 p-1">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                            </button>
+                        </div>
+                    @endforeach
+                </div>
+            @else
+                <p class="text-sm text-gray-500 italic">Belum ada kolom tambahan. Tabel menggunakan kolom standar.</p>
+            @endif
+        </div>
+        
+        <div class="flex justify-end mt-6 pt-4 border-t border-gray-100">
+            <x-button variant="outline" type="button" onclick="closeModal('modalAturKolom')">Tutup</x-button>
+        </div>
+    </x-modal>
+
+    <x-delete-modal id="modalHapusKolom" title="Hapus Kolom Tambahan" message="Kolom ini akan dihilangkan dari tabel dan formulir secara permanen. Lanjutkan?" />
+
+    <x-import-modal id="modalImport" route="{{ route('program-strategis.import') }}" title="Import Data Program Strategis" templateRoute="{{ route('template.download', 'program-strategis') }}" />
+
+    <!-- MODAL TAMBAH MASTER -->
+    <x-modal id="modalTambahMaster" title="Tambah Sasaran & Program Induk" description="Buat grup program strategis baru.">
+        <form action="{{ route('program-strategis.store') }}" method="POST" class="grid grid-cols-1 gap-y-4 novalidate-form" novalidate id="formTambahMaster">
+            @csrf
+            <input type="hidden" name="is_master" value="1">
+            
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1.5">Bulan & Tahun (Periode) <span class="text-red-500">*</span></label>
+                <input type="month" name="periode" id="add_master_periode" required class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:border-orange-500 outline-none cursor-pointer">
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1.5">Sasaran <span class="text-red-500">*</span></label>
+                <input type="text" name="sasaran" placeholder="Misal: Peningkatan Kinerja..." required class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:border-orange-500 outline-none">
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1.5">Nama Program Strategis <span class="text-red-500">*</span></label>
+                <input type="text" name="program_strategis" placeholder="Misal: Implementasi Sistem A..." required class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:border-orange-500 outline-none">
+            </div>
+
+            <div class="flex justify-end gap-3 mt-4 border-t border-gray-100 pt-4">
+                <x-button variant="outline" type="button" onclick="closeModal('modalTambahMaster')">Batal</x-button>
+                <x-button variant="primary" type="submit" class="!bg-orange-500 hover:!bg-orange-600">Simpan Master</x-button>
+            </div>
+        </form>
+    </x-modal>
+
+    <!-- MODAL TAMBAH RINCIAN -->
+    <x-modal id="modalTambah" title="Tambah Rincian Kegiatan" description="Pilih program yang sudah ada di sistem dan masukkan rincian kegiatannya. Status, Kendala, dan Target Waktu akan otomatis mengikuti Program Strategis Induk.">
+        <form action="{{ route('program-strategis.store') }}" method="POST" id="formTambah" class="grid grid-cols-1 gap-y-4 novalidate-form" novalidate>
             @csrf
             
-            <div class="col-span-1">
-                <label class="block text-sm font-medium text-gray-700 mb-1.5">Tahun <span class="text-red-500">*</span></label>
-                <input type="number" name="tahun" id="add_tahun" required class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:border-orange-500 outline-none">
-                <span class="error-msg text-red-500 text-xs mt-1 font-medium hidden">Wajib diisi!</span>
-            </div>
-            
-            <div class="col-span-1">
-                <label class="block text-sm font-medium text-gray-700 mb-1.5">Target Waktu Pelaksanaan</label>
-                <input type="text" name="target_waktu" placeholder="Misal: Jan - Apr 2026" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:border-orange-500 outline-none">
-            </div>
-
-            <div class="md:col-span-2">
-                <label class="block text-sm font-medium text-gray-700 mb-1.5">Nama Program Strategis <span class="text-red-500">*</span></label>
-                <input type="text" name="program_strategis" required class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:border-orange-500 outline-none">
-                <span class="error-msg text-red-500 text-xs mt-1 font-medium hidden">Wajib diisi!</span>
-            </div>
-
-            <div class="md:col-span-2">
-                <label class="block text-sm font-medium text-gray-700 mb-1.5">Deskripsi Kegiatan</label>
-                <!-- Gunakan Textarea agar bisa multiline -->
-                <textarea name="deskripsi_kegiatan" rows="2" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:border-orange-500 outline-none"></textarea>
+            <div class="border-b border-gray-200 pb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-1.5">Pilih Pasangan Sasaran & Program Induk <span class="text-red-500">*</span></label>
+                <select name="sasaran_program_select" required class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:border-orange-500 outline-none cursor-pointer bg-white">
+                    <option value="" disabled selected>-- Pilih Dari Daftar yang Sudah Dibuat --</option>
+                    @if(isset($listSasaranProgram))
+                        @foreach($listSasaranProgram as $sp)
+                            @php 
+                                $nmBulan = ($sp->bulan && is_numeric($sp->bulan)) ? $bulanIndo[(int)$sp->bulan] : $sp->bulan; 
+                            @endphp
+                            <option value="{{ $sp->tahun }}|||{{ $sp->bulan }}|||{{ $sp->sasaran }}|||{{ $sp->program_strategis }}">{{ $sp->tahun }} {{ $nmBulan }} : {{ $sp->sasaran }} — {{ $sp->program_strategis }}</option>
+                        @endforeach
+                    @endif
+                </select>
+                <p class="text-xs text-gray-400 mt-1">Kalau belum ada, bikin dulu lewat tombol "+ Sasaran & Program Induk" di luar ya!</p>
             </div>
 
-            <div class="md:col-span-2 grid grid-cols-2 gap-x-6 gap-y-4 bg-gray-50 p-4 rounded-xl border border-gray-100">
-                <div class="col-span-2 md:col-span-1">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1.5">Program Kegiatan (Baru) <span class="text-red-500">*</span></label>
+                <textarea name="deskripsi_kegiatan" id="add_kegiatan" rows="2" required placeholder="Jelaskan detail kegiatan..." class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:border-orange-500 outline-none"></textarea>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="col-span-2">
+                    <label class="block text-sm font-medium text-gray-700 mb-1.5">Status Kegiatan <span class="text-red-500">*</span></label>
+                    <select name="status" required class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:border-orange-500 outline-none cursor-pointer bg-white">
+                        <option value="-">- (Belum Dimulai)</option>
+                        <option value="In Progress">In Progress</option>
+                        <option value="Selesai">Selesai</option>
+                        <option value="Hold">Hold</option>
+                        <option value="Tercapai">Tercapai</option>
+                        <option value="Berjalan">Berjalan</option>
+                        <option value="Tertunda">Tertunda</option>
+                    </select>
+                </div>
+                
+                <div class="col-span-1">
+                    <label class="block text-sm font-medium text-gray-700 mb-1.5">Target Waktu Mulai</label>
+                    <input type="date" name="target_waktu_start" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:border-orange-500 outline-none">
+                </div>
+                <div class="col-span-1">
+                    <label class="block text-sm font-medium text-gray-700 mb-1.5">Target Waktu Selesai</label>
+                    <input type="date" name="target_waktu_end" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:border-orange-500 outline-none">
+                </div>
+                
+                <div class="md:col-span-2">
                     <label class="block text-sm font-medium text-gray-700 mb-1.5">Realisasi (%)</label>
                     <input type="text" name="realisasi" placeholder="Misal: 93%" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:border-orange-500 outline-none">
                 </div>
-                <div class="col-span-2 md:col-span-1">
-                    <label class="block text-sm font-medium text-gray-700 mb-1.5">Keterangan / Kolom 1</label>
-                    <input type="text" name="keterangan_tambahan" placeholder="Opsional..." class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:border-orange-500 outline-none">
+                
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-medium text-gray-700 mb-1.5">Progress Saat Ini</label>
+                    <textarea name="progress_saat_ini" rows="2" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:border-orange-500 outline-none"></textarea>
                 </div>
                 
-                <div class="col-span-2">
-                    <label class="block text-sm font-medium text-gray-700 mb-1.5">Progress Saat Ini</label>
-                    <textarea name="progress_saat_ini" rows="4" placeholder="Ketik rincian progress (bisa dienter ke bawah)..." class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:border-orange-500 outline-none"></textarea>
-                    <p class="text-[10px] text-gray-400 mt-1">Gunakan tombol 'Enter' pada keyboard Anda untuk membuat poin atau baris baru.</p>
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-medium text-gray-700 mb-1.5">Kendala</label>
+                    <textarea name="kendala" rows="2" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:border-orange-500 outline-none"></textarea>
                 </div>
+                
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-medium text-gray-700 mb-1.5">Keterangan Tambahan</label>
+                    <input type="text" name="keterangan_tambahan" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:border-orange-500 outline-none">
+                </div>
+                
+                @if(isset($kolomDinamis) && count($kolomDinamis) > 0)
+                    <div class="md:col-span-2 border-t border-gray-200 mt-2 pt-4">
+                        <h4 class="text-sm font-bold text-gray-700 mb-3">Kolom Tambahan</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            @foreach($kolomDinamis as $kol)
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-600 mb-1">{{ $kol->nama_kolom }}</label>
+                                    @if($kol->tipe_data == 'date')
+                                        <input type="date" name="data_tambahan[{{ $kol->nama_kolom }}]" class="w-full px-3 py-1.5 border border-gray-300 rounded text-sm outline-none focus:border-orange-500">
+                                    @elseif($kol->tipe_data == 'number')
+                                        <input type="number" step="any" name="data_tambahan[{{ $kol->nama_kolom }}]" class="w-full px-3 py-1.5 border border-gray-300 rounded text-sm outline-none focus:border-orange-500">
+                                    @else
+                                        <input type="text" name="data_tambahan[{{ $kol->nama_kolom }}]" class="w-full px-3 py-1.5 border border-gray-300 rounded text-sm outline-none focus:border-orange-500">
+                                    @endif
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                @endif
             </div>
 
-            <div class="md:col-span-2 flex justify-end gap-3 mt-2 border-t border-gray-100 pt-4">
+            <div class="md:col-span-2 flex justify-end gap-3 mt-4 border-t border-gray-100 pt-4">
                 <x-button variant="outline" type="button" onclick="closeModal('modalTambah')">Batal</x-button>
-                <x-button variant="primary" type="submit">Simpan</x-button>
+                <x-button variant="primary" type="submit">Simpan Kegiatan</x-button>
             </div>
         </form>
     </x-modal>
 
     <!-- MODAL EDIT DATA -->
-    <x-modal id="modalEdit" title="Edit Program Strategis" description="Perbarui detail kegiatan dan progress terkini.">
+    <x-modal id="modalEdit" title="Edit Rincian Kegiatan" description="Perbarui detail kegiatan dan progress terkini.">
         <form id="formEdit" method="POST" class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 novalidate-form" novalidate>
             @csrf
-            @method('PUT') <!-- Wajib untuk Update di Laravel -->
+            @method('PUT')
             
-            <div class="col-span-1">
-                <label class="block text-sm font-medium text-gray-700 mb-1.5">Tahun <span class="text-red-500">*</span></label>
-                <input type="number" name="tahun" id="edit_tahun" required class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:border-orange-500 outline-none">
-                <span class="error-msg text-red-500 text-xs mt-1 font-medium hidden">Wajib diisi!</span>
-            </div>
-            
-            <div class="col-span-1">
-                <label class="block text-sm font-medium text-gray-700 mb-1.5">Target Waktu Pelaksanaan</label>
-                <input type="text" name="target_waktu" id="edit_target" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:border-orange-500 outline-none">
+            <div class="md:col-span-2 border-b border-gray-200 pb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-1.5">Pasangan Sasaran & Program Induk</label>
+                <!-- Dibuat readonly pakai pointer-events-none agar tidak bisa diklik dan diubah -->
+                <select name="sasaran_program_select" id="edit_sp_select" required class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm bg-gray-100 outline-none cursor-not-allowed" style="pointer-events: none;" tabindex="-1" readonly>
+                    <!-- Opsi akan dimasukkan via JS saat Edit diklik -->
+                </select>
             </div>
 
             <div class="md:col-span-2">
-                <label class="block text-sm font-medium text-gray-700 mb-1.5">Nama Program Strategis <span class="text-red-500">*</span></label>
-                <input type="text" name="program_strategis" id="edit_program" required class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:border-orange-500 outline-none">
-                <span class="error-msg text-red-500 text-xs mt-1 font-medium hidden">Wajib diisi!</span>
-            </div>
-
-            <div class="md:col-span-2">
-                <label class="block text-sm font-medium text-gray-700 mb-1.5">Deskripsi Kegiatan</label>
+                <label class="block text-sm font-medium text-gray-700 mb-1.5">Program Kegiatan</label>
                 <textarea name="deskripsi_kegiatan" id="edit_deskripsi" rows="2" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:border-orange-500 outline-none"></textarea>
             </div>
+            
+            <div class="md:col-span-2">
+                <label class="block text-sm font-medium text-gray-700 mb-1.5">Status Kegiatan <span class="text-red-500">*</span></label>
+                <select name="status" id="edit_status" required class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:border-orange-500 outline-none cursor-pointer bg-white">
+                    <option value="-">- (Belum Dimulai)</option>
+                    <option value="In Progress">In Progress</option>
+                    <option value="Selesai">Selesai</option>
+                    <option value="Hold">Hold</option>
+                    <option value="Tercapai">Tercapai</option>
+                    <option value="Berjalan">Berjalan</option>
+                    <option value="Tertunda">Tertunda</option>
+                </select>
+            </div>
 
-            <div class="md:col-span-2 grid grid-cols-2 gap-x-6 gap-y-4 bg-gray-50 p-4 rounded-xl border border-gray-100">
+            <div class="col-span-1">
+                <label class="block text-sm font-medium text-gray-700 mb-1.5">Target Waktu Mulai</label>
+                <input type="date" name="target_waktu_start" id="edit_target_start" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:border-orange-500 outline-none">
+            </div>
+            
+            <div class="col-span-1">
+                <label class="block text-sm font-medium text-gray-700 mb-1.5">Target Waktu Selesai</label>
+                <input type="date" name="target_waktu_end" id="edit_target_end" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:border-orange-500 outline-none">
+            </div>
+
+            <div class="md:col-span-2 grid grid-cols-2 gap-x-6 gap-y-4 bg-gray-50 p-4 rounded-xl border border-gray-100 mt-2">
                 <div class="col-span-2 md:col-span-1">
                     <label class="block text-sm font-medium text-gray-700 mb-1.5">Realisasi (%)</label>
                     <input type="text" name="realisasi" id="edit_realisasi" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:border-orange-500 outline-none">
                 </div>
+                
                 <div class="col-span-2 md:col-span-1">
-                    <label class="block text-sm font-medium text-gray-700 mb-1.5">Keterangan / Kolom 1</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1.5">Kendala</label>
+                    <textarea name="kendala" id="edit_kendala" rows="1" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:border-orange-500 outline-none"></textarea>
+                </div>
+                
+                <div class="col-span-2">
+                    <label class="block text-sm font-medium text-gray-700 mb-1.5">Keterangan Tambahan</label>
                     <input type="text" name="keterangan_tambahan" id="edit_keterangan" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:border-orange-500 outline-none">
                 </div>
                 
@@ -184,11 +439,31 @@
                     <label class="block text-sm font-medium text-gray-700 mb-1.5">Progress Saat Ini</label>
                     <textarea name="progress_saat_ini" id="edit_progress" rows="4" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:border-orange-500 outline-none"></textarea>
                 </div>
+                
+                @if(isset($kolomDinamis) && count($kolomDinamis) > 0)
+                    <div class="col-span-2 border-t border-gray-200 mt-2 pt-4">
+                        <h4 class="text-sm font-bold text-gray-700 mb-3">Kolom Tambahan</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            @foreach($kolomDinamis as $kol)
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-600 mb-1">{{ $kol->nama_kolom }}</label>
+                                    @if($kol->tipe_data == 'date')
+                                        <input type="date" id="dt_{{ $kol->id }}" name="data_tambahan[{{ $kol->nama_kolom }}]" class="w-full px-3 py-1.5 border border-gray-300 rounded text-sm outline-none focus:border-orange-500">
+                                    @elseif($kol->tipe_data == 'number')
+                                        <input type="number" step="any" id="dt_{{ $kol->id }}" name="data_tambahan[{{ $kol->nama_kolom }}]" class="w-full px-3 py-1.5 border border-gray-300 rounded text-sm outline-none focus:border-orange-500">
+                                    @else
+                                        <input type="text" id="dt_{{ $kol->id }}" name="data_tambahan[{{ $kol->nama_kolom }}]" class="w-full px-3 py-1.5 border border-gray-300 rounded text-sm outline-none focus:border-orange-500">
+                                    @endif
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                @endif
             </div>
 
             <div class="md:col-span-2 flex justify-end gap-3 mt-2 border-t border-gray-100 pt-4">
                 <x-button variant="outline" type="button" onclick="closeModal('modalEdit')">Batal</x-button>
-                <x-button variant="primary" type="submit">Update</x-button>
+                <x-button variant="primary" type="submit">Update Kegiatan</x-button>
             </div>
         </form>
     </x-modal>
@@ -197,26 +472,92 @@
 <script>
     function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
     function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+    
+    function toggleDropdown(id) {
+        const el = document.getElementById(id);
+        if (el.classList.contains('hidden')) {
+            el.classList.remove('hidden');
+        } else {
+            el.classList.add('hidden');
+        }
+    }
+    
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function(event) {
+        const dropdown = document.getElementById('dropdownOpsiSuper');
+        const button = dropdown ? dropdown.previousElementSibling : null;
+        if (dropdown && !dropdown.classList.contains('hidden') && !dropdown.contains(event.target) && !button.contains(event.target)) {
+            dropdown.classList.add('hidden');
+        }
+    });
+
+    function openModalTambahMaster() {
+        document.getElementById('formTambahMaster').reset();
+        const now = new Date();
+        const monthStr = String(now.getMonth() + 1).padStart(2, '0');
+        document.getElementById('add_master_periode').value = `${now.getFullYear()}-${monthStr}`;
+        
+        document.querySelectorAll('.border-red-500').forEach(el => { el.classList.remove('border-red-500', 'bg-red-50'); el.classList.add('border-gray-300'); });
+        openModal('modalTambahMaster');
+    }
 
     function openModalTambah() {
-        const now = new Date();
-        document.getElementById('add_tahun').value = now.getFullYear();
+        document.getElementById('formTambah').reset();
+        
+        document.querySelectorAll('.border-red-500').forEach(el => { el.classList.remove('border-red-500', 'bg-red-50'); el.classList.add('border-gray-300'); });
+        document.querySelectorAll('.error-msg').forEach(el => el.classList.add('hidden'));
+
         openModal('modalTambah');
     }
 
     function editData(data) {
-        // Arahkan action form ke rute update spesifik ID
         const form = document.getElementById('formEdit');
         form.action = `/program-strategis/${data.id}`;
 
-        // Isi form dengan data lama
-        document.getElementById('edit_tahun').value = data.tahun;
-        document.getElementById('edit_program').value = data.program_strategis;
+        const spSelect = document.getElementById('edit_sp_select');
+        const spValue = `${data.tahun}|||${data.bulan}|||${data.sasaran}|||${data.program_strategis}`;
+        
+        let optionExists = false;
+        for (let i = 0; i < spSelect.options.length; i++) {
+            if (spSelect.options[i].value === spValue) {
+                optionExists = true; break;
+            }
+        }
+        
+        if (!optionExists) {
+            const newOption = document.createElement("option");
+            
+            const listBulan = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+            const nBulan = data.bulan && !isNaN(data.bulan) ? listBulan[parseInt(data.bulan)] : data.bulan;
+            
+            newOption.text = `${data.tahun} ${nBulan} : ${data.sasaran} — ${data.program_strategis}`;
+            newOption.value = spValue;
+            spSelect.add(newOption);
+        }
+        spSelect.value = spValue;
+
         document.getElementById('edit_deskripsi').value = data.deskripsi_kegiatan || '';
-        document.getElementById('edit_target').value = data.target_waktu || '';
+        document.getElementById('edit_target_start').value = data.target_waktu_start || '';
+        document.getElementById('edit_target_end').value = data.target_waktu_end || '';
         document.getElementById('edit_realisasi').value = data.realisasi || '';
         document.getElementById('edit_progress').value = data.progress_saat_ini || '';
-        document.getElementById('edit_keterangan').value = data.keterangan_tambahan || '';
+        document.getElementById('edit_kendala').value = (data.kendala && data.kendala !== '-') ? data.kendala : '';
+        document.getElementById('edit_keterangan').value = (data.keterangan_tambahan && data.keterangan_tambahan !== '-') ? data.keterangan_tambahan : '';
+        document.getElementById('edit_status').value = data.status || '-';
+        
+        let tambahan = {};
+        try {
+            tambahan = (typeof data.data_tambahan === 'string') ? JSON.parse(data.data_tambahan) : (data.data_tambahan || {});
+        } catch(e) {}
+        
+        @if(isset($kolomDinamis))
+            @foreach($kolomDinamis as $kol)
+                const inputEl_{{ $kol->id }} = document.getElementById('dt_{{ $kol->id }}');
+                if(inputEl_{{ $kol->id }}) {
+                    inputEl_{{ $kol->id }}.value = tambahan['{{ $kol->nama_kolom }}'] || '';
+                }
+            @endforeach
+        @endif
         
         openModal('modalEdit');
     }

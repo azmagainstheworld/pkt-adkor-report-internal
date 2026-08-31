@@ -3,68 +3,52 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
-// Gunakan model tunggal yang memiliki data volume dan ongkir
 use App\Models\PengirimanDokumen; 
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
+// Import Package Excel & PDF
+use Maatwebsite\Excel\Facades\Excel;
+use App\Imports\PengirimanDokumenImport;
+use App\Exports\PengirimanDokumenExport;
+use Barryvdh\DomPDF\Facade\Pdf;
+
 class PengirimanDokumenController extends Controller
 {
-    // Struktur Bulan standar untuk visualisasi urut indonesian month sorting
-    protected $masterMonths = [
-        'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-        'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
-    ];
+    protected $masterMonths = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
 
     public function index(Request $request)
     {
-        // 1. Tentukan Filter Default (Tahun Sekarang, Bulan 'semua')
         $now = Carbon::now();
-        // Default tahun sekarang
         $selectedYear = $request->input('year', $now->year); 
-        // Default 'semua' bulan untuk melihat tren setahun penuh seperti Looker
         $selectedMonth = $request->input('month', 'semua'); 
 
-        // --- PERBAIKAN FILTER TAHUN DINAMIS ---
-        // Ambil tahun unik yang *memang ada* di database agar dropdown filter valid
-        $availableYears = PengirimanDokumen::select('tahun')
-            ->distinct()
-            ->orderBy('tahun', 'desc')
-            ->pluck('tahun');
+        $availableYears = PengirimanDokumen::select('tahun')->distinct()->orderBy('tahun', 'desc')->pluck('tahun');
+        if ($availableYears->isEmpty()) $availableYears = collect([$now->year]); 
 
-        // Jika database benar-benar kosong, gunakan tahun sekarang sebagai fallback
-        if ($availableYears->isEmpty()) {
-            $availableYears = collect([$now->year]); 
+        $baseQuery = PengirimanDokumen::query();
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $baseQuery->where(function($q) use ($search) {
+                $q->where('tahun', 'like', "%{$search}%")->orWhere('bulan', 'like', "%{$search}%")
+                  ->orWhere('penerimaan_mailroom', 'like', "%{$search}%")->orWhere('pengiriman_dalam_negeri', 'like', "%{$search}%")
+                  ->orWhere('pengiriman_luar_negeri', 'like', "%{$search}%")->orWhere('registrasi_surat_masuk_dof', 'like', "%{$search}%")
+                  ->orWhere('ongkir_dalam_negeri', 'like', "%{$search}%")->orWhere('ongkir_luar_negeri', 'like', "%{$search}%");
+            });
         }
 
-        // ==========================================
-        // 2. QUERY DASAR BERDASARKAN FILTER
-        // ==========================================
-        // Kita gunakan model tunggal pengiriman_dokumen yang memiliki volume dan ongkir
-        $baseQuery = PengirimanDokumen::where('tahun', $selectedYear);
+        if ($selectedYear != 'semua') $baseQuery->where('tahun', $selectedYear);
+        if ($selectedMonth != 'semua') $baseQuery->where('bulan', $selectedMonth);
 
-        if ($selectedMonth != 'semua') {
-            $baseQuery->where('bulan', $selectedMonth);
-        }
-
-        // --- DATA UNTUK CHART & AKSES TERKUNCI (Keyed) ---
-        // Ambil data untuk Chart, keyBy('bulan') untuk kemudahan preparasi data
         $dataForChartBuilder = clone $baseQuery;
         $allDataKeyed = $dataForChartBuilder->get()->keyBy('bulan'); 
-
-        // --- PREPARASI DATA CHART ---
-        // Labels dinamis: 12 bulan jika 'semua', atau 1 bulan terpilih
         $chartLabels = ($selectedMonth == 'semua') ? $this->masterMonths : [$selectedMonth];
         
-        $chartMailroom = [];
-        $chartDof = [];
-        $chartDomestikVolume = [];
-        $chartInternasionalVolume = [];
-
+        $chartMailroom = []; $chartDof = []; $chartDomestikVolume = []; $chartInternasionalVolume = [];
         foreach ($chartLabels as $bulanNama) {
             $dataRow = $allDataKeyed->get($bulanNama);
-            // Gunakan nama kolom DB yang benar dari migration combined combined combined penerimaan_mailroom, registrasi_surat_masuk_dof, dll.
             $chartMailroom[] = $dataRow ? $dataRow->penerimaan_mailroom : 0;
             $chartDof[] = $dataRow ? $dataRow->registrasi_surat_masuk_dof : 0;
             $chartDomestikVolume[] = $dataRow ? $dataRow->pengiriman_dalam_negeri : 0;
@@ -74,106 +58,166 @@ class PengirimanDokumenController extends Controller
         $chartVolumeConfig = [
             'labels' => $chartLabels,
             'datasets' => [
-                [
-                    'label' => 'Penerimaan Mailroom',
-                    'backgroundColor' => '#0056A3', // custom color birul birul birul
-                    'data' => $chartMailroom
-                ],
-                [
-                    'label' => 'Registrasi Surat Masuk via DOF',
-                    'backgroundColor' => '#F7941E', // custom orange color
-                    'data' => $chartDof
-                ],
-                [
-                    'label' => 'Pengiriman Dalam Negeri',
-                    'backgroundColor' => '#22C55E', // green-500
-                    'data' => $chartDomestikVolume
-                ],
-                [
-                    'label' => 'Pengiriman Luar Negeri',
-                    'backgroundColor' => '#F87171', // red-400
-                    'data' => $chartInternasionalVolume
-                ]
+                ['label' => 'Penerimaan Mailroom', 'backgroundColor' => '#0056A3', 'data' => $chartMailroom],
+                ['label' => 'Registrasi Surat Masuk via DOF', 'backgroundColor' => '#F7941E', 'data' => $chartDof],
+                ['label' => 'Pengiriman Dalam Negeri', 'backgroundColor' => '#22C55E', 'data' => $chartDomestikVolume],
+                ['label' => 'Pengiriman Luar Negeri', 'backgroundColor' => '#F87171', 'data' => $chartInternasionalVolume]
             ]
         ];
 
-        // ==========================================
-        // 3. QUERY UNTUK TABEL ONGKIR DENGAN PENGURUTAN (PERBAIKAN BUG BADMETHODCALL)
-        // ==========================================
-        // Kita clone query builder dasar untuk menerapkan pengurutan kustom indonesian indonesian month sorting FIELD indonesian bulan FIELD sorting indonesian order by field bulan indonesian indonesian
         $costQueryBuilder = clone $baseQuery;
-
-        // --- SOLUSI ERRORorderByRaw ---
-        // Metode orderByRaw dipanggil pada Query Builder, BUKAN pada Collection.
+        $costQueryBuilder->orderBy('tahun', 'desc');
         $costQueryBuilder->orderByRaw("FIELD(bulan, '" . implode("','", $this->masterMonths) . "')");
+        $costRecords = $costQueryBuilder->paginate(5)->withQueryString(); 
 
-        // Akhirnya eksekusi get() untuk mendapatkan Collection yang sudah terurut.
-        $costRecords = $costQueryBuilder->get(); 
-
-        // --- PERHITUNGAN TOTAL ONGKIR KESELURUHAN (Collection Sum) ---
-        // Gunakan nama kolom DB yang benar untuk sum sum sum: ongkir_dalam_negeri
-        $totalDomestikOverall = $costRecords->sum('ongkir_dalam_negeri');
-        $totalInternasionalOverall = $costRecords->sum('ongkir_luar_negeri');
+        $totalDomestikOverall = (clone $baseQuery)->sum('ongkir_dalam_negeri');
+        $totalInternasionalOverall = (clone $baseQuery)->sum('ongkir_luar_negeri');
+        $kolomDinamis = DB::table('dynamic_columns')->where('modul', 'pengiriman_dokumen')->get();
 
         return view('pengiriman-dokumen', compact(
-            'selectedYear', 'selectedMonth', 'availableYears',
-            'chartVolumeConfig', // Format JSON untuk Chart
-            'costRecords',       // Data Tabel Ongkir (Rincian Bulanan)
-            'totalDomestikOverall',
-            'totalInternasionalOverall'
+            'selectedYear', 'selectedMonth', 'availableYears', 'chartVolumeConfig',
+            'costRecords', 'totalDomestikOverall', 'totalInternasionalOverall', 'kolomDinamis'
         ));
     }
 
     public function store(Request $request)
     {
-        // --- PERBAIKAN VALIDASI ---
-        // Sesuaikan key validasi dengan nama input di form Blade Anda
-        $request->validate([
+        $rules = [
             'tahun' => 'required|integer',
             'bulan' => 'required|string',
-            'volume_mailroom' => 'required|integer|min:0',
-            'volume_domestik' => 'required|integer|min:0',
-            'volume_internasional' => 'required|integer|min:0',
-            'volume_dof' => 'required|integer|min:0',
-            // Pastikan input biaya dikirim sebagai integer murni dari JS
-            'cost_domestik' => 'required|integer|min:0', 
-            'cost_internasional' => 'required|integer|min:0',
-            // Tambahkan validasi e_materai jika ada di form, jika tidak ada beri default 0 di DB
-            'e_materai' => 'nullable|integer|min:0', 
-        ], [
+            'jenis_form' => 'required|in:volume,ongkir',
+        ];
+
+        if ($request->jenis_form === 'volume') {
+            $rules['volume_mailroom'] = 'required|integer|min:0';
+            $rules['volume_domestik'] = 'required|integer|min:0';
+            $rules['volume_internasional'] = 'required|integer|min:0';
+            $rules['volume_dof'] = 'required|integer|min:0';
+        } else {
+            $rules['cost_domestik'] = 'required|integer|min:0';
+            $rules['cost_internasional'] = 'required|integer|min:0';
+        }
+
+        $request->validate($rules, [
             '*.required' => 'Bidang ini wajib diisi.',
             '*.integer' => 'Bidang ini harus berupa angka.',
         ]);
 
         try {
-            // --- PERBAIKAN PENYIMPANAN DATA (Peta Input ke Kolom DB) ---
-            PengirimanDokumen::updateOrCreate(
-                // 1. Kunci Pencarian (Unique Key)
-                ['tahun' => $request->tahun, 'bulan' => $request->bulan], 
-                
-                // 2. Data yang Diupdate/Disimpan
-                [
-                    // 'NAMA_KOLOM_DB' => $request->NAMA_INPUT_FORM
-                    'penerimaan_mailroom' => $request->volume_mailroom,
-                    'registrasi_surat_masuk_dof' => $request->volume_dof,
-                    'pengiriman_dalam_negeri' => $request->volume_domestik,
-                    'pengiriman_luar_negeri' => $request->volume_internasional,
-                    'ongkir_dalam_negeri' => $request->cost_domestik,
-                    'ongkir_luar_negeri' => $request->cost_internasional,
-                    'e_materai' => $request->e_materai ?? 0, // Beri default jika null
-                ]
-            );
+            $record = PengirimanDokumen::firstOrNew(['tahun' => $request->tahun, 'bulan' => $request->bulan]);
+
+            if ($request->jenis_form === 'volume') {
+                $record->penerimaan_mailroom = $request->volume_mailroom;
+                $record->registrasi_surat_masuk_dof = $request->volume_dof;
+                $record->pengiriman_dalam_negeri = $request->volume_domestik;
+                $record->pengiriman_luar_negeri = $request->volume_internasional;
+                $record->data_tambahan = json_encode($request->input('data_tambahan', []));
+            } else if ($request->jenis_form === 'ongkir') {
+                $record->ongkir_dalam_negeri = $request->cost_domestik;
+                $record->ongkir_luar_negeri = $request->cost_internasional;
+            }
+
+            $record->penerimaan_mailroom = $record->penerimaan_mailroom ?? 0;
+            $record->registrasi_surat_masuk_dof = $record->registrasi_surat_masuk_dof ?? 0;
+            $record->pengiriman_dalam_negeri = $record->pengiriman_dalam_negeri ?? 0;
+            $record->pengiriman_luar_negeri = $record->pengiriman_luar_negeri ?? 0;
+            $record->ongkir_dalam_negeri = $record->ongkir_dalam_negeri ?? 0;
+            $record->ongkir_luar_negeri = $record->ongkir_luar_negeri ?? 0;
+            $record->e_materai = $record->e_materai ?? 0;
+            $record->save();
 
             return redirect()->route('pengiriman-dokumen.index', ['year' => $request->tahun, 'month' => $request->bulan])
-                ->with('success', "Data laporan Pengiriman Dokumen bulan {$request->bulan} {$request->tahun} berhasil diperbaharui.");
+                ->with('success', "Data laporan bulan {$request->bulan} {$request->tahun} berhasil diperbaharui.");
 
         } catch (\Exception $e) {
-            // Log error untuk debug
             \Log::error("Error saving PengirimanDokumen: " . $e->getMessage());
-
-            return redirect()->back()
-                ->withInput()
-                ->with('error', 'Terjadi kesalahan sistem saat menyimpan data. Silakan coba lagi nanti.');
+            return redirect()->back()->withInput()->with('error', 'Terjadi kesalahan sistem saat menyimpan data.');
         }
+    }
+
+    public function destroy($id)
+    {
+        try {
+            PengirimanDokumen::findOrFail($id)->delete();
+            return redirect()->back()->with('success', 'Data pengiriman dokumen berhasil dihapus.');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Terjadi kesalahan saat menghapus data.');
+        }
+    }
+
+    public function import(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|mimes:xlsx,xls,csv|max:10240',
+            'jenis' => 'required|in:volume,ongkir'
+        ]);
+
+        try {
+            \Maatwebsite\Excel\Facades\Excel::import(new \App\Imports\PengirimanDokumenImport($request->jenis), $request->file('file')); 
+            return redirect()->back()->with('success', 'Data berhasil ditembak ke Database secara paksa!');
+        } catch (\Exception $e) {
+            // Tampilkan error ke Pop-up Merah
+            return redirect()->back()->with('error_modal', 'ERROR SYSTEM: ' . $e->getMessage());
+        }
+    }
+
+    public function exportExcel(Request $request)
+    {
+        $year = $request->input('year', 'semua');
+        $month = $request->input('month', 'semua');
+        $jenis = $request->input('jenis', 'volume');
+        $typeLabel = $jenis == 'volume' ? 'Volume_Dokumen' : 'Biaya_Ongkir';
+        
+        // Tidak perlu lagi mempassing parameter $jenis ke constructor (otomatis terbaca)
+        return Excel::download(new PengirimanDokumenExport(false, $year, $month), "Laporan_Pengiriman_{$typeLabel}_{$month}_{$year}.xlsx");
+    }
+
+    public function exportPdf(Request $request)
+    {
+        $year = $request->input('year', 'semua');
+        $month = $request->input('month', 'semua');
+
+        $query = PengirimanDokumen::query();
+        if ($year !== 'semua') $query->where('tahun', $year);
+        if ($month !== 'semua') $query->where('bulan', $month);
+
+        $query->orderBy('tahun', 'desc')->orderByRaw("FIELD(bulan, '" . implode("','", $this->masterMonths) . "')");
+        $records = $query->get();
+
+        $totalDomestik = $records->sum('ongkir_dalam_negeri');
+        $totalInternasional = $records->sum('ongkir_luar_negeri');
+        $kolomDinamis = DB::table('dynamic_columns')->where('modul', 'pengiriman_dokumen')->get();
+
+        $pdf = Pdf::loadView('exports.pengiriman-pdf', compact('records', 'year', 'month', 'totalDomestik', 'totalInternasional', 'kolomDinamis'))->setPaper('a4', 'landscape');
+        return $pdf->stream("Laporan_Pengiriman_{$month}_{$year}.pdf");
+    }
+
+    public function downloadTemplate(Request $request)
+    {
+        $jenis = $request->input('jenis', 'volume');
+        $typeLabel = $jenis == 'volume' ? 'Volume_Dokumen' : 'Biaya_Ongkir';
+        return Excel::download(new PengirimanDokumenExport(true, 'semua', 'semua', $jenis), "Template_Pengiriman_{$typeLabel}.xlsx");
+    }
+
+    public function storeKolomDinamis(Request $request)
+    {
+        $request->validate(['modul' => 'required|string', 'nama_kolom' => 'required|string|max:100', 'tipe_input' => 'required|in:text,number,date,dropdown,currency']);
+        if (DB::table('dynamic_columns')->where('modul', $request->modul)->whereRaw('LOWER(nama_kolom) = ?', [strtolower(trim($request->nama_kolom))])->exists()) {
+            return back()->with('error_modal', 'Kolom sudah ada!')->with('failed_modul', $request->modul);
+        }
+
+        $pilihanDropdown = ($request->tipe_input === 'dropdown' && $request->filled('pilihan_dropdown')) ? json_encode(array_map('trim', explode(',', $request->pilihan_dropdown))) : null;
+
+        DB::table('dynamic_columns')->insert([
+            'modul' => $request->modul, 'nama_kolom' => trim($request->nama_kolom), 'tipe_input' => $request->tipe_input,
+            'pilihan_dropdown' => $pilihanDropdown, 'created_at' => Carbon::now(), 'updated_at' => Carbon::now(),
+        ]);
+        return back()->with('success', 'Kolom dinamis berhasil ditambahkan.');
+    }
+
+    public function destroyKolomDinamis($id)
+    {
+        DB::table('dynamic_columns')->where('id', $id)->delete();
+        return back()->with('success', 'Kolom dinamis berhasil dihapus.');
     }
 }

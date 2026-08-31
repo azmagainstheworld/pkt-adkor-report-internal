@@ -10,6 +10,13 @@ class PengirimanCost extends Model
     use Auditable;
 
     protected $auditModuleKey = 'pengiriman-dokumen';
+    protected $table = 'pengiriman_costs';
 
-    //
+    // WAJIB ADA AGAR DATA EXCEL TIDAK DITOLAK LARAVEL
+    protected $fillable = [
+        'tahun',
+        'bulan',
+        'cost_domestik',
+        'cost_internasional',
+    ];
 }

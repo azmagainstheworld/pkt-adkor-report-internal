@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Models;
 
 use App\Traits\Auditable;
@@ -16,7 +15,11 @@ class PemeliharaanPeralatanData extends Model
     protected $table = 'pemeliharaan_peralatan_data';
     protected $guarded = ['id'];
 
-    // Relasi balik ke tabel master
+    // TRIK JSON ARRAY
+    protected $casts = [
+        'data_tambahan' => 'array',
+    ];
+
     public function pemeliharaanPeralatanMaster()
     {
         return $this->belongsTo(PemeliharaanPeralatanMaster::class, 'peralatan_id');

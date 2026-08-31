@@ -6,6 +6,10 @@ use App\Models\AnggaranAdministrasi;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Imports\AnggaranImport;
+use App\Exports\AnggaranExport;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 class AnggaranController extends Controller
 {
@@ -14,6 +18,24 @@ class AnggaranController extends Controller
         'Dikelola'  => 'Anggaran Dikelola',
         'Rutin'     => 'Anggaran Rutin',
         'Investasi' => 'Anggaran Investasi',
+    ];
+
+    // Urutan default untuk detail anggaran (sesuai template asli)
+    protected $detailOrder = [
+        'Pemeliharaan - Peralatan Kantor' => 1,
+        'Cetak dan Fotocopy' => 2,
+        'Pos Materai dan Pengiriman Dok.' => 3,
+        'Iuran Keanggotaan' => 4,
+        'Inspeksi dan Perijinan' => 5,
+        'Sewa - Peralatan Pabrik & Kantor' => 6,
+        'Jasa - Konsultan' => 7,
+        'Rekreasi dan Olahraga' => 8,
+        'Peralatan Kantor' => 9,
+        'Biaya Makan Minum' => 10,
+        'Perjalanan Dinas Dalam Negeri' => 11,
+        'Perlengkapan & Peralatan (Alat-alat Kantor)' => 12,
+        'Perlengkapan & Peralatan (Furniture Kantor)' => 13,
+        'Aset Ttp dlm Proses Konstruksi-Bangunan&Prasarana (HGB)' => 14,
     ];
 
     public function index(Request $request)
@@ -96,16 +118,26 @@ class AnggaranController extends Controller
         $detailTable = collect();
         foreach ($tahunTampil as $tahun) {
             foreach ($bulanOrder as $bulan) {
-                $rowsBulan = $allRows->where('tahun', $tahun)->where('bulan', $bulan);
+                // Filter bulan case-insensitive
+                $rowsBulan = $allRows->filter(function($item) use ($tahun, $bulan) {
+                    return $item->tahun == $tahun && strtolower($item->bulan) === strtolower($bulan);
+                });
                 if ($rowsBulan->isEmpty()) {
                     continue;
                 }
 
                 $perKategori = [];
+                $totRkap = 0; $totKomitmen = 0; $totRealisasi = 0;
+
                 foreach ($kategoriOrder as $kat) {
-                    $items = $rowsBulan->where('kategori', $kat)->sortBy('detail_anggaran')->values();
+                    $items = $rowsBulan->where('kategori', $kat)->sortBy(function($item) {
+                        return $this->detailOrder[$item->detail_anggaran] ?? 999;
+                    })->values();
                     if ($items->isNotEmpty()) {
                         $perKategori[$kat] = $items;
+                        $totRkap += $items->sum('rkap');
+                        $totKomitmen += $items->sum('komitmen');
+                        $totRealisasi += $items->sum('realisasi');
                     }
                 }
 
@@ -114,6 +146,9 @@ class AnggaranController extends Controller
                         'tahun' => $tahun,
                         'bulan' => $bulan,
                         'kategori' => $perKategori,
+                        'total_rkap' => $totRkap,
+                        'total_komitmen' => $totKomitmen,
+                        'total_realisasi' => $totRealisasi,
                     ]);
                 }
             }
@@ -125,7 +160,9 @@ class AnggaranController extends Controller
         $summaryPerBulan = collect();
         foreach ($tahunTampil as $tahun) {
             foreach ($bulanOrder as $bulan) {
-                $rowsBulan = $allRows->where('tahun', $tahun)->where('bulan', $bulan);
+                $rowsBulan = $allRows->filter(function($item) use ($tahun, $bulan) {
+                    return $item->tahun == $tahun && strtolower($item->bulan) === strtolower($bulan);
+                });
                 if ($rowsBulan->isEmpty()) {
                     continue;
                 }
@@ -156,7 +193,9 @@ class AnggaranController extends Controller
         $sisaPerKategori = collect();
         foreach ($tahunTampil as $tahun) {
             foreach ($bulanOrder as $bulan) {
-                $rowsBulan = $allRows->where('tahun', $tahun)->where('bulan', $bulan);
+                $rowsBulan = $allRows->filter(function($item) use ($tahun, $bulan) {
+                    return $item->tahun == $tahun && strtolower($item->bulan) === strtolower($bulan);
+                });
                 if ($rowsBulan->isEmpty()) {
                     continue;
                 }
@@ -178,6 +217,33 @@ class AnggaranController extends Controller
             }
         }
 
+        $perPage = 10;
+        $page = $request->input('page', 1);
+
+        $detailTablePaginated = new LengthAwarePaginator(
+            $detailTable->forPage($page, $perPage),
+            $detailTable->count(),
+            $perPage,
+            $page,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
+
+        $summaryPerBulanPaginated = new LengthAwarePaginator(
+            $summaryPerBulan->forPage($page, $perPage),
+            $summaryPerBulan->count(),
+            $perPage,
+            $page,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
+
+        $sisaPerKategoriPaginated = new LengthAwarePaginator(
+            $sisaPerKategori->forPage($page, $perPage),
+            $sisaPerKategori->count(),
+            $perPage,
+            $page,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
+
         return view('anggaran.index', [
             'selectedYear' => $selectedYear,
             'selectedMonth' => $selectedMonth,
@@ -188,9 +254,9 @@ class AnggaranController extends Controller
             'totalRkap' => $totalRkap,
             'totalRealPlusKomit' => $totalRealPlusKomit,
             'totalSisa' => $totalSisa,
-            'detailTable' => $detailTable,
-            'summaryPerBulan' => $summaryPerBulan,
-            'sisaPerKategori' => $sisaPerKategori,
+            'detailTable' => $detailTablePaginated,
+            'summaryPerBulan' => $summaryPerBulanPaginated,
+            'sisaPerKategori' => $sisaPerKategoriPaginated,
         ]);
     }
 
@@ -210,20 +276,101 @@ class AnggaranController extends Controller
             'kategori' => 'required|in:' . implode(',', array_keys($this->kategoriList)),
             'detail_anggaran' => 'required|string|max:255',
 
-            'rkap' => 'required|integer|min:1',
-            'komitmen' => 'required|integer|min:1',
-            'realisasi' => 'required|integer|min:1',
+            'rkap' => 'required|integer|min:0',
+            'komitmen' => 'required|integer|min:0',
+            'realisasi' => 'required|integer|min:0',
 
             'keterangan' => 'nullable|string',
         ], [
             '*.required' => 'Wajib diisi.',
             '*.integer' => 'Harus berupa angka integer.',
-            '*.min' => 'Wajib lebih besar dari 0.',
+            '*.min' => 'Wajib lebih besar atau sama dengan 0.',
         ]);
 
-        AnggaranAdministrasi::create($request->all());
+        $data = $request->all();
+        $data['data_tambahan'] = json_encode($request->input('data_tambahan', []));
 
-        return redirect()->route('anggaran.index')
+        AnggaranAdministrasi::create($data);
+
+        return redirect()->route('anggaran.index', ['tahun' => $request->tahun, 'bulan' => $request->bulan])
             ->with('success', 'Data anggaran bulan ' . $request->bulan . ' ' . $request->tahun . ' berhasil ditambahkan.');
+    }
+
+    public function update(Request $request, AnggaranAdministrasi $anggaran)
+    {
+        $request->merge([
+            'rkap' => str_replace('.', '', $request->input('rkap')),
+            'komitmen' => str_replace('.', '', $request->input('komitmen')),
+            'realisasi' => str_replace('.', '', $request->input('realisasi')),
+        ]);
+
+        $validated = $request->validate([
+            'tahun' => 'required',
+            'bulan' => 'required',
+            'kategori' => 'required|in:' . implode(',', array_keys($this->kategoriList)),
+            'detail_anggaran' => 'required|string|max:255',
+            'rkap' => 'required|integer|min:0',
+            'komitmen' => 'required|integer|min:0',
+            'realisasi' => 'required|integer|min:0',
+            'keterangan' => 'nullable|string',
+        ], [
+            '*.required' => 'Wajib diisi.',
+            '*.integer' => 'Harus berupa angka integer.',
+            '*.min' => 'Wajib lebih besar atau sama dengan 0.',
+        ]);
+
+        $dataTambahan = $request->input('data_tambahan', []);
+        $validated['data_tambahan'] = json_encode($dataTambahan);
+
+        $anggaran->update($validated);
+
+        return redirect()->route('anggaran.index', ['tahun' => $validated['tahun'], 'bulan' => $validated['bulan']])
+                         ->with('success', 'Data anggaran berhasil diperbarui.');
+    }
+
+    public function destroy(AnggaranAdministrasi $anggaran)
+    {
+        $tahun = $anggaran->tahun;
+        $bulan = $anggaran->bulan;
+        $anggaran->delete();
+
+        return redirect()->route('anggaran.index', ['tahun' => $tahun, 'bulan' => $bulan])
+                         ->with('success', 'Data anggaran berhasil dihapus.');
+    }
+
+    public function import(Request $request)
+    {
+        set_time_limit(0);
+        $request->validate(['file' => 'required|mimes:xlsx,xls,csv|max:51200']);
+
+        try {
+            Excel::import(new AnggaranImport, $request->file('file'));
+            
+            if ($request->ajax()) {
+                return response()->json(['success' => true, 'message' => 'Data Anggaran berhasil di-import!']);
+            }
+            return redirect()->back()->with('success', 'Data Anggaran berhasil di-import!');
+        } catch (\Exception $e) {
+            if ($request->ajax()) {
+                return response()->json(['error' => $e->getMessage()], 400);
+            }
+            return redirect()->back()->with('error_modal', 'Terjadi kesalahan saat import: ' . $e->getMessage());
+        }
+    }
+
+    public function exportExcel(Request $request)
+    {
+        $tahun = $request->input('tahun', now()->year);
+        $bulan = $request->input('bulan', 'semua');
+        return Excel::download(new AnggaranExport($tahun, $bulan), 'Laporan_Anggaran_' . $tahun . '_' . $bulan . '.xlsx');
+    }
+
+    public function downloadTemplate()
+    {
+        $filePath = public_path('template/Template_anggaran.xlsx');
+        if (!file_exists($filePath)) {
+            return redirect()->back()->with('error', 'File template tidak ditemukan.');
+        }
+        return response()->download($filePath);
     }
 }

@@ -4,125 +4,171 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Undangan;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class UndanganController extends Controller
 {
     public function index(Request $request)
     {
-        // 1. Ambil daftar tahun unik yang datanya SUDAH ADA di database
-        $tahunTersedia = Undangan::select('tahun')
-                            ->distinct()
-                            ->orderBy('tahun', 'desc')
-                            ->pluck('tahun')
-                            ->toArray();
-
-        // Jika database masih kosong, beri default tahun saat ini
+        // 1. FILTER DINAMIS: Ambil Tahun dan Bulan yang BENAR-BENAR ada di database
+        $tahunTersedia = Undangan::select('tahun')->distinct()->orderBy('tahun', 'desc')->pluck('tahun')->toArray();
         if (empty($tahunTersedia)) {
             $tahunTersedia = [date('Y')];
         }
 
-        // 2. Ambil Filter Tahun dan Bulan
+        $masterMonths = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+        $bulanTersediaRaw = Undangan::select('bulan')->distinct()->pluck('bulan')->toArray();
+        $bulanTersedia = array_intersect($masterMonths, $bulanTersediaRaw); // Menjaga urutan bulan
+        if (empty($bulanTersedia)) {
+            $bulanTersedia = [Carbon::now()->translatedFormat('F')];
+        }
+
         $tahunFilter = $request->input('tahun', 'semua');
         $bulanFilter = $request->input('bulan', 'semua');
 
-        // 3. Query Data berdasarkan Filter untuk Tabel
+        // 2. QUERY TABEL
         $query = Undangan::query();
+        if ($tahunFilter != 'semua') $query->where('tahun', $tahunFilter);
+        if ($bulanFilter != 'semua') $query->where('bulan', $bulanFilter);
         
-        if ($tahunFilter != 'semua') {
-            $query->where('tahun', $tahunFilter);
-        }
-        
-        if ($bulanFilter != 'semua') {
-            $query->where('bulan', $bulanFilter);
-        }
-        
-        // Urutkan data terbaru di paling atas
-        $tableData = $query->orderBy('tahun', 'desc')->orderBy('id', 'desc')->get();
+        // Custom Sort Bulan agar urut dari Januari -> Desember (Atau kebalikannya)
+        $query->orderBy('tahun', 'desc')->orderByRaw("FIELD(bulan, '" . implode("','", $masterMonths) . "') DESC");
+        $tableData = $query->get();
 
-        // 4. Hitung Grand Total untuk Tabel
         $totalIntern = $tableData->sum('undangan_intern');
         $totalEkstern = $tableData->sum('undangan_ekstern');
 
-        // 5. Siapkan Data untuk Chart.js (DINAMIS SUMBU X)
+        // 3. QUERY CHART.JS
         $chartData = [];
-        
         if ($tahunFilter == 'semua') {
-            // JIKA SEMUA TAHUN: Sumbu X adalah Tahun (urut dari terlama ke terbaru)
             $tahunAsc = array_reverse($tahunTersedia);
-            
             $chartQuery = Undangan::query();
-            if ($bulanFilter != 'semua') {
-                $chartQuery->where('bulan', $bulanFilter);
-            }
+            if ($bulanFilter != 'semua') $chartQuery->where('bulan', $bulanFilter);
             $rawDataForChart = $chartQuery->get();
 
             foreach ($tahunAsc as $thn) {
                 $dataTahunIni = $rawDataForChart->where('tahun', $thn);
                 $chartData[] = [
-                    'label' => (string)$thn, // Menjadi "2025", "2026"
+                    'label' => (string)$thn,
                     'intern' => $dataTahunIni->sum('undangan_intern'),
                     'ekstern' => $dataTahunIni->sum('undangan_ekstern'),
                 ];
             }
         } else {
-            // JIKA TAHUN SPESIFIK: Sumbu X adalah 12 Bulan
-            $daftarBulan = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
-            
             $chartQuery = Undangan::where('tahun', $tahunFilter);
-            if ($bulanFilter != 'semua') {
-                $chartQuery->where('bulan', $bulanFilter);
-            }
+            if ($bulanFilter != 'semua') $chartQuery->where('bulan', $bulanFilter);
             $rawDataForChart = $chartQuery->get();
 
-            foreach ($daftarBulan as $bulan) {
+            foreach ($masterMonths as $bulan) {
                 $dataBulanIni = $rawDataForChart->where('bulan', $bulan);
                 $chartData[] = [
-                    'label' => substr($bulan, 0, 3), // Menjadi "Jan", "Feb"
+                    'label' => substr($bulan, 0, 3),
                     'intern' => $dataBulanIni->sum('undangan_intern'),
                     'ekstern' => $dataBulanIni->sum('undangan_ekstern'),
                 ];
             }
         }
 
-        return view('undangan', compact('tableData', 'chartData', 'tahunFilter', 'bulanFilter', 'totalIntern', 'totalEkstern', 'tahunTersedia'));
+        // 4. TARIK DEFINISI KOLOM DINAMIS
+        $kolomDinamis = DB::table('dynamic_columns')->where('modul', 'undangan')->get();
+
+        return view('undangan', compact(
+            'tableData', 'chartData', 
+            'tahunFilter', 'bulanFilter', 
+            'totalIntern', 'totalEkstern', 
+            'tahunTersedia', 'bulanTersedia', 'kolomDinamis'
+        ));
     }
 
     public function store(Request $request)
     {
         $request->validate([
-            'periode' => 'required|date_format:Y-m',
-            'jenis_undangan' => 'required|in:intern,ekstern',
-            'jumlah_undangan' => 'required|integer|min:0',
+            'tahun' => 'required|integer',
+            'bulan' => 'required|string',
+            'undangan_intern' => 'required|integer|min:0',
+            'undangan_ekstern' => 'required|integer|min:0',
         ]);
 
-        $parts = explode('-', $request->periode);
-        $tahun = $parts[0];
-        $bulanNum = (int)$parts[1]; 
-        
-        $daftarBulan = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
-        $namaBulan = $daftarBulan[$bulanNum - 1];
+        // Tangkap JSON
+        $dataTambahan = $request->input('data_tambahan', []);
 
-        $undangan = Undangan::firstOrNew([
-            'tahun' => $tahun,
-            'bulan' => $namaBulan
+        // Logika Sakti: Jika bulan & tahun sudah ada, update. Jika belum, create.
+        Undangan::updateOrCreate(
+            ['tahun' => $request->tahun, 'bulan' => $request->bulan],
+            [
+                'undangan_intern' => $request->undangan_intern,
+                'undangan_ekstern' => $request->undangan_ekstern,
+                'data_tambahan' => $dataTambahan
+            ]
+        );
+
+        return redirect()->back()->with('success', 'Data distribusi undangan berhasil disimpan.');
+    }
+
+    public function destroy($id)
+    {
+        Undangan::findOrFail($id)->delete();
+        return redirect()->back()->with('success', 'Data undangan berhasil dihapus.');
+    }
+
+    // ==========================================
+    // BLUEPRINT FUNGSI ATUR KOLOM
+    // ==========================================
+    public function storeKolomDinamis(Request $request)
+    {
+        $request->validate([
+            'modul'      => 'required|string',
+            'nama_kolom' => 'required|string|max:100',
+            'tipe_input' => 'required|in:text,number,date,dropdown,currency',
         ]);
 
-        if (!$undangan->exists) {
-            $undangan->undangan_intern = 0;
-            $undangan->undangan_ekstern = 0;
+        $isDuplicate = DB::table('dynamic_columns')
+            ->where('modul', $request->modul)
+            ->whereRaw('LOWER(nama_kolom) = ?', [strtolower(trim($request->nama_kolom))])
+            ->exists();
+
+        if ($isDuplicate) {
+            return back()->with('error_modal', 'Kolom dengan nama "' . $request->nama_kolom . '" sudah ada. Silakan gunakan nama lain!');
         }
 
-        if ($request->jenis_undangan === 'intern') {
-            $undangan->undangan_intern = $request->jumlah_undangan;
-        } else {
-            $undangan->undangan_ekstern = $request->jumlah_undangan;
+        $pilihanDropdown = null;
+        if ($request->tipe_input === 'dropdown' && $request->pilihan_dropdown) {
+            $arrayPilihan = array_map('trim', explode(',', $request->pilihan_dropdown));
+            $pilihanDropdown = json_encode($arrayPilihan);
         }
 
-        $undangan->save();
+        DB::table('dynamic_columns')->insert([
+            'modul'            => $request->modul,
+            'nama_kolom'       => trim($request->nama_kolom),
+            'tipe_input'       => $request->tipe_input,
+            'pilihan_dropdown' => $pilihanDropdown,
+            'created_at'       => Carbon::now(),
+            'updated_at'       => Carbon::now(),
+        ]);
 
-        return redirect()->route('undangan.index', [
-            'tahun' => 'semua',
-            'bulan' => 'semua'
-        ])->with('success', 'Data distribusi undangan berhasil disimpan.');
+        return back()->with('success', 'Kolom dinamis baru berhasil ditambahkan.');
+    }
+
+    public function destroyKolomDinamis($id)
+    {
+        DB::table('dynamic_columns')->where('id', $id)->delete();
+        return back()->with('success', 'Kolom dinamis berhasil dihapus.');
+    }
+
+    public function import(Request $request) {
+        return redirect()->back()->with('error_modal', 'Fitur Import Undangan sedang dalam tahap pengembangan akhir. Harap tunggu update selanjutnya.');
+    }
+
+    public function exportExcel(Request $request) {
+        return redirect()->back()->with('error_modal', 'Fitur Export Excel Undangan sedang dalam tahap pengembangan akhir. Harap tunggu update selanjutnya.');
+    }
+
+    public function exportPdf(Request $request) {
+        return redirect()->back()->with('error_modal', 'Fitur Export PDF Undangan sedang dalam tahap pengembangan akhir. Harap tunggu update selanjutnya.');
+    }
+
+    public function downloadTemplate(Request $request) {
+        return redirect()->back()->with('error_modal', 'Template Excel Undangan sedang dalam tahap pengembangan akhir. Harap tunggu update selanjutnya.');
     }
 }

@@ -15,4 +15,9 @@ class MasalahKendala extends Model
 
     protected $table = 'masalah_kendala';
     protected $guarded = ['id'];
+
+    // Trik sakti agar JSON otomatis jadi Array di PHP
+    protected $casts = [
+        'data_tambahan' => 'array',
+    ];
 }

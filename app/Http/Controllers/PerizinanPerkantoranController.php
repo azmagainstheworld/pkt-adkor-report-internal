@@ -7,14 +7,18 @@ use App\Models\PerizinanTerbit;
 use App\Models\PerizinanProsesList;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Imports\PerizinanTerbitImport;
+use App\Imports\PerizinanProsesImport;
+use App\Exports\PerizinanTerbitExport;
+use App\Exports\PerizinanProsesExport;
 
 class PerizinanPerkantoranController extends Controller
 {
     public function index(Request $request)
     {
-        // Pastikan locale Carbon diset ke Indonesia
-        Carbon::setLocale('id');
-        $tanggalToday = Carbon::now()->translatedFormat('l, d F Y');
+        Carbon::setLocale('en');
+        $tanggalToday = Carbon::now()->format('l, d F Y');
         
         $tahunTersedia = PerizinanTerbit::select(DB::raw('YEAR(tanggal_sejak) as tahun'))
                             ->distinct()
@@ -38,7 +42,8 @@ class PerizinanPerkantoranController extends Controller
         ];
 
         // --- QUERY TABEL 2: RINCIAN PERIZINAN TERBIT ---
-        $queryRincian = PerizinanTerbit::query();
+        $queryRincian = PerizinanTerbit::leftJoin('jenis_perizinan_master', 'perizinan_terbit.jenis_perizinan_id', '=', 'jenis_perizinan_master.id')
+            ->select('perizinan_terbit.*', 'jenis_perizinan_master.nama_jenis as nama_perizinan');
 
         if ($filterTahun != 'semua') {
             $queryRincian->whereYear('tanggal_sejak', $filterTahun);
@@ -51,39 +56,44 @@ class PerizinanPerkantoranController extends Controller
             }
         }
 
-        $dataRincian = $queryRincian->orderBy('tanggal_sejak', 'desc')->paginate(10)->withQueryString();
+        $dataRincian = $queryRincian->orderBy('tanggal_sejak', 'desc')
+            ->paginate(10, ['*'], 'page_terbit')
+            ->fragment('tabel-terbit')
+            ->appends(request()->all());
 
         // --- QUERY TABEL 1: RINGKASAN AKUMULASI ---
-        $queryRingkasan = PerizinanTerbit::query()
-            ->select(
-                DB::raw('YEAR(tanggal_sejak) as tahun'),
-                DB::raw('MONTH(tanggal_sejak) as bulan_num'),
-                DB::raw('SUM(CASE WHEN kegiatan = "Produk" THEN 1 ELSE 0 END) as produk'),
-                DB::raw('SUM(CASE WHEN kegiatan = "Aset" THEN 1 ELSE 0 END) as aset'),
-                DB::raw('SUM(CASE WHEN kegiatan = "Proyek" THEN 1 ELSE 0 END) as proyek'),
-                DB::raw('SUM(CASE WHEN kegiatan = "Peralatan Pabrik" THEN 1 ELSE 0 END) as peralatan_pabrik'),
-                DB::raw('SUM(CASE WHEN kegiatan = "Adm & Lainnya" THEN 1 ELSE 0 END) as adm')
-            );
+        $queryRingkasan = PerizinanTerbit::leftJoin('jenis_perizinan_master', 'perizinan_terbit.jenis_perizinan_id', '=', 'jenis_perizinan_master.id')
+            ->selectRaw('
+                YEAR(perizinan_terbit.tanggal_sejak) as tahun,
+                MONTH(perizinan_terbit.tanggal_sejak) as bulan_num,
+                SUM(CASE WHEN perizinan_terbit.kegiatan = "Produk" THEN 1 ELSE 0 END) as produk,
+                SUM(CASE WHEN perizinan_terbit.kegiatan = "Aset" THEN 1 ELSE 0 END) as aset,
+                SUM(CASE WHEN perizinan_terbit.kegiatan = "Proyek" THEN 1 ELSE 0 END) as proyek,
+                SUM(CASE WHEN perizinan_terbit.kegiatan = "Peralatan Pabrik" THEN 1 ELSE 0 END) as peralatan_pabrik,
+                SUM(CASE WHEN perizinan_terbit.kegiatan = "Adm & Lainnya" THEN 1 ELSE 0 END) as adm
+            ');
 
         if ($filterTahun != 'semua') {
-            $queryRingkasan->whereYear('tanggal_sejak', $filterTahun);
+            $queryRingkasan->whereYear('perizinan_terbit.tanggal_sejak', $filterTahun);
         }
         if ($filterBulan != 'semua') {
             $monthNum = $mapBulan[$filterBulan] ?? null;
             if ($monthNum) {
-                $queryRingkasan->whereMonth('tanggal_sejak', $monthNum);
+                $queryRingkasan->whereMonth('perizinan_terbit.tanggal_sejak', $monthNum);
             }
         }
 
         $ringkasanRaw = $queryRingkasan->groupBy('tahun', 'bulan_num')
                                        ->orderBy('tahun', 'desc')
                                        ->orderBy('bulan_num', 'desc')
-                                       ->get();
+                                       ->paginate(10, ['*'], 'page_ringkasan')
+                                       ->fragment('tabel-ringkasan')
+                                       ->appends(request()->all());
 
         $daftarBulanTeks = ['', 'Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
         $dataRingkasan = [];
 
-        foreach ($ringkasanRaw as $row) {
+        foreach ($ringkasanRaw->items() as $row) {
             $dataRingkasan[] = [
                 'tahun' => $row->tahun,
                 'bulan' => $daftarBulanTeks[$row->bulan_num],
@@ -159,17 +169,23 @@ class PerizinanPerkantoranController extends Controller
         $dataProses = $queryProses->orderBy('tahun', 'desc')
                                   ->orderBy('nama_proses', 'asc')
                                   ->orderBy('id', 'asc')
-                                  ->get();
+                                  ->paginate(10, ['*'], 'page_proses')
+                                  ->fragment('tabel-proses')
+                                  ->appends(request()->all());
 
         // Grouping data berdasarkan tahun dan nama proses untuk rowspan di Blade
-        $groupedProses = $dataProses->groupBy(function ($item) {
+        $groupedProses = collect($dataProses->items())->groupBy(function ($item) {
             return $item->tahun . '_' . $item->nama_proses;
         });
 
-        // Compact diperbaiki: pastikan nama variabel sesuai dengan yang digunakan di compact()
+        // --- 6. AMBIL KONFIGURASI KOLOM DINAMIS (Keduanya) ---
+        $kolomDinamisTerbit = DB::table('dynamic_columns')->where('modul', 'perizinan_terbit')->get();
+        $kolomDinamisProses = DB::table('dynamic_columns')->where('modul', 'perizinan_proses_list')->get();
+
         return view('perizinan-perkantoran', compact(
             'tanggalToday', 'filterTahun', 'filterBulan', 'tahunTersedia',
-            'dataRincian', 'dataRingkasan', 'chartData', 'groupedProses'
+            'dataRincian', 'dataRingkasan', 'chartData', 'groupedProses', 'ringkasanRaw', 'dataProses',
+            'kolomDinamisTerbit', 'kolomDinamisProses'
         ));
     }
 
@@ -182,12 +198,31 @@ class PerizinanPerkantoranController extends Controller
             // Format input date (Y-m) divalidasi sebagai date
             'tanggal_sejak'     => 'required|date',
             // Pastikan format date bisa divalidasi after
-            'tanggal_akhir'     => 'required|date|after:tanggal_sejak',
+            'tanggal_akhir'     => 'required|date|after_or_equal:tanggal_sejak',
             'instansi_penerbit' => 'required|string|max:150',
         ]);
 
-        $request->merge(['kategori_grup' => $request->kegiatan]);
-        PerizinanTerbit::create($request->all());
+        $jenis = DB::table('jenis_perizinan_master')
+            ->whereRaw('LOWER(nama_jenis) = ?', [strtolower($request->nama_perizinan)])
+            ->first();
+
+        if (!$jenis) {
+            $jenisId = DB::table('jenis_perizinan_master')->insertGetId([
+                'nama_jenis' => $request->nama_perizinan,
+                'kategori_grup' => $request->kegiatan,
+                'aktif' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        } else {
+            $jenisId = $jenis->id;
+        }
+
+        $request->merge([
+            'kategori_grup' => $request->kegiatan,
+            'jenis_perizinan_id' => $jenisId
+        ]);
+        PerizinanTerbit::create($request->except('nama_perizinan'));
 
         return redirect()->route('perizinan-perkantoran.index')
             ->with('success', 'Rincian Perizinan Terbit berhasil ditambahkan.');
@@ -200,12 +235,31 @@ class PerizinanPerkantoranController extends Controller
             'kegiatan'          => 'required|string|in:Aset,Adm & Lainnya,Peralatan Pabrik,Produk,Proyek',
             'nomor'             => 'required|string|max:100',
             'tanggal_sejak'     => 'required|date',
-            'tanggal_akhir'     => 'required|date|after:tanggal_sejak',
+            'tanggal_akhir'     => 'required|date|after_or_equal:tanggal_sejak',
             'instansi_penerbit' => 'required|string|max:150',
         ]);
 
-        $request->merge(['kategori_grup' => $request->kegiatan]);
-        PerizinanTerbit::findOrFail($id)->update($request->all());
+        $jenis = DB::table('jenis_perizinan_master')
+            ->whereRaw('LOWER(nama_jenis) = ?', [strtolower($request->nama_perizinan)])
+            ->first();
+
+        if (!$jenis) {
+            $jenisId = DB::table('jenis_perizinan_master')->insertGetId([
+                'nama_jenis' => $request->nama_perizinan,
+                'kategori_grup' => $request->kegiatan,
+                'aktif' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        } else {
+            $jenisId = $jenis->id;
+        }
+
+        $request->merge([
+            'kategori_grup' => $request->kegiatan,
+            'jenis_perizinan_id' => $jenisId
+        ]);
+        PerizinanTerbit::findOrFail($id)->update($request->except('nama_perizinan'));
 
         return redirect()->route('perizinan-perkantoran.index')
             ->with('success', 'Data Perizinan Terbit berhasil diperbarui.');
@@ -227,7 +281,12 @@ class PerizinanPerkantoranController extends Controller
             'periode'     => 'nullable|string|max:100',
         ]);
 
-        PerizinanProsesList::create($request->all());
+        PerizinanProsesList::updateOrCreate([
+            'tahun'       => $request->tahun,
+            'nama_proses' => $request->nama_proses,
+            'target'      => $request->target,
+            'periode'     => $request->periode,
+        ], $request->all());
 
         return redirect()->route('perizinan-perkantoran.index')
             ->with('success', 'Data Perizinan Proses berhasil ditambahkan.');
@@ -253,5 +312,79 @@ class PerizinanPerkantoranController extends Controller
         PerizinanProsesList::findOrFail($id)->delete();
         return redirect()->route('perizinan-perkantoran.index')
             ->with('success', 'Data Perizinan Proses berhasil dihapus.');
+    }
+
+    public function import(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|mimes:xlsx,xls'
+        ]);
+
+        set_time_limit(0);
+
+        try {
+            Excel::import(new PerizinanTerbitImport, $request->file('file'));
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['success' => true]);
+            }
+            return redirect()->route('perizinan-perkantoran.index')->with('success', 'Data Perizinan Terbit berhasil diimpor!');
+        } catch (\Exception $e) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['error' => 'Gagal mengimpor data: ' . $e->getMessage()], 500);
+            }
+            return redirect()->route('perizinan-perkantoran.index')->with('error', 'Gagal mengimpor data: ' . $e->getMessage());
+        }
+    }
+
+    public function importProses(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|mimes:xlsx,xls'
+        ]);
+
+        set_time_limit(0);
+
+        try {
+            Excel::import(new PerizinanProsesImport, $request->file('file'));
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['success' => true]);
+            }
+            return redirect()->route('perizinan-perkantoran.index')->with('success', 'Data Perizinan Proses berhasil diimpor!');
+        } catch (\Exception $e) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['error' => 'Gagal mengimpor data: ' . $e->getMessage()], 500);
+            }
+            return redirect()->route('perizinan-perkantoran.index')->with('error', 'Gagal mengimpor data: ' . $e->getMessage());
+        }
+    }
+
+    public function exportExcel()
+    {
+        return Excel::download(new PerizinanTerbitExport, 'Perizinan_Terbit.xlsx');
+    }
+
+    public function exportPdf()
+    {
+        return Excel::download(new PerizinanTerbitExport, 'Perizinan_Terbit.pdf', \Maatwebsite\Excel\Excel::DOMPDF);
+    }
+
+    public function exportExcelProses()
+    {
+        return Excel::download(new PerizinanProsesExport, 'Perizinan_Proses.xlsx');
+    }
+
+    public function exportPdfProses()
+    {
+        return Excel::download(new PerizinanProsesExport, 'Perizinan_Proses.pdf', \Maatwebsite\Excel\Excel::DOMPDF);
+    }
+
+    public function downloadTemplate()
+    {
+        return Excel::download(new PerizinanTerbitExport(true), 'Template_Perizinan_Terbit.xlsx');
+    }
+
+    public function downloadTemplateProses()
+    {
+        return Excel::download(new PerizinanProsesExport(true), 'Template_Perizinan_Proses.xlsx');
     }
 }

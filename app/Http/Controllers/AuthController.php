@@ -12,7 +12,7 @@ class AuthController extends Controller
      */
     public function loginPost(Request $request)
     {
-        // 1. Validasi input dari user
+        // 1. Validasi input dari user (Keduanya tetap WAJIB)
         $credentials = $request->validate([
             'email' => ['required', 'email'],
             'password' => ['required'],
@@ -21,7 +21,7 @@ class AuthController extends Controller
         // Tangkap nilai checkbox remember me (menghasilkan true/false)
         $remember = $request->boolean('remember');
 
-        // 2. Coba melakukan autentikasi dengan param $remember
+        // 2. Coba melakukan autentikasi ke database
         if (Auth::attempt($credentials, $remember)) {
             $request->session()->regenerate();
             return redirect()->intended('dashboard'); 

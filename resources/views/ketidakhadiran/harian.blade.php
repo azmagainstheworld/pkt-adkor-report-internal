@@ -5,7 +5,6 @@
 
     <x-success-modal />
 
-    <!-- Header -->
     <div class="flex justify-between items-end mb-6">
         <div>
             <nav class="text-sm text-gray-500 mb-1 flex items-center gap-2">
@@ -30,7 +29,6 @@
         </a>
     </div>
 
-    <!-- Filter: pilih karyawan + tahun + bulan -->
     <x-card class="!rounded-xl p-5 mb-6 shadow-sm border border-gray-100">
         <form action="{{ route('ketidakhadiran.harian') }}" method="GET" class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
             <div class="md:col-span-2">
@@ -61,31 +59,60 @@
                 </select>
             </div>
             <div class="md:col-span-4">
-                <x-button variant="primary" type="submit" class="!rounded-xl">Tampilkan</x-button>
+                <x-button variant="primary" type="submit" class="!rounded-xl border-none">Tampilkan</x-button>
             </div>
         </form>
     </x-card>
 
-    <!-- Hasil -->
     @if (!$karyawanTerpilih)
         <div class="p-6 bg-blue-50 border border-blue-100 rounded-xl text-sm text-blue-900 text-center">
             Pilih karyawan, tahun, dan bulan di atas untuk melihat rincian catatan harian.
         </div>
     @else
-        <x-card class="!rounded-xl overflow-hidden !p-0 shadow-sm border border-gray-100">
+        <x-card class="!rounded-xl overflow-visible !p-0 shadow-sm border border-gray-100">
             <div class="p-5 border-b border-gray-100 bg-white">
                 <h3 class="font-bold text-gray-900 text-lg">{{ $karyawanTerpilih->nama }}</h3>
                 <p class="text-xs text-gray-400">NPK {{ $karyawanTerpilih->npk }} &bull; {{ $bulanNama }} {{ $tahun }} &bull; {{ $riwayat->count() }} catatan harian</p>
             </div>
 
-            <x-table :headers="['Tanggal', 'Jenis', 'Keterangan', 'Aksi']">
+            <!-- HEADER TABEL DINAMIS -->
+            @php
+                $tableHeaders = ['Tanggal', 'Jenis', 'Keterangan'];
+                if(isset($kolomDinamis)) {
+                    foreach($kolomDinamis as $k) {
+                        $tableHeaders[] = $k->nama_kolom;
+                    }
+                }
+                $tableHeaders[] = 'Aksi';
+            @endphp
+
+            <x-table :headers="$tableHeaders">
                 @forelse ($riwayat as $catatan)
+                    @php
+                        // Terjemahkan string JSON kembali ke Array
+                        $tambahan = is_string($catatan->data_tambahan) ? json_decode($catatan->data_tambahan, true) : ($catatan->data_tambahan ?? []);
+                    @endphp
+
                     <tr class="hover:bg-gray-50 transition-colors">
                         <td class="px-6 py-4 text-gray-700 font-medium">{{ $catatan->tanggal->translatedFormat('l, d F Y') }}</td>
                         <td class="px-6 py-4">
                             <span class="px-2.5 py-1 rounded-md text-xs font-medium bg-blue-50 text-blue-600">{{ ucfirst($catatan->jenis) }}</span>
                         </td>
                         <td class="px-6 py-4 text-gray-500">{{ $catatan->keterangan ?? '-' }}</td>
+                        
+                        <!-- ISI KOLOM DINAMIS -->
+                        @if(isset($kolomDinamis))
+                            @foreach($kolomDinamis as $kolom)
+                                <td class="px-6 py-4 text-gray-600">
+                                    @if($kolom->tipe_input === 'currency' && isset($tambahan[$kolom->nama_kolom]))
+                                        Rp {{ $tambahan[$kolom->nama_kolom] }}
+                                    @else
+                                        {{ $tambahan[$kolom->nama_kolom] ?? '-' }}
+                                    @endif
+                                </td>
+                            @endforeach
+                        @endif
+
                         <td class="px-6 py-4">
                             <button type="button"
                                 onclick="openDeleteModal('modalHapusHarian', '{{ route('ketidakhadiran.destroyHarian', $catatan->id) }}')"
@@ -95,13 +122,12 @@
                         </td>
                     </tr>
                 @empty
-                    <tr><td colspan="4" class="px-6 py-4 text-center text-gray-500">Belum ada catatan harian untuk karyawan & bulan ini.</td></tr>
+                    <tr><td colspan="{{ count($tableHeaders) }}" class="px-6 py-4 text-center text-gray-500">Belum ada catatan harian untuk karyawan & bulan ini.</td></tr>
                 @endforelse
             </x-table>
         </x-card>
     @endif
 
-    <!-- Modal Konfirmasi Hapus Harian (pola sama seperti modul Karyawan & rekap Bulanan) -->
     <x-delete-modal id="modalHapusHarian" title="Hapus Catatan Harian" message="Apakah Anda yakin ingin menghapus catatan ini? Angka rekap bulanan terkait akan otomatis dikurangi 1." />
 
 </main>
