@@ -30,9 +30,15 @@ class MasalahKendalaController extends Controller
 
         // Sorting agar urut dari bulan terbaru
         $monthsOrder = ['Januari'=>1,'Februari'=>2,'Maret'=>3,'April'=>4,'Mei'=>5,'Juni'=>6,'Juli'=>7,'Agustus'=>8,'September'=>9,'Oktober'=>10,'November'=>11,'Desember'=>12];
-        $dataMasalah = $query->get()->sortByDesc(function($item) use ($monthsOrder) {
+        $allData = $query->get()->sortByDesc(function($item) use ($monthsOrder) {
             return sprintf('%04d%02d', $item->tahun, $monthsOrder[$item->bulan] ?? 0);
         });
+
+        $perPage = 10;
+        $currentPage = \Illuminate\Pagination\LengthAwarePaginator::resolveCurrentPage();
+        $currentItems = $allData->slice(($currentPage - 1) * $perPage, $perPage)->all();
+        $dataMasalah = new \Illuminate\Pagination\LengthAwarePaginator($currentItems, count($allData), $perPage, $currentPage, ['path' => \Illuminate\Pagination\LengthAwarePaginator::resolveCurrentPath()]);
+        $dataMasalah->appends(request()->all());
 
         // Ambil konfigurasi Atur Kolom khusus modul masalah_kendala
         $kolomDinamis = DB::table('dynamic_columns')->where('modul', 'masalah_kendala')->get();
@@ -45,7 +51,7 @@ class MasalahKendalaController extends Controller
         $request->validate([
             'tahun' => 'required|integer',
             'bulan' => 'required|string',
-            'masalah' => 'required|string',
+            'masalah_kendala' => 'required|string',
             'solusi' => 'required|string',
         ]);
 
@@ -61,7 +67,7 @@ class MasalahKendalaController extends Controller
         $request->validate([
             'tahun' => 'required|integer',
             'bulan' => 'required|string',
-            'masalah' => 'required|string',
+            'masalah_kendala' => 'required|string',
             'solusi' => 'required|string',
         ]);
 
@@ -169,3 +175,4 @@ class MasalahKendalaController extends Controller
         return $pdf->download('Data_Masalah_Kendala.pdf');
     }
 }
+

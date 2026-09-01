@@ -327,7 +327,7 @@ class KaryawanController extends Controller
         
         $kolomDinamis = \Illuminate\Support\Facades\DB::table('dynamic_columns')->where('modul', 'karyawan_tabel')->get();
         $kolomProfil = \Illuminate\Support\Facades\DB::table('dynamic_columns')->where('modul', 'karyawan_profil')->get();
-        $kolomKeluarga = \Illuminate\Support\Facades\DB::table('dynamic_columns')->where('modul', 'karyawan_keluarga')->get();
+        $kolomKeluarga = \Illuminate\Support\Facades\DB::table('dynamic_columns')->where('modul', 'keluarga_karyawan')->get();
         
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.karyawan', compact('karyawan', 'type', 'kolomDinamis', 'kolomProfil', 'kolomKeluarga'))
                 ->setPaper('a4', 'landscape');

@@ -39,7 +39,7 @@ class MasalahKendalaExport implements FromCollection, WithHeadings, WithMapping,
 
     public function headings(): array
     {
-        $headers = ['Tahun', 'Bulan', 'Masalah Kendala', 'Solusi'];
+        $headers = ['Tahun', 'Bulan', 'Masalah/Kendala', 'Solusi'];
         foreach ($this->kolomDinamis as $kolom) {
             $headers[] = $kolom->nama_kolom;
         }
@@ -53,7 +53,7 @@ class MasalahKendalaExport implements FromCollection, WithHeadings, WithMapping,
         $mapped = [
             $row->tahun,
             $row->bulan,
-            $row->masalah,
+            $row->masalah_kendala,
             $row->solusi,
         ];
 

@@ -16,7 +16,7 @@
                     @endphp
 
                     <th class="px-6 py-4 text-xs font-bold text-blue-700 border-b border-gray-100 text-center {{ $widthClass }}">
-                        {{ $header }}
+                        {!! $header !!}
                     </th>
                 @endforeach
             </tr>

@@ -48,10 +48,9 @@ class MasalahKendalaImport implements ToCollection, WithHeadingRow, WithChunkRea
     {
         foreach ($rows as $row) {
             // Lewati jika Masalah kosong
-            if (!isset($row['masalah_kendala']) || trim($row['masalah_kendala']) === '') {
+            if (!isset($row['masalahkendala']) || trim($row['masalahkendala']) === '') {
                 continue;
-
-    }
+            }
 
             // Tangkap data tambahan berdasarkan kolom dinamis
             $dataTambahan = [];
@@ -67,9 +66,9 @@ class MasalahKendalaImport implements ToCollection, WithHeadingRow, WithChunkRea
 
             MasalahKendala::updateOrCreate(
                 [
-                    'tahun'   => $row['tahun'] ?? now()->year,
-                    'bulan'   => $row['bulan'] ?? 'Januari',
-                    'masalah' => $row['masalah_kendala'],
+                    'tahun'           => $row['tahun'] ?? now()->year,
+                    'bulan'           => $row['bulan'] ?? 'Januari',
+                    'masalah_kendala' => $row['masalahkendala'],
                 ],
                 [
                     'solusi'        => $row['solusi'] ?? '-',

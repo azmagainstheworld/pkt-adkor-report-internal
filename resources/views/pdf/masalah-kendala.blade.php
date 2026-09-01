@@ -36,7 +36,7 @@
                 <tr>
                     <td class="text-center">{{ $no++ }}</td>
                     <td class="text-center">{{ $item->bulan }}<br>{{ $item->tahun }}</td>
-                    <td>{!! nl2br(e($item->masalah)) !!}</td>
+                    <td>{!! nl2br(e($item->masalah_kendala)) !!}</td>
                     <td>{!! nl2br(e($item->solusi)) !!}</td>
                     @foreach($kolomDinamis as $kolom)
                         <td>{{ $tambahan[$kolom->nama_kolom] ?? '-' }}</td>

@@ -20,6 +20,8 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         ini_set('memory_limit', '-1');
-        ini_set('max_execution_time', '300');
+        if (!app()->runningInConsole()) {
+            ini_set('max_execution_time', '300');
+        }
     }
 }

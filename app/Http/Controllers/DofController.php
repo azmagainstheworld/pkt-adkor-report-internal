@@ -247,16 +247,15 @@ class DofController extends Controller
     {
         $tahun = $request->query('tahun', 'semua');
         $bulan = $request->query('bulan', 'semua');
-        // Let's use the old format or new format for Export Excel? 
-        // We can just use DofExport(1) and DofExport(2) but Excel only supports one export class per file unless we use MultipleSheets.
-        // I will recreate DofDataExport that exports the raw data like PaTeknikExport did.
-        return Excel::download(new \App\Exports\DofDataExport($tahun, $bulan), 'Data_DOF_'.$tahun.'_'.$bulan.'.xlsx');
+        $kelompok_tabel = $request->query('kelompok_tabel', 1);
+        return Excel::download(new \App\Exports\DofDataExport($tahun, $bulan, $kelompok_tabel), 'Data_DOF_Tabel_'.$kelompok_tabel.'_'.$tahun.'_'.$bulan.'.xlsx');
     }
 
     public function exportPdf(Request $request)
     {
         $filterTahun = $request->query('tahun', 'semua');
         $filterBulan = $request->query('bulan', 'semua');
+        $kelompok_tabel = $request->query('kelompok_tabel', 1);
 
         $masterTabel1 = DofMaster::where('kelompok_tabel', 1)->orderBy('id', 'asc')->get();
         $masterTabel2 = DofMaster::where('kelompok_tabel', 2)->orderBy('id', 'asc')->get();
@@ -307,7 +306,7 @@ class DofController extends Controller
         $kolomTabel2 = DB::table('dynamic_columns')->where('modul', 'dof_2')->get();
 
         $pdf = Pdf::loadView('pdf.dof', compact(
-            'filterTahun', 'filterBulan', 'masterTabel1', 'masterTabel2', 
+            'kelompok_tabel', 'filterTahun', 'filterBulan', 'masterTabel1', 'masterTabel2', 
             'dataTable1', 'dataTable2', 'totalsTabel1', 'totalsTabel2',
             'kolomTabel1', 'kolomTabel2'
         ))->setPaper('a4', 'landscape');
@@ -335,3 +334,6 @@ class DofController extends Controller
         }
     }
 }
+
+
+

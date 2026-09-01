@@ -24,6 +24,7 @@
         <p>Filter Periode: Tahun {{ $filterTahun == 'semua' ? 'Semua Tahun' : $filterTahun }} | Bulan {{ $filterBulan == 'semua' ? 'Semua Bulan' : $filterBulan }}</p>
     </div>
 
+    @if(!isset($kelompok_tabel) || $kelompok_tabel == 1)
     <!-- TABEL 1 -->
     <div class="section-title">1. Laporan Admin DOF (Tabel 1)</div>
     <table>
@@ -64,6 +65,9 @@
         </tbody>
     </table>
 
+    @endif
+
+    @if(!isset($kelompok_tabel) || $kelompok_tabel == 2)
     <!-- TABEL 2 -->
     <div class="section-title">2. Laporan Helpdesk DOF (Tabel 2)</div>
     <table>
@@ -104,6 +108,9 @@
         </tbody>
     </table>
 
+    @endif
+
     <div class="footer">Dicetak pada: {{ date('d-m-Y H:i:s') }}</div>
 </body>
 </html>
+

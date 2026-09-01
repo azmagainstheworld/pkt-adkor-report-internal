@@ -133,7 +133,7 @@
                         <td class="px-4 py-3 text-gray-700 font-medium text-center align-top">{{ $index + 1 }}</td>
                         <td class="px-4 py-3 text-gray-700 font-medium text-center align-top">{{ $row->tahun }}</td>
                         <td class="px-4 py-3 text-gray-900 font-medium text-center align-top">{{ $row->bulan }}</td>
-                        <td class="px-4 py-3 text-gray-600 max-w-sm text-left align-top whitespace-pre-line">{{ $row->masalah }}</td>
+                        <td class="px-4 py-3 text-gray-600 max-w-sm text-left align-top whitespace-pre-line">{{ $row->masalah_kendala }}</td>
                         <td class="px-4 py-3 text-gray-600 max-w-md text-left align-top whitespace-pre-line">{{ $row->solusi }}</td>
                         
                         <!-- ISI KOLOM DINAMIS -->
@@ -164,6 +164,9 @@
                     <tr><td colspan="10" class="px-6 py-10 text-center text-gray-500 text-sm">Belum ada data masalah / kendala.</td></tr>
                 @endforelse
             </x-table>
+            <div class="mt-4 px-4 pb-4">
+                {{ $dataMasalah->links() }}
+            </div>
         </div>
     </x-card>
 
@@ -248,7 +251,7 @@
 
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1.5">Masalah / Kendala <span class="text-red-500">*</span></label>
-                <textarea name="masalah" id="add_masalah" rows="3" required placeholder="Jelaskan masalah yang terjadi..." class="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:border-orange-500 outline-none"></textarea>
+                <textarea name="masalah_kendala" id="add_masalah" rows="3" required placeholder="Jelaskan masalah yang terjadi..." class="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:border-orange-500 outline-none"></textarea>
                 <span class="error-msg text-red-500 text-xs mt-1.5 font-medium hidden">Masalah wajib diisi!</span>
             </div>
 
@@ -311,7 +314,7 @@
 
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1.5">Masalah / Kendala <span class="text-red-500">*</span></label>
-                <textarea name="masalah" id="edit_masalah" rows="3" required class="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:border-orange-500 outline-none"></textarea>
+                <textarea name="masalah_kendala" id="edit_masalah" rows="3" required class="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:border-orange-500 outline-none"></textarea>
                 <span class="error-msg text-red-500 text-xs mt-1.5 font-medium hidden">Masalah wajib diisi!</span>
             </div>
 
@@ -451,7 +454,7 @@
         document.getElementById('picker_edit').value = pickerVal;
         syncPeriode(pickerVal, 'edit_tahun', 'edit_bulan');
 
-        document.getElementById('edit_masalah').value = row.masalah;
+        document.getElementById('edit_masalah').value = row.masalah_kendala;
         document.getElementById('edit_solusi').value = row.solusi;
         
         // Auto-fill Data Dinamis Edit
