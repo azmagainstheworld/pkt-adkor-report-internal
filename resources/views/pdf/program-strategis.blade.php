@@ -76,7 +76,7 @@
                                 -
                             @endif
                         </td>
-                        <td>{{ $row->realisasi ?? '0' }}%</td>
+                        <td>{{ (!empty($row->realisasi) && $row->realisasi !== '-' && !str_ends_with(trim($row->realisasi), '%')) ? trim($row->realisasi) . '%' : ($row->realisasi ?? '-') }}</td>
                         <td class="text-left">{{ $row->progress_saat_ini ?? '-' }}</td>
                         <td class="text-left">{{ $row->kendala ?? '-' }}</td>
                         <td class="text-left">{{ $row->keterangan_tambahan ?? '-' }}</td>

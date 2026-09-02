@@ -1,6 +1,10 @@
 @extends('layouts.app')
 
 @section('content')
+<style>
+/* Kolom pertama (checkbox) disembunyikan jika class hide-bulk aktif */
+.hide-bulk th:first-child, .hide-bulk td:first-child { display: none !important; }
+</style>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <main class="flex-1 overflow-y-auto p-8 relative bg-[#F8F9FA]">
@@ -99,7 +103,7 @@
             </div>
         </div>
 
-        <div class="overflow-x-auto">
+            <div class="overflow-x-auto">
             <x-table :headers="['Tahun', 'Bulan', 'Tujuan Eksternal', 'Tujuan Internal', 'Total Laporan']">
                 @forelse($dataRingkasan as $index => $row)
                     <tr class="ringkasan-row hover:bg-gray-50 transition-colors text-xs whitespace-nowrap {{ $index % 2 == 1 ? 'bg-gray-50/60' : '' }}">
@@ -115,8 +119,7 @@
                     </tr>
                 @endforelse
             </x-table>
-        </div>
-        
+            </div>
         <div class="p-4 border-t border-gray-100 flex items-center justify-between text-sm text-gray-500 bg-white">
             <span id="ringkasanPageInfo">Menampilkan data</span>
             <div class="flex items-center gap-1.5">
@@ -165,6 +168,7 @@
                                 Export PDF
                             </a>
                         </div>
+                        @if(auth()->user()->isAdmin())
                         <div class="px-4 py-2 bg-gray-50 border-y border-gray-100 mt-1">
                             <p class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Tampilan Teks</p>
                         </div>
@@ -174,9 +178,14 @@
                                 Atur Kolom Tabel
                             </button>
                         </div>
+                        @endif
                     </div>
                 </div>
 
+                                <button type="button" id="btnModeBulk" onclick="toggleBulkMode()" class="inline-flex items-center justify-center gap-2 px-3 py-1.5 text-xs font-medium bg-red-50 text-red-600 border border-red-200 rounded-xl hover:bg-red-100 transition-colors shadow-sm outline-none focus:ring-2 focus:ring-red-300">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                    Hapus semua
+                </button>
                 <x-button variant="primary" onclick="openModalTambah()" class="!py-2 text-xs !bg-[#F7941E] hover:!bg-orange-600 border-none !rounded-xl shadow-sm">
                     <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
                     Tambah Laporan
@@ -184,10 +193,23 @@
             </div>
         </div>
 
-        <div class="overflow-x-auto">
+                <form id="bulkDeleteForm" action="{{ route('pelaporan.destroyBulk') }}" method="POST" >
+            <input type="hidden" id="deleteAllPages" name="delete_all_pages" value="0">
+            @csrf
+            @method('DELETE')
+            
+            <div id="btnGroupBulk" class="hidden flex justify-between items-center px-4 py-2 bg-red-50 border-b border-red-100">
+                <span class="text-xs text-red-600 font-semibold">Data terpilih untuk dihapus</span>
+                <div class="flex gap-2">
+                    <button type="button" onclick="cancelAll()" class="px-3 py-1.5 bg-white border border-gray-300 text-gray-700 rounded-lg text-xs font-medium hover:bg-gray-50">Batal</button>
+                    <button type="submit" class="px-3 py-1.5 bg-red-600 text-white rounded-lg text-xs font-medium hover:bg-red-700">Hapus Terpilih</button>
+                </div>
+            </div>
+
+            <div id="tableContainerBulk" class="hide-bulk overflow-x-auto">
             <!-- HEADER TABEL DINAMIS -->
             @php
-                $tableHeaders = ['Tujuan Laporan', 'Nomor Laporan', 'Laporan', 'Tanggal', 'Jenis'];
+                $tableHeaders = ['<input type="checkbox" id="selectAllBulk" onclick="toggleSelectAll()">', 'Tujuan Laporan', 'Nomor Laporan', 'Laporan', 'Tanggal', 'Jenis'];
                 if(isset($kolomDinamis)) {
                     foreach($kolomDinamis as $k) {
                         $tableHeaders[] = $k->nama_kolom;
@@ -203,6 +225,7 @@
                     @endphp
 
                     <tr class="pelaporan-row hover:bg-gray-50 transition-colors text-xs whitespace-nowrap {{ $index % 2 == 1 ? 'bg-gray-50/60' : '' }}">
+                        <td class="px-3 py-2 text-center align-middle"><input type="checkbox" name="ids[]" class="cb-bulk" value="{{ $item->id }}" onclick="toggleCheckbox()"></td>
                         <td class="px-4 py-3 text-center">
                             @if($item->tujuan == 'Eksternal')
                                 <span class="bg-orange-100 text-orange-700 px-2.5 py-1 rounded-md font-medium text-[10px]">Eksternal</span>
@@ -241,11 +264,12 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="10" class="px-6 py-10 text-center text-gray-500 text-sm">Tidak ada rincian pelaporan.</td>
+                        <td colspan="11" class="px-6 py-10 text-center text-gray-500 text-sm">Tidak ada rincian pelaporan.</td>
                     </tr>
                 @endforelse
             </x-table>
         </div>
+        </form>
         
         <div class="p-4 border-t border-gray-100 flex items-center justify-between text-sm text-gray-500 bg-white">
             <div>
@@ -272,7 +296,8 @@
     />
 
     <!-- ================= MODAL ATUR KOLOM DINAMIS ================= -->
-    <x-modal id="modalAturKolom" title="Pengaturan Kolom Tambahan" description="Kelola kolom ekstra khusus untuk formulir Pelaporan.">
+    @if(auth()->user()->isAdmin())
+<x-modal id="modalAturKolom" title="Pengaturan Kolom Tambahan" description="Kelola kolom ekstra khusus untuk formulir Pelaporan.">
         <div class="mb-6 bg-gray-50 p-4 rounded-xl border border-gray-100">
             <h4 class="text-sm font-bold text-gray-800 mb-3">Kolom Terdaftar Saat Ini:</h4>
             @if(isset($kolomDinamis) && $kolomDinamis->count() > 0)
@@ -303,7 +328,7 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                     <label class="block text-xs font-medium text-gray-700 mb-1">Nama Kolom (Cth: Harga Sewa)</label>
-                    <input type="text" name="nama_kolom" required class="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm outline-none focus:border-blue-500">
+                    <input type="text" name="nama_kolom" required class="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm outline-none focus:border-blue-500"> <span class="text-[10px] text-red-500 font-medium mt-1 hidden error-msg">Wajib diisi!</span>
                 </div>
                 <div>
                     <label class="block text-xs font-medium text-gray-700 mb-1">Tipe Input</label>
@@ -313,7 +338,7 @@
                         <option value="currency">Harga / Uang (Titik Otomatis)</option>
                         <option value="date">Tanggal</option>
                         <option value="dropdown">Dropdown (Pilihan)</option>
-                    </select>
+                    </select> <span class="text-[10px] text-red-500 font-medium mt-1 hidden error-msg">Wajib diisi!</span>
                 </div>
                 <div class="md:col-span-2 hidden" id="dropdownConfigArea">
                     <label class="block text-xs font-medium text-gray-700 mb-1">Pilihan Dropdown (Pisahkan dengan koma)</label>
@@ -327,6 +352,7 @@
             </div>
         </form>
     </x-modal>
+@endif
 
     <!-- ================= MODAL TAMBAH LAPORAN ================= -->
     <x-modal id="modalTambahLaporan" title="Formulir Tambah Laporan" description="Masukkan detail pelaporan yang baru.">
@@ -340,7 +366,7 @@
                     <option value="" disabled selected>Pilih Tujuan...</option>
                     <option value="Eksternal">Eksternal</option>
                     <option value="Internal">Internal</option>
-                </select>
+                </select> <span class="text-[10px] text-red-500 font-medium mt-1 hidden error-msg">Wajib diisi!</span>
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1.5">Jenis Laporan <span class="text-red-500">*</span></label>
@@ -350,19 +376,19 @@
                     <option value="Triwulan">Triwulan</option>
                     <option value="Semester">Semester</option>
                     <option value="Tahunan">Tahunan</option>
-                </select>
+                </select> <span class="text-[10px] text-red-500 font-medium mt-1 hidden error-msg">Wajib diisi!</span>
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1.5">Tanggal <span class="text-red-500">*</span></label>
-                <input type="date" name="tanggal" required class="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:border-orange-500 outline-none">
+                <input type="date" name="tanggal" required class="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:border-orange-500 outline-none"> <span class="text-[10px] text-red-500 font-medium mt-1 hidden error-msg">Wajib diisi!</span>
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1.5">Nomor <span class="text-red-500">*</span></label>
-                <input type="text" name="nomor" required placeholder="Cth: LAP/01" class="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:border-orange-500 outline-none">
+                <input type="text" name="nomor" required placeholder="Cth: LAP/01" class="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:border-orange-500 outline-none"> <span class="text-[10px] text-red-500 font-medium mt-1 hidden error-msg">Wajib diisi!</span>
             </div>
             <div class="md:col-span-2">
                 <label class="block text-sm font-medium text-gray-700 mb-1.5">Laporan <span class="text-red-500">*</span></label>
-                <textarea name="laporan" rows="2" required class="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:border-orange-500 outline-none"></textarea>
+                <textarea name="laporan" rows="2" required class="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:border-orange-500 outline-none"></textarea> <span class="text-[10px] text-red-500 font-medium mt-1 hidden error-msg">Wajib diisi!</span>
             </div>
 
             <!-- AREA KOLOM DINAMIS (TAMBAH) -->
@@ -413,25 +439,25 @@
                 <label class="block text-sm font-medium text-gray-700 mb-1.5">Tujuan Laporan</label>
                 <select name="tujuan" id="edit_tujuan" required class="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm outline-none">
                     <option value="Eksternal">Eksternal</option><option value="Internal">Internal</option>
-                </select>
+                </select> <span class="text-[10px] text-red-500 font-medium mt-1 hidden error-msg">Wajib diisi!</span>
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1.5">Jenis</label>
                 <select name="jenis" id="edit_jenis" required class="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm outline-none">
                     <option value="Bulanan">Bulanan</option><option value="Triwulan">Triwulan</option><option value="Semester">Semester</option><option value="Tahunan">Tahunan</option>
-                </select>
+                </select> <span class="text-[10px] text-red-500 font-medium mt-1 hidden error-msg">Wajib diisi!</span>
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1.5">Tanggal</label>
-                <input type="date" name="tanggal" id="edit_tanggal" required class="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm outline-none">
+                <input type="date" name="tanggal" id="edit_tanggal" required class="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm outline-none"> <span class="text-[10px] text-red-500 font-medium mt-1 hidden error-msg">Wajib diisi!</span>
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1.5">Nomor</label>
-                <input type="text" name="nomor" id="edit_nomor" required class="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm outline-none">
+                <input type="text" name="nomor" id="edit_nomor" required class="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm outline-none"> <span class="text-[10px] text-red-500 font-medium mt-1 hidden error-msg">Wajib diisi!</span>
             </div>
             <div class="md:col-span-2">
                 <label class="block text-sm font-medium text-gray-700 mb-1.5">Laporan</label>
-                <textarea name="laporan" id="edit_laporan" rows="2" required class="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm outline-none"></textarea>
+                <textarea name="laporan" id="edit_laporan" rows="2" required class="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm outline-none"></textarea> <span class="text-[10px] text-red-500 font-medium mt-1 hidden error-msg">Wajib diisi!</span>
             </div>
 
             <!-- AREA KOLOM DINAMIS (EDIT) -->
@@ -472,7 +498,53 @@
     </x-modal>
 </main>
 
-<script>
+    <script>
+        function toggleBulkMode() {
+            let container = document.getElementById("tableContainerBulk");
+            let btn = document.getElementById("btnModeBulk");
+            if (container.classList.contains("hide-bulk")) {
+                container.classList.remove("hide-bulk");
+                if(btn) { btn.classList.replace("bg-red-50", "bg-red-600"); btn.classList.replace("text-red-600", "text-white"); }
+            } else {
+                container.classList.add("hide-bulk");
+                cancelAll();
+                if(btn) { btn.classList.replace("bg-red-600", "bg-red-50"); btn.classList.replace("text-white", "text-red-600"); }
+            }
+        }
+        function toggleSelectAll() {
+            let selectAll = document.getElementById("selectAllBulk");
+            let checkboxes = document.querySelectorAll(".cb-bulk");
+            checkboxes.forEach(cb => cb.checked = selectAll.checked);
+            
+            let deleteAllInput = document.getElementById("deleteAllPages");
+            if (deleteAllInput) {
+                deleteAllInput.value = selectAll.checked ? "1" : "0";
+            }
+            
+            toggleDeleteBtn();
+        }
+        function toggleCheckbox() {
+            let selectAll = document.getElementById("selectAllBulk");
+            let checkboxes = document.querySelectorAll(".cb-bulk");
+            selectAll.checked = Array.from(checkboxes).every(cb => cb.checked);
+            toggleDeleteBtn();
+        }
+        function toggleDeleteBtn() {
+            let group = document.getElementById("btnGroupBulk");
+            if (group) {
+                let checked = document.querySelectorAll(".cb-bulk:checked").length > 0;
+                if (checked) { group.classList.remove("hidden"); } 
+                else { group.classList.add("hidden"); }
+            }
+        }
+        function cancelAll() {
+            let selectAll = document.getElementById("selectAllBulk");
+            if (selectAll) selectAll.checked = false;
+            let checkboxes = document.querySelectorAll(".cb-bulk");
+            checkboxes.forEach(cb => cb.checked = false);
+            toggleDeleteBtn();
+        }
+
     function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
     function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
 
@@ -737,7 +809,7 @@
         
         // Trigger highlight if there is a search query from server
         @if(request('search'))
-            pelaporanSearch("{{ request('search') }}");
+            pelaporanSearch(@json(request('search')));
         @endif
         const canvas = document.getElementById('pelaporanChart');
         if (canvas) {

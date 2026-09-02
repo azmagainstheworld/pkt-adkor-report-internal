@@ -174,7 +174,7 @@ class KaryawanController extends Controller
             \Maatwebsite\Excel\Facades\Excel::import(new \App\Imports\KaryawanImport, $request->file('file'));
             
             if ($request->ajax() || $request->wantsJson()) {
-                return response()->json(['success' => true]);
+                return redirect()->back()->with('success', 'Berhasil menghapus data secara massal.');
             }
             return redirect()->back()->with('success', 'Data Karyawan berhasil di-import!');
         } catch (\Exception $e) {
@@ -211,7 +211,7 @@ class KaryawanController extends Controller
                 if ($warningMsg) {
                     return response()->json(['success' => true, 'warning' => $warningMsg]);
                 }
-                return response()->json(['success' => true]);
+                return redirect()->back()->with('success', 'Berhasil menghapus data secara massal.');
             }
             
             if ($warningMsg) {
@@ -333,5 +333,15 @@ class KaryawanController extends Controller
                 ->setPaper('a4', 'landscape');
                 
         return $pdf->download('Data_Karyawan_' . date('Ymd_His') . '.pdf');
+    }
+
+    public function destroyBulk(\Illuminate\Http\Request $request)
+    {
+        $ids = $request->ids;
+        if ($ids && is_array($ids)) {
+            \App\Models\Karyawan::whereIn('id', $ids)->delete();
+            return redirect()->back()->with('success', 'Berhasil menghapus data secara massal.');
+        }
+        return redirect()->back()->with('error_modal', 'Tidak ada data yang dipilih.');
     }
 }

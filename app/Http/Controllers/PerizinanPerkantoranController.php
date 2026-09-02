@@ -66,11 +66,11 @@ class PerizinanPerkantoranController extends Controller
             ->selectRaw('
                 YEAR(perizinan_terbit.tanggal_sejak) as tahun,
                 MONTH(perizinan_terbit.tanggal_sejak) as bulan_num,
-                SUM(CASE WHEN perizinan_terbit.kegiatan = "Produk" THEN 1 ELSE 0 END) as produk,
-                SUM(CASE WHEN perizinan_terbit.kegiatan = "Aset" THEN 1 ELSE 0 END) as aset,
-                SUM(CASE WHEN perizinan_terbit.kegiatan = "Proyek" THEN 1 ELSE 0 END) as proyek,
-                SUM(CASE WHEN perizinan_terbit.kegiatan = "Peralatan Pabrik" THEN 1 ELSE 0 END) as peralatan_pabrik,
-                SUM(CASE WHEN perizinan_terbit.kegiatan = "Adm & Lainnya" THEN 1 ELSE 0 END) as adm
+                SUM(CASE WHEN perizinan_terbit.kegiatan = \'Produk\' THEN 1 ELSE 0 END) as produk,
+                SUM(CASE WHEN perizinan_terbit.kegiatan = \'Aset\' THEN 1 ELSE 0 END) as aset,
+                SUM(CASE WHEN perizinan_terbit.kegiatan = \'Proyek\' THEN 1 ELSE 0 END) as proyek,
+                SUM(CASE WHEN perizinan_terbit.kegiatan = \'Peralatan Pabrik\' THEN 1 ELSE 0 END) as peralatan_pabrik,
+                SUM(CASE WHEN perizinan_terbit.kegiatan = \'Adm & Lainnya\' THEN 1 ELSE 0 END) as adm
             ');
 
         if ($filterTahun != 'semua') {
@@ -265,6 +265,32 @@ class PerizinanPerkantoranController extends Controller
             ->with('success', 'Data Perizinan Terbit berhasil diperbarui.');
     }
 
+        public function destroyBulkTerbit(\Illuminate\Http\Request $request)
+    {
+        $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'exists:perizinan_terbit,id',
+        ]);
+
+        if ($request->delete_all_pages == '1') {
+            $query = \App\Models\PerizinanTerbit::query();
+            if ($request->filter_tahun && $request->filter_tahun != 'semua') {
+                $query->whereYear('tanggal_sejak', $request->filter_tahun);
+            }
+            if ($request->filter_bulan && $request->filter_bulan != 'semua') {
+                $mapBulan = ['Januari'=>1,'Februari'=>2,'Maret'=>3,'April'=>4,'Mei'=>5,'Juni'=>6,'Juli'=>7,'Agustus'=>8,'September'=>9,'Oktober'=>10,'November'=>11,'Desember'=>12];
+                $monthNum = $mapBulan[$request->filter_bulan] ?? null;
+                if ($monthNum) $query->whereMonth('tanggal_sejak', $monthNum);
+            }
+            $count = $query->count();
+            $query->delete();
+            return redirect()->back()->with('success', $count . ' Seluruh Data perizinan terbit yang difilter berhasil dihapus.');
+        } else {
+            \App\Models\PerizinanTerbit::whereIn('id', $request->ids)->delete();
+            return redirect()->back()->with('success', count($request->ids) . ' Data perizinan terbit berhasil dihapus.');
+        }
+    }
+
     public function destroy($id)
     {
         PerizinanTerbit::findOrFail($id)->delete();
@@ -305,6 +331,27 @@ class PerizinanPerkantoranController extends Controller
 
         return redirect()->route('perizinan-perkantoran.index')
             ->with('success', 'Data Perizinan Proses berhasil diperbarui.');
+    }
+
+        public function destroyBulkProses(\Illuminate\Http\Request $request)
+    {
+        $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'exists:perizinan_proses_list,id',
+        ]);
+
+        if ($request->delete_all_pages == '1') {
+            $query = \App\Models\PerizinanProsesList::query();
+            if ($request->filter_tahun && $request->filter_tahun != 'semua') {
+                $query->where('tahun', $request->filter_tahun);
+            }
+            $count = $query->count();
+            $query->delete();
+            return redirect()->back()->with('success', $count . ' Seluruh Data perizinan proses yang difilter berhasil dihapus.');
+        } else {
+            \App\Models\PerizinanProsesList::whereIn('id', $request->ids)->delete();
+            return redirect()->back()->with('success', count($request->ids) . ' Data perizinan proses berhasil dihapus.');
+        }
     }
 
     public function destroyProses($id)

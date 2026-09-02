@@ -16,4 +16,9 @@ class Undangan extends Model {
     protected $casts = [
         'data_tambahan' => 'array',
     ];
+
+    public function details()
+    {
+        return $this->hasMany(UndanganDetail::class, 'undangan_id');
+    }
 }

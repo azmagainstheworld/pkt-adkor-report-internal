@@ -293,7 +293,8 @@
     />
 
     <!-- ================= MODAL ATUR KOLOM (TABEL 1) ================= -->
-    <x-modal id="modalAturKolom1" title="Pengaturan Kolom Tambahan (Tabel 1)" description="Kelola kolom ekstra khusus untuk Tabel 1.">
+    @if(auth()->user()->isAdmin())
+<x-modal id="modalAturKolom1" title="Pengaturan Kolom Tambahan (Tabel 1)" description="Kelola kolom ekstra khusus untuk Tabel 1.">
         <div class="mb-6 bg-gray-50 p-4 rounded-xl border border-gray-100 max-h-48 overflow-y-auto">
             <h4 class="text-sm font-bold text-gray-800 mb-3">Kolom Terdaftar:</h4>
             @if(isset($kolomTabel1) && $kolomTabel1->count() > 0)
@@ -325,9 +326,11 @@
             <div class="flex justify-end gap-3 mt-4"><x-button variant="outline" type="button" onclick="closeModal('modalAturKolom1')">Tutup</x-button><x-button variant="primary" type="submit">Simpan</x-button></div>
         </form>
     </x-modal>
+@endif
 
     <!-- ================= MODAL ATUR KOLOM (TABEL 2) ================= -->
-    <x-modal id="modalAturKolom2" title="Pengaturan Kolom Tambahan (Tabel 2)" description="Kelola kolom ekstra khusus untuk Tabel 2.">
+    @if(auth()->user()->isAdmin())
+<x-modal id="modalAturKolom2" title="Pengaturan Kolom Tambahan (Tabel 2)" description="Kelola kolom ekstra khusus untuk Tabel 2.">
         <div class="mb-6 bg-gray-50 p-4 rounded-xl border border-gray-100 max-h-48 overflow-y-auto">
             <h4 class="text-sm font-bold text-gray-800 mb-3">Kolom Terdaftar:</h4>
             @if(isset($kolomTabel2) && $kolomTabel2->count() > 0)
@@ -359,6 +362,7 @@
             <div class="flex justify-end gap-3 mt-4"><x-button variant="outline" type="button" onclick="closeModal('modalAturKolom2')">Tutup</x-button><x-button variant="primary" type="submit">Simpan</x-button></div>
         </form>
     </x-modal>
+@endif
 
     <!-- ================= MODAL TAMBAH DATA (TABEL 1) ================= -->
     <x-modal id="modalTambah1" title="Tambah Data Dokumen (Tabel 1)" description="Pilih jenis dokumen dan masukkan jumlahnya.">

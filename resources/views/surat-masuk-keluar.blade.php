@@ -85,7 +85,19 @@
             <p class="text-xs text-gray-400">Total surat berstatus <span class="text-green-600 font-medium">"Terkirim"</span> terfilter Tahun: {{ $tahunFilter }}, Bulan: {{ $bulanFilter }}</p>
         </div>
 
-        <div class="overflow-x-auto">
+                <form id="bulkDeleteForm" action="{{ route('surat.destroyBulk') }}" method="POST" onsubmit="return confirm('Hapus data terpilih?')">
+            @csrf
+            @method('DELETE')
+            
+            <div id="btnGroupBulk" class="hidden flex justify-between items-center px-4 py-2 bg-red-50 border-b border-red-100">
+                <span class="text-xs text-red-600 font-semibold">Data terpilih untuk dihapus</span>
+                <div class="flex gap-2">
+                    <button type="button" onclick="cancelAll()" class="px-3 py-1.5 bg-white border border-gray-300 text-gray-700 rounded-lg text-xs font-medium hover:bg-gray-50">Batal</button>
+                    <button type="submit" class="px-3 py-1.5 bg-red-600 text-white rounded-lg text-xs font-medium hover:bg-red-700">Hapus Terpilih</button>
+                </div>
+            </div>
+
+            <div id="tableContainerBulk" class="hide-bulk overflow-x-auto">
             <table class="w-full text-sm text-left text-gray-600">
                 <thead class="text-xs text-gray-700 uppercase bg-gray-50 border-b border-gray-100">
                     <tr>
@@ -117,7 +129,8 @@
                     </tfoot>
                 @endif
             </table>
-        </div>
+            </div>
+        </form>
     </x-card>
 
     <!-- ================= Req 4: ACTION BAR DIPINDAH KE ATAS TABEL 2 ================= -->
@@ -172,15 +185,21 @@
                         <button type="button" onclick="openModal('modalImportExcel'); toggleDropdown('dropdownOpsiSurat')" class="w-full text-left text-gray-700 px-4 py-2.5 text-xs hover:bg-gray-50 flex items-center gap-2.5 font-medium transition-colors">
                             <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg> Impor Data dari Excel
                         </button>
-                        <button type="button" onclick="openModal('modalAturKolom'); toggleDropdown('dropdownOpsiSurat')" class="text-gray-700 w-full text-left px-4 py-2.5 text-xs hover:bg-gray-50 flex items-center gap-2.5 font-medium transition-colors border-t border-gray-50">
+                        @if(auth()->check() && auth()->user()->isAdmin())
+<button type="button" onclick="openModal('modalAturKolom'); toggleDropdown('dropdownOpsiSurat')" class="text-gray-700 w-full text-left px-4 py-2.5 text-xs hover:bg-gray-50 flex items-center gap-2.5 font-medium transition-colors border-t border-gray-50">
                             <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg> Atur Kolom Tambahan
                         </button>
+@endif
                     </div>
                 </div>
             </div>
 
             <!-- Tambah Data Utama -->
             <div>
+                                <button type="button" id="btnModeBulk" onclick="toggleBulkMode()" class="inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium bg-red-50 text-red-600 border border-red-200 rounded-xl hover:bg-red-100 transition-colors shadow-sm outline-none focus:ring-2 focus:ring-red-300 mr-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                    Mode Hapus Massal
+                </button>
                 <button type="button" onclick="openModalTambah()" class="inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-pkt-jingga hover:bg-orange-600 rounded-xl shadow-sm transition-colors border-none outline-none focus:ring-2 focus:ring-orange-300">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
                     Catat Surat Satuan
@@ -199,7 +218,7 @@
 
         @php
             // Definisi Header (Req 5: Kolom File Dihapus)
-            $headers = ['No', 'Tahun', 'Bulan', 'Nomor Surat', 'Tanggal Surat', 'Judul Surat', 'Status', 'Jenis Surat'];
+            $headers = ['<input type="checkbox" id="selectAllBulk" onclick="toggleSelectAll()">', 'No', 'Tahun', 'Bulan', 'Nomor Surat', 'Tanggal Surat', 'Judul Surat', 'Status', 'Jenis Surat'];
             if(isset($kolomDinamis)) { foreach($kolomDinamis as $k) { $headers[] = $k->nama_kolom; } }
             $headers[] = 'Aksi';
         @endphp
@@ -209,7 +228,7 @@
                 <thead class="text-xs text-gray-700 uppercase bg-gray-50 border-b border-gray-100">
                     <tr>
                         @foreach($headers as $header)
-                            <th class="px-6 py-3.5 font-semibold whitespace-nowrap">{{ $header }}</th>
+                            <th class="px-6 py-3.5 font-semibold whitespace-nowrap">{!! $header !!}</th>
                         @endforeach
                     </tr>
                 </thead>
@@ -217,6 +236,7 @@
                     @forelse($tableDetail as $index => $row)
                         @php $tambahan = $row->data_tambahan ?? []; @endphp
                         <tr class="hover:bg-gray-50 transition-colors text-xs">
+                            <td class="px-6 py-4 text-center align-middle"><input type="checkbox" name="ids[]" class="cb-bulk" value="{{ $row->id }}" onclick="toggleCheckbox()"></td>
                             <td class="px-6 py-4 text-gray-500 font-medium">{{ $index + 1 }}</td>
                             <td class="px-6 py-4">{{ $row->tahun }}</td>
                             <td class="px-6 py-4 font-medium text-gray-900">{{ $row->bulan }}</td>
@@ -277,7 +297,8 @@
     <x-delete-modal id="modalHapusSurat" title="Hapus Arsip Surat" message="Apakah Anda yakin ingin menghapus arsip surat satuan ini? Data rekap bulanan akan disesuaikan otomatis." />
     <x-delete-modal id="modalHapusKolom" title="Hapus Kolom Tambahan" message="Kolom ini akan dihilangkan dari tabel dan formulir. Lanjutkan?" />
 
-    <!-- MODAL ATUR KOLOM -->
+    @if(auth()->user()->isAdmin())
+<!-- MODAL ATUR KOLOM -->
     <x-modal id="modalAturKolom" title="Pengaturan Kolom Surat" description="Kelola kolom ekstra khusus untuk pencatatan detail surat satuan.">
         <div class="mb-6 bg-gray-50 p-4 rounded-xl border border-gray-100 max-h-48 overflow-y-auto">
             <h4 class="text-sm font-bold text-gray-800 mb-3">Kolom Terdaftar Saat Ini:</h4>
@@ -326,6 +347,7 @@
             <div class="flex justify-end gap-3 mt-4"><x-button variant="outline" type="button" onclick="closeModal('modalAturKolom')">Tutup</x-button><x-button variant="primary" type="submit" class="!bg-blue-600 hover:!bg-blue-700 border-none">Simpan Kolom</x-button></div>
         </form>
     </x-modal>
+@endif
 
     <!-- MODAL TAMBAH DATA SATUAN -->
     <x-modal id="modalTambah" title="Catat Surat Satuan Baru" description="Lengkapi detail surat. Tahun dan Bulan laporan otomatis diset berdasarkan Periode Laporan.">
@@ -561,6 +583,47 @@
     </x-modal>
 
 </main>
+
+    <script>
+        function toggleBulkMode() {
+            let container = document.getElementById("tableContainerBulk");
+            let btn = document.getElementById("btnModeBulk");
+            if (container.classList.contains("hide-bulk")) {
+                container.classList.remove("hide-bulk");
+                if(btn) { btn.classList.replace("bg-red-50", "bg-red-600"); btn.classList.replace("text-red-600", "text-white"); }
+            } else {
+                container.classList.add("hide-bulk");
+                cancelAll();
+                if(btn) { btn.classList.replace("bg-red-600", "bg-red-50"); btn.classList.replace("text-white", "text-red-600"); }
+            }
+        }
+        function toggleSelectAll() {
+            let selectAll = document.getElementById("selectAllBulk");
+            let checkboxes = document.querySelectorAll(".cb-bulk");
+            checkboxes.forEach(cb => cb.checked = selectAll.checked);
+            toggleDeleteBtn();
+        }
+        function toggleCheckbox() {
+            let selectAll = document.getElementById("selectAllBulk");
+            let checkboxes = document.querySelectorAll(".cb-bulk");
+            selectAll.checked = Array.from(checkboxes).every(cb => cb.checked);
+            toggleDeleteBtn();
+        }
+        function toggleDeleteBtn() {
+            let group = document.getElementById("btnGroupBulk");
+            if (group) {
+                let checked = document.querySelectorAll(".cb-bulk:checked").length > 0;
+                if (checked) { group.classList.remove("hidden"); } 
+                else { group.classList.add("hidden"); }
+            }
+        }
+        function cancelAll() {
+            let selectAll = document.getElementById("selectAllBulk");
+            if (selectAll) selectAll.checked = false;
+            let checkboxes = document.querySelectorAll(".cb-bulk");
+            checkboxes.forEach(cb => cb.checked = false);
+            toggleDeleteBtn();
+        }
 
 <script>
     function openModal(id) { document.getElementById(id).classList.remove('hidden'); }

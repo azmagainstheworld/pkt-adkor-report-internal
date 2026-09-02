@@ -61,7 +61,9 @@
                     <td class="px-6 py-4 text-gray-600 font-mono text-xs">{{ $user->email }}</td>
                     
                     <td class="px-6 py-4">
-                        @if(strtolower($user->role) === 'admin')
+                        @if(strtolower($user->role) === 'super_admin')
+                            <span class="px-2.5 py-1 rounded-md text-xs font-bold bg-yellow-100 text-yellow-800 border border-yellow-300">⭐ Super Admin</span>
+                        @elseif(strtolower($user->role) === 'admin')
                             <span class="px-2.5 py-1 rounded-md text-xs font-bold bg-purple-100 text-purple-700 border border-purple-200">Admin</span>
                         @else
                             <span class="px-2.5 py-1 rounded-md text-xs font-bold bg-blue-100 text-blue-700 border border-blue-200">Karyawan</span>
@@ -99,11 +101,16 @@
                     
                     <td class="px-6 py-4">
                         <div class="flex items-center gap-1">
-                            @if($user->id !== auth()->id())
-                                {{-- Tombol Ubah Password Dihapus --}}
+                            @if($user->isSuperAdmin())
+                                {{-- Super Admin tidak bisa diubah status atau dihapus oleh siapapun --}}
+                                <span class="text-xs text-yellow-600 font-semibold italic flex items-center gap-1">
+                                    <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"></path></svg>
+                                    Terlindungi
+                                </span>
+                            @elseif($user->id !== auth()->id())
                                 <label class="relative inline-flex items-center cursor-pointer mt-1" 
                                        title="{{ $user->is_active ? 'Nonaktifkan Akun' : 'Aktifkan Akun' }}"
-                                       onclick="event.preventDefault(); openToggleModal('{{ route('admin.users.toggle', $user->id) }}', '{{ $user->is_active ? 'Nonaktifkan' : 'Aktifkan' }}', '{{ $user->name }}')">
+                                       onclick="event.preventDefault(); openToggleModal('{{ route('admin.users.toggle', $user->id) }}', '{{ $user->is_active ? 'Nonaktifkan' : 'Aktifkan' }}', '{{ $user->name }}')"> 
                                     <input type="checkbox" class="sr-only peer" {{ $user->is_active ? 'checked' : '' }} readonly>
                                     <div class="w-9 h-5 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-green-600"></div>
                                 </label>

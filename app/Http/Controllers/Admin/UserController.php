@@ -10,6 +10,7 @@ use Illuminate\Validation\Rules\Password;
 
 class UserController extends Controller
 {
+
     public function index(Request $request)
     {
         $search = $request->input('search');
@@ -31,22 +32,24 @@ class UserController extends Controller
         $request->validate([
             'name'     => 'required|string',
             'email'    => 'required|email|unique:users',
-            'role'     => 'required|in:admin,karyawan', // Validasi Role
+            // super_admin hanya bisa dibuat via seeder/artisan, TIDAK lewat form
+            'role'     => 'required|in:admin,karyawan',
             'password' => ['required', 'confirmed', Password::min(8)],
         ], [
             'name.required'      => 'Nama lengkap wajib diisi!',
             'email.required'     => 'Email wajib diisi!',
             'email.unique'       => 'Email ini sudah terdaftar!',
             'role.required'      => 'Role wajib dipilih!',
+            'role.in'            => 'Role tidak valid!',
             'password.required'  => 'Password wajib diisi!',
             'password.confirmed' => 'Konfirmasi password tidak cocok!',
-            'password.min'       => 'Password minimal 8 karakter!'
+            'password.min'       => 'Password minimal 8 karakter!',
         ]);
 
         User::create([
             'name'      => $request->name,
             'email'     => $request->email,
-            'role'      => $request->role, // Simpan Role
+            'role'      => $request->role,
             'password'  => Hash::make($request->password),
             'is_active' => true,
         ]);
@@ -59,6 +62,12 @@ class UserController extends Controller
 
     public function toggleStatus(User $user)
     {
+        // Super Admin tidak bisa dinonaktifkan oleh siapapun
+        if ($user->isSuperAdmin()) {
+            return redirect()->route('admin.users.index')
+                ->with('error_modal', 'Akun Super Admin tidak dapat dinonaktifkan atau diubah statusnya.');
+        }
+
         $user->update(['is_active' => !$user->is_active]);
         $status = $user->is_active ? 'diaktifkan' : 'dinonaktifkan';
         return redirect()->route('admin.users.index')
@@ -67,6 +76,12 @@ class UserController extends Controller
 
     public function destroy(User $user)
     {
+        // Super Admin tidak bisa dihapus oleh siapapun
+        if ($user->isSuperAdmin()) {
+            return redirect()->route('admin.users.index')
+                ->with('error_modal', 'Akun Super Admin tidak dapat dihapus secara permanen.');
+        }
+
         $nama = $user->name;
         $user->delete();
         return redirect()->route('admin.users.index')

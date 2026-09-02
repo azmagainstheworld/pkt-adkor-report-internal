@@ -184,6 +184,18 @@ class ProgramStrategisController extends Controller
         return back()->with('success', 'Data Program Strategis berhasil diperbarui.');
     }
 
+        public function destroyBulk(\Illuminate\Http\Request $request)
+    {
+        $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'exists:program_strategis,id',
+        ]);
+
+        \App\Models\ProgramStrategis::whereIn('id', $request->ids)->delete();
+
+        return redirect()->back()->with('success', count($request->ids) . ' Data program strategis berhasil dihapus.');
+    }
+
     public function destroy($id)
     {
         ProgramStrategis::findOrFail($id)->delete();
@@ -192,6 +204,7 @@ class ProgramStrategisController extends Controller
 
     public function storeKolomDinamis(Request $request)
     {
+        abort_if(!auth()->user()->isAdmin(), 403, 'Akses ditolak.');
         $request->validate([
             'modul'      => 'required|string',
             'nama_kolom' => 'required|string|max:100',
@@ -219,6 +232,7 @@ class ProgramStrategisController extends Controller
 
     public function destroyKolomDinamis($id)
     {
+        abort_if(!auth()->user()->isAdmin(), 403, 'Akses ditolak.');
         DB::table('dynamic_columns')->where('id', $id)->delete();
         return back()->with('success', 'Kolom dinamis berhasil dihapus.');
     }

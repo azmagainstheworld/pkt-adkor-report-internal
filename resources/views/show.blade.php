@@ -165,7 +165,8 @@
     <x-delete-modal id="modalHapusKeluarga" title="Hapus Anggota Keluarga" message="Apakah Anda yakin ingin menghapus data anggota keluarga ini?" />
     <x-delete-modal id="modalHapusKolom" title="Hapus Kolom Tambahan" message="Kolom ini akan dihilangkan dari tabel keluarga. Lanjutkan?" />
 
-    <!-- MODAL ATUR KOLOM KELUARGA -->
+    @if(auth()->user()->isAdmin())
+<!-- MODAL ATUR KOLOM KELUARGA -->
     <x-modal id="modalAturKolomKeluarga" title="Atur Kolom (Keluarga Karyawan)" description="Kelola kolom ekstra khusus untuk tabel keluarga.">
         <div class="mb-6 bg-gray-50 p-4 rounded-xl border border-gray-100">
             <h4 class="text-sm font-bold text-gray-800 mb-3">Kolom Terdaftar:</h4>
@@ -204,6 +205,7 @@
             <div class="flex justify-end gap-3 mt-4"><x-button variant="outline" type="button" onclick="closeModal('modalAturKolomKeluarga')">Tutup</x-button><x-button variant="primary" type="submit">Simpan</x-button></div>
         </form>
     </x-modal>
+@endif
 
     <!-- ================= MODAL TAMBAH KELUARGA ================= -->
     <x-modal id="modalTambahKeluarga" title="Tambah Anggota Keluarga" description="Masukkan data pasangan atau anak dari karyawan ini">
@@ -313,7 +315,7 @@
 
     <!-- JavaScript Pendukung -->
     <script>
-        function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+        function openModal(id) { const el = document.getElementById(id); if(el) el.classList.remove('hidden'); else console.error('Modal not found:', id); }
         function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
         function triggerDeleteKolom(modalAsal, deleteUrl) {
             closeModal(modalAsal);

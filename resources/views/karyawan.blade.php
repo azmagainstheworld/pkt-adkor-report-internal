@@ -1,6 +1,10 @@
 @extends('layouts.app')
 
 @section('content')
+<style>
+/* Kolom pertama (checkbox) disembunyikan jika class hide-bulk aktif */
+.hide-bulk th:first-child, .hide-bulk td:first-child { display: none !important; }
+</style>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
 
@@ -127,6 +131,7 @@
                         <p class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Tampilan Teks</p>
                     </div>
                     <div class="py-1" role="none">
+                        @if(auth()->check() && auth()->user()->isAdmin())
                         <button type="button" onclick="openModal('modalAturKolomTabel'); toggleDropdown('dropdownOpsiSuper')" class="text-gray-700 w-full text-left px-4 py-2.5 text-xs hover:bg-gray-50 flex items-center gap-2.5 font-medium transition-colors">
                             <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
                             Atur Kolom Tabel
@@ -135,13 +140,16 @@
                             <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
                             Atur Kolom Profil
                         </button>
-                        <button type="button" onclick="openModal('modalAturKolomKeluarga'); toggleDropdown('dropdownOpsiSuper')" class="text-gray-700 w-full text-left px-4 py-2.5 text-xs hover:bg-gray-50 flex items-center gap-2.5 font-medium transition-colors border-t border-gray-50">
-                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
-                            Atur Kolom Keluarga
-                        </button>
+                        @endif
+                        
                     </div>
                 </div>
             </div>
+            
+            <button type="button" id="btnModeBulk" onclick="toggleBulkMode()" class="inline-flex items-center justify-center gap-2 px-3 py-1.5 text-xs font-medium bg-red-50 text-red-600 border border-red-200 rounded-xl hover:bg-red-100 transition-colors shadow-sm outline-none focus:ring-2 focus:ring-red-300">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                Hapus semua
+            </button>
 
             <!-- Tambah Data Utama (Paling Kanan / Ujung) -->
             <div>
@@ -156,9 +164,26 @@
     <!-- ========================================================================= -->
 
     <!-- DATA TABLE SECTION -->
-    <x-card class="!rounded-xl overflow-visible !p-0 shadow-sm border border-gray-100">
+        <form id="bulkDeleteForm" action="{{ route('karyawan.destroyBulk') }}" method="POST" onsubmit="return confirm('Hapus data karyawan terpilih beserta keluarganya?')">
+        @csrf
+        @method('DELETE')
+        
+        <div id="btnGroup" class="hidden flex justify-between items-center px-4 py-2 bg-red-50 rounded-t-xl border-b border-red-100">
+            <span class="text-xs text-red-600 font-semibold flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                <span id="selectedCount">0</span> data terpilih untuk dihapus
+            </span>
+            <div class="flex gap-2">
+                <button type="button" onclick="cancelAll()" class="px-3 py-1.5 text-xs font-medium text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors shadow-sm">Batal</button>
+                <button type="submit" class="px-3 py-1.5 text-xs font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors shadow-sm flex items-center gap-1.5">
+                    Hapus Terpilih
+                </button>
+            </div>
+        </div>
+
+        <x-card class="!rounded-xl overflow-visible !p-0 shadow-sm border border-gray-100 hide-bulk" id="tableContainerBulk">
         @php
-            $headers = ['No', 'Nama', 'NPK', 'Gol/Grade', 'MPP/PBP', 'Ket. Pensiun', 'Keterangan'];
+            $headers = ['<input type="checkbox" id="selectAllBulk" onclick="toggleSelectAll()">', 'No', 'Nama', 'NPK', 'Gol/Grade', 'MPP/PBP', 'Ket. Pensiun', 'Keterangan'];
             if(isset($kolomDinamisTabel)) { foreach($kolomDinamisTabel as $k) { $headers[] = $k->nama_kolom; } }
             $headers[] = 'Aksi';
         @endphp
@@ -167,6 +192,9 @@
             @forelse($karyawan as $index => $item)
                 @php $tambahan = is_string($item->data_tambahan) ? json_decode($item->data_tambahan, true) : ($item->data_tambahan ?? []); @endphp
                 <tr class="hover:bg-gray-50 transition-colors">
+                                        <td class="px-3 py-2 text-center align-middle">
+                        <input type="checkbox" name="ids[]" class="cb-bulk" value="{{ $item->id }}" onclick="toggleCheckbox()">
+                    </td>
                     <td class="px-6 py-4 text-center font-medium text-gray-500">
                         {{ $karyawan->firstItem() + $index }}
                     </td>
@@ -235,6 +263,7 @@
             {{ $karyawan->links() }}
         </div>
     </x-card>
+    </form>
 
     <x-delete-modal id="modalHapusKaryawan" title="Hapus Data Karyawan" message="Apakah Anda yakin ingin menghapus data karyawan ini beserta seluruh keluarganya?" />
     <x-delete-modal id="modalHapusKolom" title="Hapus Kolom Tambahan" message="Kolom ini akan dihilangkan dari sistem. Lanjutkan?" />
@@ -573,8 +602,54 @@
         renderChart('chartPensiun', 'pie');
     };
 
-    function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+    function openModal(id) { const el = document.getElementById(id); if(el) el.classList.remove('hidden'); else console.error('Modal not found:', id); }
     function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+        let isBulkMode = false;
+    function toggleBulkMode() {
+        isBulkMode = !isBulkMode;
+        const container = document.getElementById('tableContainerBulk');
+        const btnGroup = document.getElementById('btnGroup');
+        if (container) {
+            if (isBulkMode) {
+                container.classList.remove('hide-bulk');
+                if(btnGroup) btnGroup.classList.remove('hidden');
+            } else {
+                container.classList.add('hide-bulk');
+                if(btnGroup) btnGroup.classList.add('hidden');
+                cancelAll();
+            }
+        }
+    }
+    function toggleSelectAll() {
+        const selectAll = document.getElementById('selectAllBulk');
+        const checkboxes = document.querySelectorAll('.cb-bulk');
+        checkboxes.forEach(cb => cb.checked = selectAll.checked);
+        updateSelectedCount();
+    }
+    function toggleCheckbox() {
+        const selectAll = document.getElementById('selectAllBulk');
+        const checkboxes = document.querySelectorAll('.cb-bulk');
+        const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+        selectAll.checked = allChecked;
+        updateSelectedCount();
+    }
+    function updateSelectedCount() {
+        const count = document.querySelectorAll('.cb-bulk:checked').length;
+        const countEl = document.getElementById('selectedCount');
+        if (countEl) countEl.textContent = count;
+    }
+    function cancelAll() {
+        const selectAll = document.getElementById('selectAllBulk');
+        if(selectAll) selectAll.checked = false;
+        document.querySelectorAll('.cb-bulk').forEach(cb => cb.checked = false);
+        updateSelectedCount();
+        isBulkMode = false;
+        const container = document.getElementById('tableContainerBulk');
+        if (container) container.classList.add('hide-bulk');
+        const btnGroup = document.getElementById('btnGroup');
+        if (btnGroup) btnGroup.classList.add('hidden');
+    }
 
     // --- DROPDOWN TOGGLE LOGIC ---
     function toggleDropdown(id) {

@@ -1,6 +1,9 @@
 @extends('layouts.app')
 
 @section('content')
+<style>
+.hide-bulk th:first-child, .hide-bulk td:first-child { display: none !important; }
+</style>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <main class="flex-1 overflow-y-auto p-8 relative bg-[#F8F9FA]">
@@ -89,6 +92,7 @@
                                 Export PDF
                             </a>
                         </div>
+                        @if(auth()->user()->isAdmin())
                         <div class="px-4 py-2 bg-gray-50 border-y border-gray-100 mt-1">
                             <p class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Tampilan Teks</p>
                         </div>
@@ -98,9 +102,14 @@
                                 Atur Kolom Tabel
                             </button>
                         </div>
+                        @endif
                     </div>
                 </div>
 
+                                <button type="button" id="btnModeBulkVolume" onclick="toggleBulkModeVolume()" class="inline-flex items-center justify-center gap-2 px-3 py-1.5 text-xs font-medium bg-red-50 text-red-600 border border-red-200 rounded-xl hover:bg-red-100 transition-colors shadow-sm outline-none focus:ring-2 focus:ring-red-300 mr-2">
+                    <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                    Hapus semua
+                </button>
                 <button type="button" onclick="openModalTambahVolume()" class="inline-flex justify-center items-center gap-2 rounded-xl border border-transparent px-4 py-2 bg-pkt-jingga text-xs font-medium text-white hover:bg-orange-600 focus:outline-none transition-colors shadow-sm">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
                     Tambah Data Dokumen
@@ -108,9 +117,22 @@
             </div>
         </div>
 
-        <div class="overflow-x-auto">
+                <form id="bulkDeleteFormVolume" action="{{ route('pengiriman-dokumen.destroyBulk') }}" method="POST">
+            <input type="hidden" id="deleteAllPagesVolume" name="delete_all_pages" value="0">
+            @csrf
+            @method('DELETE')
+            
+            <div id="btnGroupBulkVolume" class="hidden flex justify-between items-center px-4 py-2 bg-red-50 border-b border-red-100 relative z-10">
+                <span class="text-xs text-red-600 font-semibold">Data terpilih untuk dihapus</span>
+                <div class="flex gap-2">
+                    <button type="button" onclick="cancelAllVolume()" class="px-3 py-1.5 bg-white border border-gray-300 text-gray-700 rounded-lg text-xs font-medium hover:bg-gray-50">Batal</button>
+                    <button type="submit" class="px-3 py-1.5 bg-red-600 text-white rounded-lg text-xs font-medium hover:bg-red-700">Hapus Terpilih</button>
+                </div>
+            </div>
+
+            <div id="tableContainerBulkVolume" class="hide-bulk overflow-x-auto">
             @php
-                $tableHeaders = ['Tahun', 'Bulan', 'Penerimaan mailroom', 'Pengiriman Dalam Negeri', 'Pengiriman Luar Negeri', 'Reg. Surat Masuk DOF'];
+                $tableHeaders = ['<input type="checkbox" id="selectAllBulkVolume" onclick="toggleSelectAllVolume()">', 'Tahun', 'Bulan', 'Penerimaan mailroom', 'Pengiriman Dalam Negeri', 'Pengiriman Luar Negeri', 'Reg. Surat Masuk DOF'];
                 if(isset($kolomDinamis)) { foreach($kolomDinamis as $k) { $tableHeaders[] = $k->nama_kolom; } }
                 $tableHeaders[] = 'Aksi';
             @endphp
@@ -118,6 +140,7 @@
                 @forelse($costRecords as $record)
                     @php $tambahan = is_string($record->data_tambahan) ? json_decode($record->data_tambahan, true) : ($record->data_tambahan ?? []); @endphp
                     <tr class="hover:bg-gray-50 transition-colors text-sm">
+                        <td class="px-6 py-4 text-center align-middle"><input type="checkbox" name="ids[]" class="cb-bulk-volume" value="{{ $record->id }}" onclick="toggleCheckboxVolume()"></td>
                         <td class="px-6 py-4 text-gray-700 font-medium align-middle text-center">{{ $record->tahun }}</td>
                         <td class="px-6 py-4 text-gray-900 font-medium align-middle text-center">{{ $record->bulan }}</td>
                         <td class="px-6 py-4 text-gray-700 font-mono align-middle text-center">{{ number_format($record->penerimaan_mailroom, 0, ',', '.') }}</td>
@@ -149,11 +172,11 @@
                         </td>
                     </tr>
                 @empty
-                    <tr><td colspan="10" class="px-6 py-10 text-center text-gray-500 text-sm">Belum ada data laporan volume.</td></tr>
+                    <tr><td colspan="{{ count($tableHeaders) }}" class="px-6 py-10 text-center text-gray-500 text-sm">Belum ada data laporan volume.</td></tr>
                 @endforelse
             </x-table>
-        </div>
-        
+            </div>
+        </form>
         <!-- PAGINATION TABEL 1 -->
         <div class="p-4 border-t border-gray-100 bg-gray-50 rounded-b-xl">
             {{ $costRecords->links() }}
@@ -195,6 +218,7 @@
                             </a>
                         </div>
                         
+                        @if(auth()->user()->isAdmin())
                         <div class="px-4 py-2 bg-gray-50 border-y border-gray-100 mt-1">
                             <p class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Tampilan Teks</p>
                         </div>
@@ -204,18 +228,38 @@
                                 Atur Kolom Tabel
                             </button>
                         </div>
+                        @endif
                     </div>
                 </div>
 
+                                <button type="button" id="btnModeBulkOngkir" onclick="toggleBulkModeOngkir()" class="inline-flex items-center justify-center gap-2 px-3 py-1.5 text-xs font-medium bg-red-50 text-red-600 border border-red-200 rounded-xl hover:bg-red-100 transition-colors shadow-sm outline-none focus:ring-2 focus:ring-red-300 mr-2">
+                    <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                    Hapus semua
+                </button>
                 <button type="button" onclick="openModalTambahOngkir()" class="inline-flex justify-center items-center gap-2 rounded-xl border border-transparent px-4 py-2 bg-pkt-jingga text-xs font-medium text-white hover:bg-orange-600 focus:outline-none transition-colors shadow-sm">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
                     Tambah Data Ongkir
                 </button>
             </div>
         </div>
-        <x-table :headers="['Tahun', 'Bulan', 'Total Ongkir Dalam Negeri', 'Total Ongkir Luar Negeri', 'Aksi']">
+                <form id="bulkDeleteFormOngkir" action="{{ route('pengiriman-dokumen.destroyBulk') }}" method="POST">
+            <input type="hidden" id="deleteAllPagesOngkir" name="delete_all_pages" value="0">
+            @csrf
+            @method('DELETE')
+            
+            <div id="btnGroupBulkOngkir" class="hidden flex justify-between items-center px-4 py-2 bg-red-50 border-b border-red-100 relative z-10">
+                <span class="text-xs text-red-600 font-semibold">Data terpilih untuk dihapus</span>
+                <div class="flex gap-2">
+                    <button type="button" onclick="cancelAllOngkir()" class="px-3 py-1.5 bg-white border border-gray-300 text-gray-700 rounded-lg text-xs font-medium hover:bg-gray-50">Batal</button>
+                    <button type="submit" class="px-3 py-1.5 bg-red-600 text-white rounded-lg text-xs font-medium hover:bg-red-700">Hapus Terpilih</button>
+                </div>
+            </div>
+
+            <div id="tableContainerBulkOngkir" class="hide-bulk overflow-x-auto w-full">
+                <x-table :headers="['<input type=\'checkbox\' id=\'selectAllBulkOngkir\' onclick=\'toggleSelectAllOngkir()\'>', 'Tahun', 'Bulan', 'Total Ongkir Dalam Negeri', 'Total Ongkir Luar Negeri', 'Aksi']">
             @forelse($costRecords as $cost)
                 <tr class="hover:bg-gray-50 transition-colors text-sm">
+                        <td class="px-6 py-4 text-center align-middle"><input type="checkbox" name="ids[]" class="cb-bulk-volume" value="{{ $record->id }}" onclick="toggleCheckboxVolume()"></td>
                     <td class="px-6 py-4 text-gray-700 font-medium text-center align-middle">{{ $cost->tahun }}</td>
                     <td class="px-6 py-4 text-gray-900 font-medium text-center align-middle">{{ $cost->bulan }}</td>
                     <td class="px-6 py-4 text-gray-700 font-mono font-semibold text-center align-middle">Rp {{ number_format($cost->ongkir_dalam_negeri, 0, ',', '.') }}</td>
@@ -232,16 +276,17 @@
                     </td>
                 </tr>
             @empty
-                <tr><td colspan="5" class="px-6 py-10 text-center text-gray-500">Belum ada data biaya ongkir.</td></tr>
+                <tr><td colspan="6" class="px-6 py-10 text-center text-gray-500">Belum ada data biaya ongkir.</td></tr>
             @endforelse
             <tr class="bg-gray-100 border-t border-gray-200 font-bold text-blue-900 text-sm">
-                <td colspan="2" class="px-6 py-4 text-right">Total Keseluruhan {{ $selectedMonth == 'semua' ? "Filter" : "$selectedMonth $selectedYear" }} :</td>
+                <td colspan="3" class="px-6 py-4 text-right">Total Keseluruhan {{ $selectedMonth == 'semua' ? "Filter" : "$selectedMonth $selectedYear" }} :</td>
                 <td class="px-6 py-4 text-pkt-biru font-mono text-center">Rp {{ number_format($totalDomestikOverall, 0, ',', '.') }}</td>
                 <td class="px-6 py-4 text-pkt-biru font-mono text-center">Rp {{ number_format($totalInternasionalOverall, 0, ',', '.') }}</td>
                 <td></td>
             </tr>
         </x-table>
-        
+            </div>
+        </form>
         <!-- PAGINATION TABEL 2 -->
         <div class="p-4 border-t border-gray-100 bg-gray-50 rounded-b-xl">
             {{ $costRecords->links() }}
@@ -268,7 +313,8 @@
     />
 
     <!-- ================= MODAL ATUR KOLOM ================= -->
-    <x-modal id="modalAturKolom" title="Pengaturan Kolom Tambahan" description="Kelola kolom ekstra khusus untuk formulir Pengiriman.">
+    @if(auth()->user()->isAdmin())
+<x-modal id="modalAturKolom" title="Pengaturan Kolom Tambahan" description="Kelola kolom ekstra khusus untuk formulir Pengiriman.">
         <div class="mb-6 bg-gray-50 p-4 rounded-xl border border-gray-100">
             <h4 class="text-sm font-bold text-gray-800 mb-3">Kolom Terdaftar Saat Ini:</h4>
             @if(isset($kolomDinamis) && $kolomDinamis->count() > 0)
@@ -288,11 +334,11 @@
         <form action="{{ route('kolom-dinamis.store') }}" method="POST" class="border-t pt-4">
             @csrf <input type="hidden" name="modul" value="pengiriman_dokumen">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div><label class="block text-xs font-medium mb-1">Nama Kolom</label><input type="text" name="nama_kolom" required class="w-full px-3 py-2 border rounded-lg text-sm outline-none"></div>
+                <div><label class="block text-xs font-medium mb-1">Nama Kolom</label><input type="text" name="nama_kolom" required class="w-full px-3 py-2 border rounded-lg text-sm outline-none"> <span class="text-[10px] text-red-500 font-medium mt-1 hidden error-msg">Wajib diisi!</span></div>
                 <div><label class="block text-xs font-medium mb-1">Tipe Input</label>
                     <select name="tipe_input" id="tipeInputSelector" required class="w-full px-3 py-2 border rounded-lg text-sm outline-none" onchange="toggleDropdownConfig()">
                         <option value="text">Teks Singkat</option><option value="number">Angka Kuantitas</option><option value="currency">Harga / Uang (Rp)</option><option value="date">Tanggal</option><option value="dropdown">Dropdown (Pilihan)</option>
-                    </select>
+                    </select> <span class="text-[10px] text-red-500 font-medium mt-1 hidden error-msg">Wajib diisi!</span>
                 </div>
                 <div class="md:col-span-2 hidden" id="dropdownConfigArea">
                     <label class="block text-xs font-medium mb-1">Pilihan Dropdown (Pisahkan dengan koma)</label>
@@ -302,6 +348,7 @@
             <div class="flex justify-end gap-3 mt-4"><x-button variant="outline" type="button" onclick="closeModal('modalAturKolom')">Tutup</x-button><x-button variant="primary" type="submit">Simpan</x-button></div>
         </form>
     </x-modal>
+@endif
 
     <!-- ================= MODAL TAMBAH LAPORAN (KHUSUS VOLUME DOKUMEN) ================= -->
     <x-modal id="modalTambahVolume" title="Formulir Laporan Dokumen (Volume)" description="Masukkan data jumlah dokumen untuk periode ini.">
@@ -312,16 +359,16 @@
                 
                 <div class="md:col-span-2">
                     <label class="block text-sm font-medium text-gray-700 mb-1.5">Periode Laporan (Bulan & Tahun) <span class="text-red-500">*</span></label>
-                    <input type="month" id="periode_input_volume" required class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm outline-none cursor-pointer">
+                    <input type="month" id="periode_input_volume" required class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm outline-none cursor-pointer"> <span class="text-[10px] text-red-500 font-medium mt-1 hidden error-msg">Wajib diisi!</span>
                     <span class="error-msg text-red-500 text-[11px] mt-1 hidden font-medium">Periode wajib dipilih!</span>
                     <input type="hidden" name="tahun" id="tahun_hidden_volume">
                     <input type="hidden" name="bulan" id="bulan_hidden_volume">
                 </div>
 
-                <div class="md:col-span-1"><label class="block text-sm font-medium mb-1.5">Penerimaan Mailroom <span class="text-red-500">*</span></label><input type="number" name="volume_mailroom" required min="0" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm outline-none"><span class="error-msg text-red-500 text-[11px] mt-1 hidden">Wajib diisi!</span></div>
-                <div class="md:col-span-1"><label class="block text-sm font-medium mb-1.5">Registrasi Surat Masuk via DOF <span class="text-red-500">*</span></label><input type="number" name="volume_dof" required min="0" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm outline-none"><span class="error-msg text-red-500 text-[11px] mt-1 hidden">Wajib diisi!</span></div>
-                <div class="md:col-span-1"><label class="block text-sm font-medium mb-1.5">Pengiriman Dalam Negeri <span class="text-red-500">*</span></label><input type="number" name="volume_domestik" required min="0" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm outline-none"><span class="error-msg text-red-500 text-[11px] mt-1 hidden">Wajib diisi!</span></div>
-                <div class="md:col-span-1"><label class="block text-sm font-medium mb-1.5">Pengiriman Luar Negeri <span class="text-red-500">*</span></label><input type="number" name="volume_internasional" required min="0" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm outline-none"><span class="error-msg text-red-500 text-[11px] mt-1 hidden">Wajib diisi!</span></div>
+                <div class="md:col-span-1"><label class="block text-sm font-medium mb-1.5">Penerimaan Mailroom <span class="text-red-500">*</span></label><input type="number" name="volume_mailroom" required min="0" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm outline-none"> <span class="text-[10px] text-red-500 font-medium mt-1 hidden error-msg">Wajib diisi!</span><span class="error-msg text-red-500 text-[11px] mt-1 hidden">Wajib diisi!</span></div>
+                <div class="md:col-span-1"><label class="block text-sm font-medium mb-1.5">Registrasi Surat Masuk via DOF <span class="text-red-500">*</span></label><input type="number" name="volume_dof" required min="0" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm outline-none"> <span class="text-[10px] text-red-500 font-medium mt-1 hidden error-msg">Wajib diisi!</span><span class="error-msg text-red-500 text-[11px] mt-1 hidden">Wajib diisi!</span></div>
+                <div class="md:col-span-1"><label class="block text-sm font-medium mb-1.5">Pengiriman Dalam Negeri <span class="text-red-500">*</span></label><input type="number" name="volume_domestik" required min="0" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm outline-none"> <span class="text-[10px] text-red-500 font-medium mt-1 hidden error-msg">Wajib diisi!</span><span class="error-msg text-red-500 text-[11px] mt-1 hidden">Wajib diisi!</span></div>
+                <div class="md:col-span-1"><label class="block text-sm font-medium mb-1.5">Pengiriman Luar Negeri <span class="text-red-500">*</span></label><input type="number" name="volume_internasional" required min="0" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm outline-none"> <span class="text-[10px] text-red-500 font-medium mt-1 hidden error-msg">Wajib diisi!</span><span class="error-msg text-red-500 text-[11px] mt-1 hidden">Wajib diisi!</span></div>
 
                 @if(isset($kolomDinamis) && $kolomDinamis->count() > 0)
                     <div class="md:col-span-2 border-t pt-5"><h4 class="font-semibold text-sm bg-gray-50 p-3 rounded-lg border">Informasi Tambahan (Kolom Dinamis)</h4></div>
@@ -360,7 +407,7 @@
                 
                 <div class="md:col-span-2">
                     <label class="block text-sm font-medium text-gray-700 mb-1.5">Periode Laporan (Bulan & Tahun) <span class="text-red-500">*</span></label>
-                    <input type="month" id="periode_input_ongkir" required class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm outline-none cursor-pointer">
+                    <input type="month" id="periode_input_ongkir" required class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm outline-none cursor-pointer"> <span class="text-[10px] text-red-500 font-medium mt-1 hidden error-msg">Wajib diisi!</span>
                     <span class="error-msg text-red-500 text-[11px] mt-1 hidden font-medium">Periode wajib dipilih!</span>
                     <input type="hidden" name="tahun" id="tahun_hidden_ongkir">
                     <input type="hidden" name="bulan" id="bulan_hidden_ongkir">
@@ -368,12 +415,12 @@
 
                 <div class="md:col-span-1">
                     <label class="block text-sm font-medium mb-1.5">Total Ongkir Dalam Negeri <span class="text-red-500">*</span></label>
-                    <div class="relative"><span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-medium">Rp</span><input type="text" id="input_cost_domestik" required class="input-rupiah w-full pl-11 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm font-mono outline-none"><input type="hidden" name="cost_domestik" required></div>
+                    <div class="relative"><span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-medium">Rp</span><input type="number" id="cost_domestik" name="cost_domestik" required class="w-full pl-11 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm font-mono outline-none"> <span class="text-[10px] text-red-500 font-medium mt-1 hidden error-msg">Wajib diisi!</span></div>
                     <span class="error-msg text-red-500 text-[11px] mt-1 hidden">Wajib diisi!</span>
                 </div>
                 <div class="md:col-span-1">
                     <label class="block text-sm font-medium mb-1.5">Total Ongkir Luar Negeri <span class="text-red-500">*</span></label>
-                    <div class="relative"><span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-medium">Rp</span><input type="text" id="input_cost_internasional" required class="input-rupiah w-full pl-11 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm font-mono outline-none"><input type="hidden" name="cost_internasional" required></div>
+                    <div class="relative"><span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-medium">Rp</span><input type="number" id="cost_internasional" name="cost_internasional" required class="w-full pl-11 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm font-mono outline-none"> <span class="text-[10px] text-red-500 font-medium mt-1 hidden error-msg">Wajib diisi!</span></div>
                     <span class="error-msg text-red-500 text-[11px] mt-1 hidden">Wajib diisi!</span>
                 </div>
 
@@ -388,7 +435,93 @@
 
 </main>
 
-<script>
+    <script>
+        // TABEL 1 (VOLUME)
+        function toggleBulkModeVolume() {
+            let container = document.getElementById("tableContainerBulkVolume");
+            let btn = document.getElementById("btnModeBulkVolume");
+            if (container.classList.contains("hide-bulk")) {
+                container.classList.remove("hide-bulk");
+                if(btn) { btn.classList.replace("bg-red-50", "bg-red-600"); btn.classList.replace("text-red-600", "text-white"); }
+            } else {
+                container.classList.add("hide-bulk");
+                cancelAllVolume();
+                if(btn) { btn.classList.replace("bg-red-600", "bg-red-50"); btn.classList.replace("text-white", "text-red-600"); }
+            }
+        }
+        function toggleSelectAllVolume() {
+            let selectAll = document.getElementById("selectAllBulkVolume");
+            let checkboxes = document.querySelectorAll(".cb-bulk-volume");
+            checkboxes.forEach(cb => cb.checked = selectAll.checked);
+            let deleteAllInput = document.getElementById("deleteAllPagesVolume");
+            if (deleteAllInput) { deleteAllInput.value = selectAll.checked ? "1" : "0"; }
+            toggleDeleteBtnVolume();
+        }
+        function toggleCheckboxVolume() {
+            let selectAll = document.getElementById("selectAllBulkVolume");
+            let checkboxes = document.querySelectorAll(".cb-bulk-volume");
+            selectAll.checked = Array.from(checkboxes).every(cb => cb.checked);
+            toggleDeleteBtnVolume();
+        }
+        function toggleDeleteBtnVolume() {
+            let group = document.getElementById("btnGroupBulkVolume");
+            if (group) {
+                let checked = document.querySelectorAll(".cb-bulk-volume:checked").length > 0;
+                if (checked) { group.classList.remove("hidden"); } 
+                else { group.classList.add("hidden"); }
+            }
+        }
+        function cancelAllVolume() {
+            let selectAll = document.getElementById("selectAllBulkVolume");
+            if (selectAll) selectAll.checked = false;
+            let checkboxes = document.querySelectorAll(".cb-bulk-volume");
+            checkboxes.forEach(cb => cb.checked = false);
+            toggleDeleteBtnVolume();
+        }
+
+        // TABEL 2 (ONGKIR)
+        function toggleBulkModeOngkir() {
+            let container = document.getElementById("tableContainerBulkOngkir");
+            let btn = document.getElementById("btnModeBulkOngkir");
+            if (container.classList.contains("hide-bulk")) {
+                container.classList.remove("hide-bulk");
+                if(btn) { btn.classList.replace("bg-red-50", "bg-red-600"); btn.classList.replace("text-red-600", "text-white"); }
+            } else {
+                container.classList.add("hide-bulk");
+                cancelAllOngkir();
+                if(btn) { btn.classList.replace("bg-red-600", "bg-red-50"); btn.classList.replace("text-white", "text-red-600"); }
+            }
+        }
+        function toggleSelectAllOngkir() {
+            let selectAll = document.getElementById("selectAllBulkOngkir");
+            let checkboxes = document.querySelectorAll(".cb-bulk-ongkir");
+            checkboxes.forEach(cb => cb.checked = selectAll.checked);
+            let deleteAllInput = document.getElementById("deleteAllPagesOngkir");
+            if (deleteAllInput) { deleteAllInput.value = selectAll.checked ? "1" : "0"; }
+            toggleDeleteBtnOngkir();
+        }
+        function toggleCheckboxOngkir() {
+            let selectAll = document.getElementById("selectAllBulkOngkir");
+            let checkboxes = document.querySelectorAll(".cb-bulk-ongkir");
+            selectAll.checked = Array.from(checkboxes).every(cb => cb.checked);
+            toggleDeleteBtnOngkir();
+        }
+        function toggleDeleteBtnOngkir() {
+            let group = document.getElementById("btnGroupBulkOngkir");
+            if (group) {
+                let checked = document.querySelectorAll(".cb-bulk-ongkir:checked").length > 0;
+                if (checked) { group.classList.remove("hidden"); } 
+                else { group.classList.add("hidden"); }
+            }
+        }
+        function cancelAllOngkir() {
+            let selectAll = document.getElementById("selectAllBulkOngkir");
+            if (selectAll) selectAll.checked = false;
+            let checkboxes = document.querySelectorAll(".cb-bulk-ongkir");
+            checkboxes.forEach(cb => cb.checked = false);
+            toggleDeleteBtnOngkir();
+        }
+
     function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
     function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
     function triggerDeleteKolom(deleteUrl) {
@@ -507,27 +640,15 @@
         document.getElementById('periode_input_ongkir').value = record.tahun + '-' + monthMap[record.bulan];
         syncOngkir();
 
-        document.getElementById('input_cost_domestik').value = new Intl.NumberFormat('id-ID').format(record.ongkir_dalam_negeri);
-        document.querySelector('input[name="cost_domestik"]').value = record.ongkir_dalam_negeri;
-
-        document.getElementById('input_cost_internasional').value = new Intl.NumberFormat('id-ID').format(record.ongkir_luar_negeri);
-        document.querySelector('input[name="cost_internasional"]').value = record.ongkir_luar_negeri;
+        document.getElementById('cost_domestik').value = record.ongkir_dalam_negeri;
+        document.getElementById('cost_internasional').value = record.ongkir_luar_negeri;
 
         document.querySelectorAll('#formOngkir .border-red-500').forEach(el => { el.classList.remove('border-red-500'); el.classList.add('border-gray-300'); });
         document.querySelectorAll('#formOngkir .error-msg').forEach(el => el.classList.add('hidden'));
         openModal('modalTambahOngkir');
     }
 
-    document.addEventListener('input', function(e) {
-        if(e.target && e.target.classList.contains('input-rupiah')) {
-            let rawValue = e.target.value.replace(/[^0-9]/g, '').replace(/^0+(?!$)/, '');
-            if(e.target.nextElementSibling && e.target.nextElementSibling.tagName === 'INPUT') {
-                e.target.nextElementSibling.value = rawValue;
-            }
-            if (rawValue) { e.target.value = new Intl.NumberFormat('id-ID').format(rawValue); } 
-            else { e.target.value = ''; }
-        }
-    });
+
     
     document.addEventListener('keydown', function(e) {
         if (e.target && e.target.type === 'number') {

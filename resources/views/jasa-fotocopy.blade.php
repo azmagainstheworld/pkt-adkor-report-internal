@@ -1,7 +1,9 @@
 @extends('layouts.app')
 
 @section('content')
-<style>th { white-space: nowrap !important; } td { font-size: 11px !important; text-align: center; }</style>
+<style>th { white-space: nowrap !important; } td { font-size: 11px !important; text-align: center; }        .hide-bulk .cb-bulk, .hide-bulk #selectAllBulk { display: none !important; }
+        .hide-bulk th:first-child, .hide-bulk td:first-child { padding: 0 !important; width: 0 !important; overflow: hidden; }
+    </style>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <main class="flex-1 min-w-0 min-h-0 overflow-y-auto p-8 relative bg-[#F8F9FA]">
@@ -71,7 +73,8 @@
                     <tr><td colspan="5" class="px-6 py-10 text-center text-gray-500 text-sm">Data kosong.</td></tr>
                 @endforelse
             </x-table>
-        </div>
+            </div>
+        </form>
     </x-card>
 
     <!-- ================= TABEL 2: DETAIL SPREADSHEET ================= -->
@@ -100,26 +103,47 @@
                         </div>
                         <div class="px-4 py-2 bg-gray-50 border-y border-gray-100 mt-1"><p class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Konfigurasi</p></div>
                         <div class="py-1">
-                            <button type="button" onclick="openModal('modalAturKolom'); toggleDropdown('dropdownOpsi')" class="w-full text-left text-gray-700 px-4 py-2 text-xs hover:bg-gray-50 flex items-center gap-2 font-medium border-t border-gray-50">
+                            @if(auth()->check() && auth()->user()->isAdmin())
+<button type="button" onclick="openModal('modalAturKolom'); toggleDropdown('dropdownOpsi')" class="w-full text-left text-gray-700 px-4 py-2 text-xs hover:bg-gray-50 flex items-center gap-2 font-medium border-t border-gray-50">
                                 <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg> Atur Kolom Tambahan
                             </button>
+@endif
                         </div>
                     </div>
                 </div>
                 
+                                <button type="button" id="btnModeBulk" onclick="toggleBulkMode()" class="inline-flex items-center justify-center gap-2 px-3 py-1.5 text-xs font-medium bg-red-50 text-red-600 border border-red-200 rounded-xl hover:bg-red-100 transition-colors shadow-sm outline-none focus:ring-2 focus:ring-red-300 mr-2">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                    Hapus semua
+                </button>
                 <x-button variant="primary" onclick="openModalTambahBaris()" class="!py-1.5 !px-3 text-xs bg-blue-600 hover:bg-blue-700 border-none">
                     <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg> Tambah Data
                 </x-button>
             </div>
         </div>
 
-        <div class="overflow-x-auto w-full max-w-full">
+                <form id="bulkDeleteForm" action="{{ route('jasafotocopy.destroyBulk') }}" method="POST">
+            @csrf
+            @method('DELETE')
+            <input type="hidden" id="deleteAllPages" name="delete_all_pages" value="0">
+            <input type="hidden" name="tahun" value="{{ request('tahun') }}">
+            <input type="hidden" name="bulan" value="{{ request('bulan') }}">
+            
+            <div id="btnGroupBulk" class="hidden flex justify-between items-center px-4 py-2 bg-red-50 border-b border-red-100">
+                <span class="text-xs text-red-600 font-semibold">Data terpilih untuk dihapus</span>
+                <div class="flex gap-2">
+                    <button type="button" onclick="cancelAll()" class="px-3 py-1.5 bg-white border border-gray-300 text-gray-700 rounded-lg text-xs font-medium hover:bg-gray-50">Batal</button>
+                    <button type="submit" class="px-3 py-1.5 bg-red-600 text-white rounded-lg text-xs font-medium hover:bg-red-700">Hapus Terpilih</button>
+                </div>
+            </div>
+
+            <div id="tableContainerBulk" class="hide-bulk overflow-x-auto w-full max-w-full">
             @php
                 $lblBln = ($filterBulan === 'semua') ? '(Bln Terkait)' : 'bln ' . $filterBulan;
                 $lblSdBln = ($filterBulan === 'semua') ? '(s.d. Bln Terkait)' : 's.d. bln ' . $filterBulan;
                 $lblBlnOnly = ($filterBulan === 'semua') ? 'Bln Terkait' : $filterBulan;
                 
-                $headers = ['NO', 'Tahun', 'Bulan', 'UNIT KERJA', 'Cost Centre', 'Jlh pemakaian ' . $lblBln, 'Jlh pemakaian ' . $lblSdBln, 'Ket.', 'Type mesin', 'Biaya fee bulan ' . $lblBlnOnly, 'Biaya fee s.d. bulan ' . $lblBlnOnly, 'Biaya fee/Lbr', 'Biaya sewa/bulan', 'Biaya Jasa Sewa bln Januari & Fee ' . $lblBlnOnly, 'Total biaya Sewa & Fee s.d. bln ' . $lblBlnOnly, 'Aksi'];
+                $headers = ['<input type="checkbox" id="selectAllBulk" onclick="toggleSelectAll()">', 'NO', 'Tahun', 'Bulan', 'UNIT KERJA', 'Cost Centre', 'Jlh pemakaian ' . $lblBln, 'Jlh pemakaian ' . $lblSdBln, 'Ket.', 'Type mesin', 'Biaya fee bulan ' . $lblBlnOnly, 'Biaya fee s.d. bulan ' . $lblBlnOnly, 'Biaya fee/Lbr', 'Biaya sewa/bulan', 'Biaya Jasa Sewa bln Januari & Fee ' . $lblBlnOnly, 'Total biaya Sewa & Fee s.d. bln ' . $lblBlnOnly, 'Aksi'];
                 
                 if(isset($kolomDinamis)) { foreach($kolomDinamis as $k) { array_splice($headers, count($headers)-1, 0, $k->nama_kolom); } }
                 $lastGroupKey = null;
@@ -136,7 +160,7 @@
                     @if($mulaiGrupBaru)
                         @php $st = $subtotalGroups[$lastGroupKey]['totals']; @endphp
                         <tr class="font-semibold text-[11px] whitespace-nowrap bg-blue-50/70 border-t border-b border-blue-200">
-                            <td colspan="5" class="px-3 py-2 text-right pr-4">Subtotal {{ $subtotalGroups[$lastGroupKey]['bulan'] }} {{ $subtotalGroups[$lastGroupKey]['tahun'] }} :</td>
+                            <td colspan="6" class="px-3 py-2 text-right pr-4">Subtotal {{ $subtotalGroups[$lastGroupKey]['bulan'] }} {{ $subtotalGroups[$lastGroupKey]['tahun'] }} :</td>
                             <td class="px-3 py-2 bg-yellow-200 border-x border-gray-300 text-center">{{ number_format($st['pemakaian_bln'], 0, ',', '.') }}</td>
                             <td class="px-3 py-2 text-center">{{ number_format($st['pemakaian_sd'], 0, ',', '.') }}</td>
                             <td colspan="2"></td>
@@ -152,6 +176,7 @@
                     @php $lastGroupKey = $groupKey; @endphp
 
                     <tr class="hover:bg-gray-50 whitespace-nowrap">
+                        <td class="px-3 py-2 text-center align-middle"><input type="checkbox" name="ids[]" class="cb-bulk" value="{{ $row['id'] }}" onclick="toggleCheckbox()"></td>
                         <td class="px-3 py-2 font-medium">{{ $index + 1 }}</td>
                         <td class="px-3 py-2 text-center text-gray-500">{{ $row['tahun'] }}</td>
                         <td class="px-3 py-2 text-center font-bold text-gray-700">{{ $row['bulan'] }}</td>
@@ -192,7 +217,7 @@
                     @php $st = $subtotalGroups[$lastGroupKey]['totals'] ?? null; @endphp
                     @if($st)
                     <tr class="font-semibold text-[11px] whitespace-nowrap bg-blue-50/70 border-t border-b border-blue-200">
-                        <td colspan="5" class="px-3 py-2 text-right pr-4">Subtotal {{ $subtotalGroups[$lastGroupKey]['bulan'] }} {{ $subtotalGroups[$lastGroupKey]['tahun'] }} :</td>
+                        <td colspan="6" class="px-3 py-2 text-right pr-4">Subtotal {{ $subtotalGroups[$lastGroupKey]['bulan'] }} {{ $subtotalGroups[$lastGroupKey]['tahun'] }} :</td>
                         <td class="px-3 py-2 bg-yellow-200 border-x border-gray-300 text-center">{{ number_format($st['pemakaian_bln'], 0, ',', '.') }}</td>
                         <td class="px-3 py-2 text-center">{{ number_format($st['pemakaian_sd'], 0, ',', '.') }}</td>
                         <td colspan="2"></td>
@@ -230,7 +255,8 @@
     <x-delete-modal id="modalHapusKolom" title="Hapus Kolom Tambahan" message="Kolom ini akan dihilangkan dari tabel dan formulir. Lanjutkan?" />
 
     <!-- ================= MODAL ATUR KOLOM DINAMIS ================= -->
-    <x-modal id="modalAturKolom" title="Pengaturan Kolom Tambahan" description="Kelola kolom ekstra khusus untuk tabel Jasa Fotocopy.">
+    @if(auth()->user()->isAdmin())
+<x-modal id="modalAturKolom" title="Pengaturan Kolom Tambahan" description="Kelola kolom ekstra khusus untuk tabel Jasa Fotocopy.">
         <div class="mb-6 bg-gray-50 p-4 rounded-xl border border-gray-100 max-h-48 overflow-y-auto">
             <h4 class="text-sm font-bold text-gray-800 mb-3">Kolom Terdaftar:</h4>
             @if(isset($kolomDinamis) && $kolomDinamis->count() > 0)
@@ -259,6 +285,7 @@
             <div class="flex justify-end gap-3 mt-4"><x-button variant="outline" type="button" onclick="closeModal('modalAturKolom')">Tutup</x-button><x-button variant="primary" type="submit" class="bg-blue-600 hover:bg-blue-700 border-none">Simpan</x-button></div>
         </form>
     </x-modal>
+@endif
 
     <!-- ================= MODAL IMPORT EXCEL ================= -->
     <x-import-modal id="modalImportExcel" route="{{ route('jasafotocopy.import') }}" title="Import Data Jasa Fotocopy" templateRoute="{{ route('template.download', 'jasa-fotocopy') }}" />
@@ -355,7 +382,47 @@
     </x-modal>
 </main>
 
-<script>
+    <script>
+        function toggleBulkMode() {
+            let container = document.getElementById("tableContainerBulk");
+            let btn = document.getElementById("btnModeBulk");
+            if (container.classList.contains("hide-bulk")) {
+                container.classList.remove("hide-bulk");
+                if(btn) { btn.classList.replace("bg-red-50", "bg-red-600"); btn.classList.replace("text-red-600", "text-white"); }
+            } else {
+                container.classList.add("hide-bulk");
+                cancelAll();
+                if(btn) { btn.classList.replace("bg-red-600", "bg-red-50"); btn.classList.replace("text-white", "text-red-600"); }
+            }
+        }
+        function toggleSelectAll() {
+            let selectAll = document.getElementById("selectAllBulk");
+            let checkboxes = document.querySelectorAll(".cb-bulk");
+            checkboxes.forEach(cb => cb.checked = selectAll.checked);
+            toggleDeleteBtn();
+        }
+        function toggleCheckbox() {
+            let selectAll = document.getElementById("selectAllBulk");
+            let checkboxes = document.querySelectorAll(".cb-bulk");
+            selectAll.checked = Array.from(checkboxes).every(cb => cb.checked);
+            toggleDeleteBtn();
+        }
+        function toggleDeleteBtn() {
+            let group = document.getElementById("btnGroupBulk");
+            if (group) {
+                let checked = document.querySelectorAll(".cb-bulk:checked").length > 0;
+                if (checked) { group.classList.remove("hidden"); } 
+                else { group.classList.add("hidden"); }
+            }
+        }
+        function cancelAll() {
+            let selectAll = document.getElementById("selectAllBulk");
+            if (selectAll) selectAll.checked = false;
+            let checkboxes = document.querySelectorAll(".cb-bulk");
+            checkboxes.forEach(cb => cb.checked = false);
+            toggleDeleteBtn();
+        }
+
     const rawChartData = {!! json_encode($chartJsonData ?? []) !!}; let chartInstance = null;
     function initChart(chartId, chartType) {
         if(!rawChartData || !rawChartData.labels) return; const ctx = document.getElementById('canvas_' + chartId);

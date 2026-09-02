@@ -1,6 +1,12 @@
 @extends('layouts.app')
 
 @section('content')
+<style>
+    .hide-bulk th:first-child, .hide-bulk td:first-child {
+        display: none !important;
+    }
+</style>
+
 {{-- Load library Chart.js --}}
 <script src="https://cdn.jsdelivr.net/npm/chart.js">
     document.addEventListener("DOMContentLoaded", function() {
@@ -253,7 +259,7 @@
 
     <!-- ================= TABEL 2: RINCIAN PERIZINAN (SESUAI EXCEL) ================= -->
     <x-card class="!rounded-xl overflow-visible !p-0 shadow-sm border border-gray-100 mb-8 bg-white">
-        <div class="p-5 border-b border-gray-100 bg-white flex justify-between items-center flex-wrap gap-4 relative z-20">
+        <div class="p-5 border-b border-gray-100 bg-white flex justify-between items-center flex-wrap gap-4 relative z-40">
             <div>
                 <h3 class="font-bold text-gray-900 text-lg">Daftar Perizinan Terbit</h3>
                 <p class="text-xs text-gray-400">Detail dokumen perizinan sesuai filter yang dipilih</p>
@@ -284,6 +290,10 @@
                     </div>
                 </div>
             
+                                <button type="button" id="btnModeBulkTerbit" onclick="toggleBulkModeTerbit()" class="inline-flex items-center justify-center gap-2 px-3 py-1.5 text-xs font-medium bg-red-50 text-red-600 border border-red-200 rounded-xl hover:bg-red-100 transition-colors shadow-sm outline-none focus:ring-2 focus:ring-red-300">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                    Hapus semua
+                </button>
                 <x-button variant="primary" onclick="openModalTambah()" class="shadow-sm text-xs border-none !py-2 !rounded-xl">
                     <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
                     Tambah Rincian
@@ -291,9 +301,26 @@
             </div>
         </div>
 
-        <x-table :headers="['NO', 'Tahun', 'Perizinan Terbit', 'Nomor', 'Terbit', 'Berakhir', 'Instansi Penerbit', 'Bulan', 'Kegiatan', 'Aksi']">
+                <form id="bulkDeleteFormTerbit" action="{{ route('perizinan-perkantoran.destroyBulk') }}" method="POST" >
+            @csrf
+            @method('DELETE')
+            <input type="hidden" name="delete_all_pages" id="deleteAllFlagTerbit" value="0">
+            <input type="hidden" name="filter_tahun" value="{{ $filterTahun }}">
+            <input type="hidden" name="filter_bulan" value="{{ $filterBulan }}">
+            
+            <div id="btnGroupBulkTerbit" class="hidden flex justify-between items-center px-4 py-2 bg-red-50 border-b border-red-100 relative z-10">
+                <span class="text-xs text-red-600 font-semibold">Data terpilih untuk dihapus</span>
+                <div class="flex gap-2">
+                    <button type="button" onclick="cancelAllTerbit()" class="px-3 py-1.5 bg-white border border-gray-300 text-gray-700 rounded-lg text-xs font-medium hover:bg-gray-50">Batal</button>
+                    <button type="submit" class="px-3 py-1.5 bg-red-600 text-white rounded-lg text-xs font-medium hover:bg-red-700">Hapus Terpilih</button>
+                </div>
+            </div>
+
+            <div id="tableContainerBulkTerbit" class="hide-bulk overflow-x-auto w-full">
+                <x-table :headers="['<input type=\'checkbox\' id=\'selectAllBulkTerbit\' onclick=\'toggleSelectAllTerbit()\'>', 'NO', 'Tahun', 'Perizinan Terbit', 'Nomor', 'Terbit', 'Berakhir', 'Instansi Penerbit', 'Bulan', 'Kegiatan', 'Aksi']">
             @forelse ($dataRincian as $index => $rincian)
                 <tr class="{{ $index % 2 == 1 ? 'bg-gray-50/60' : '' }} hover:bg-gray-100 transition-colors text-sm">
+                    <td class="px-3 py-2 text-center align-middle"><input type="checkbox" name="ids[]" class="cb-bulk-terbit" value="{{ $rincian->id }}" onclick="toggleCheckboxTerbit()"></td>
                     <td class="px-6 py-4 text-gray-700 font-medium text-center align-middle">{{ $dataRincian->firstItem() + $index }}</td>
                     
                     <td class="px-6 py-4 text-gray-600 text-center align-middle">{{ Carbon\Carbon::parse($rincian->tanggal_sejak)->year }}</td>
@@ -347,10 +374,11 @@
                     </td>
                 </tr>
             @empty
-                <tr><td colspan="10" class="px-6 py-10 text-center text-gray-500 text-sm">Belum ada data rincian untuk periode ini.</td></tr>
+                <tr><td colspan="11" class="px-6 py-10 text-center text-gray-500 text-sm">Belum ada data rincian untuk periode ini.</td></tr>
             @endforelse
         </x-table>
-        
+            </div>
+        </form>
         <div class="p-4 border-t border-gray-100 text-xs bg-white">
             {{ $dataRincian->links() }}
         </div>
@@ -358,7 +386,7 @@
 
     <!-- ================= TABEL 3: PERIZINAN PROSES (SESUAI EXCEL MERGED) ================= -->
     <x-card class="!rounded-xl overflow-visible !p-0 shadow-sm border border-gray-100 mb-8 bg-white">
-        <div class="p-5 border-b border-gray-100 bg-white flex justify-between items-center flex-wrap gap-4 relative z-20">
+        <div class="p-5 border-b border-gray-100 bg-white flex justify-between items-center flex-wrap gap-4 relative z-40">
             <div>
                 <h3 class="font-bold text-gray-900 text-lg">Daftar Perizinan Proses</h3>
                 <p class="text-xs text-gray-400">Pemantauan progres perizinan yang masih berjalan</p>
@@ -389,6 +417,10 @@
                     </div>
                 </div>
 
+                                <button type="button" id="btnModeBulkProses" onclick="toggleBulkModeProses()" class="inline-flex items-center justify-center gap-2 px-3 py-1.5 text-xs font-medium bg-red-50 text-red-600 border border-red-200 rounded-xl hover:bg-red-100 transition-colors shadow-sm outline-none focus:ring-2 focus:ring-red-300">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                    Hapus semua
+                </button>
                 <x-button variant="primary" onclick="openModalTambahProses()" class="shadow-sm text-xs border-none !py-2 !rounded-xl">
                     <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
                     Tambah Proses
@@ -396,7 +428,22 @@
             </div>
         </div>
 
-        <x-table :headers="['Tahun', 'No.', 'Perizinan Proses', 'Target', 'Periode (Bulan)', 'Aksi']">
+                <form id="bulkDeleteFormProses" action="{{ route('perizinan-proses.destroyBulk') }}" method="POST" >
+            @csrf
+            @method('DELETE')
+            <input type="hidden" name="delete_all_pages" id="deleteAllFlagProses" value="0">
+            <input type="hidden" name="filter_tahun" value="{{ $filterTahun }}">
+            
+            <div id="btnGroupBulkProses" class="hidden flex justify-between items-center px-4 py-2 bg-red-50 border-b border-red-100 relative z-10">
+                <span class="text-xs text-red-600 font-semibold">Data terpilih untuk dihapus</span>
+                <div class="flex gap-2">
+                    <button type="button" onclick="cancelAllProses()" class="px-3 py-1.5 bg-white border border-gray-300 text-gray-700 rounded-lg text-xs font-medium hover:bg-gray-50">Batal</button>
+                    <button type="submit" class="px-3 py-1.5 bg-red-600 text-white rounded-lg text-xs font-medium hover:bg-red-700">Hapus Terpilih</button>
+                </div>
+            </div>
+
+            <div id="tableContainerBulkProses" class="hide-bulk overflow-x-auto w-full">
+                <x-table :headers="['<input type=\'checkbox\' id=\'selectAllBulkProses\' onclick=\'toggleSelectAllProses()\'>', 'Tahun', 'No.', 'Perizinan Proses', 'Target', 'Periode (Bulan)', 'Aksi']">
             @php $no = $dataProses->firstItem(); @endphp
             
             @forelse($groupedProses as $group)
@@ -404,6 +451,7 @@
                 
                 @foreach($group as $index => $proses)
                     <tr class="hover:bg-gray-50 transition-colors text-sm border-b border-gray-200">
+                        <td class="px-3 py-2 text-center align-middle"><input type="checkbox" name="ids[]" class="cb-bulk-proses" value="{{ $proses->id }}" onclick="toggleCheckboxProses()"></td>
                         @if($index === 0)
                             <td rowspan="{{ $rowspan }}" class="px-6 py-4 text-gray-700 font-medium bg-gray-50/50 align-top border-r border-gray-200 text-center">{{ $proses->tahun }}</td>
                             <td rowspan="{{ $rowspan }}" class="px-6 py-4 text-gray-700 font-medium bg-gray-50/50 align-top border-r border-gray-200 text-center">{{ $no++ }}</td>
@@ -438,9 +486,14 @@
                     </tr>
                 @endforeach
             @empty
-                <tr><td colspan="6" class="px-6 py-10 text-center text-gray-500 text-sm">Belum ada data perizinan proses.</td></tr>
+                <tr><td colspan="7" class="px-6 py-10 text-center text-gray-500 text-sm">Belum ada data perizinan proses.</td></tr>
             @endforelse
         </x-table>
+            </div>
+        </form>
+        <div class="p-4 border-t border-gray-100 text-xs bg-white">
+            {{ $dataProses->links() }}
+        </div>
     </x-card>
 
     <x-delete-modal id="modalHapusPerizinan" title="Hapus Data Perizinan Terbit" message="Apakah Anda yakin ingin menghapus data perizinan terbit ini? Data yang dihapus tidak dapat dikembalikan." />
@@ -868,4 +921,98 @@
         @endif
     });
 </script>
+
+    <script>
+        // TABEL 2 (TERBIT)
+        function toggleBulkModeTerbit() {
+            let container = document.getElementById("tableContainerBulkTerbit");
+            let btn = document.getElementById("btnModeBulkTerbit");
+            if (container.classList.contains("hide-bulk")) {
+                container.classList.remove("hide-bulk");
+                if(btn) { btn.classList.replace("bg-red-50", "bg-red-600"); btn.classList.replace("text-red-600", "text-white"); }
+            } else {
+                container.classList.add("hide-bulk");
+                cancelAllTerbit();
+                if(btn) { btn.classList.replace("bg-red-600", "bg-red-50"); btn.classList.replace("text-white", "text-red-600"); }
+            }
+        }
+        function toggleSelectAllTerbit() {
+            let selectAll = document.getElementById("selectAllBulkTerbit");
+            let checkboxes = document.querySelectorAll(".cb-bulk-terbit");
+            checkboxes.forEach(cb => cb.checked = selectAll.checked);
+            let flag = document.getElementById("deleteAllFlagTerbit");
+            if (flag) flag.value = selectAll.checked ? "1" : "0";
+            toggleDeleteBtnTerbit();
+        }
+        function toggleCheckboxTerbit() {
+            let selectAll = document.getElementById("selectAllBulkTerbit");
+            let checkboxes = document.querySelectorAll(".cb-bulk-terbit");
+            let allChecked = Array.from(checkboxes).every(cb => cb.checked);
+            selectAll.checked = allChecked;
+            let flag = document.getElementById("deleteAllFlagTerbit");
+            if (flag) flag.value = allChecked ? "1" : "0";
+            toggleDeleteBtnTerbit();
+        }
+                function toggleDeleteBtnTerbit() {
+            let group = document.getElementById("btnGroupBulkTerbit");
+            if (group) {
+                let checked = document.querySelectorAll(".cb-bulk-terbit:checked").length > 0;
+                if (checked) { group.classList.remove("hidden"); } 
+                else { group.classList.add("hidden"); }
+            }
+        }
+        function cancelAllTerbit() {
+            let selectAll = document.getElementById("selectAllBulkTerbit");
+            if (selectAll) selectAll.checked = false;
+            let checkboxes = document.querySelectorAll(".cb-bulk-terbit");
+            checkboxes.forEach(cb => cb.checked = false);
+            toggleDeleteBtnTerbit();
+        }
+
+        // TABEL 3 (PROSES)
+        function toggleBulkModeProses() {
+            let container = document.getElementById("tableContainerBulkProses");
+            let btn = document.getElementById("btnModeBulkProses");
+            if (container.classList.contains("hide-bulk")) {
+                container.classList.remove("hide-bulk");
+                if(btn) { btn.classList.replace("bg-red-50", "bg-red-600"); btn.classList.replace("text-red-600", "text-white"); }
+            } else {
+                container.classList.add("hide-bulk");
+                cancelAllProses();
+                if(btn) { btn.classList.replace("bg-red-600", "bg-red-50"); btn.classList.replace("text-white", "text-red-600"); }
+            }
+        }
+        function toggleSelectAllProses() {
+            let selectAll = document.getElementById("selectAllBulkProses");
+            let checkboxes = document.querySelectorAll(".cb-bulk-proses");
+            checkboxes.forEach(cb => cb.checked = selectAll.checked);
+            let flag = document.getElementById("deleteAllFlagProses");
+            if (flag) flag.value = selectAll.checked ? "1" : "0";
+            toggleDeleteBtnProses();
+        }
+        function toggleCheckboxProses() {
+            let selectAll = document.getElementById("selectAllBulkProses");
+            let checkboxes = document.querySelectorAll(".cb-bulk-proses");
+            let allChecked = Array.from(checkboxes).every(cb => cb.checked);
+            selectAll.checked = allChecked;
+            let flag = document.getElementById("deleteAllFlagProses");
+            if (flag) flag.value = allChecked ? "1" : "0";
+            toggleDeleteBtnProses();
+        }
+                function toggleDeleteBtnProses() {
+            let group = document.getElementById("btnGroupBulkProses");
+            if (group) {
+                let checked = document.querySelectorAll(".cb-bulk-proses:checked").length > 0;
+                if (checked) { group.classList.remove("hidden"); } 
+                else { group.classList.add("hidden"); }
+            }
+        }
+        function cancelAllProses() {
+            let selectAll = document.getElementById("selectAllBulkProses");
+            if (selectAll) selectAll.checked = false;
+            let checkboxes = document.querySelectorAll(".cb-bulk-proses");
+            checkboxes.forEach(cb => cb.checked = false);
+            toggleDeleteBtnProses();
+        }
+    </script>
 @endsection

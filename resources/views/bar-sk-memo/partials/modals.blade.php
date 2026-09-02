@@ -4,6 +4,7 @@
 <x-delete-modal id="modalHapusKolom" title="Hapus Kolom Tambahan" message="Kolom ini akan dihilangkan dari sistem. Lanjutkan?" />
 
 <!-- ================= MODAL ATUR KOLOM TERBIT ================= -->
+@if(auth()->user()->isAdmin())
 <x-modal id="modalAturKolomTerbit" title="Atur Kolom (Tabel Terbit)" description="Tambahkan kolom kustom khusus untuk Tabel Dokumen Terbit.">
     <div class="mb-6 bg-gray-50 p-4 rounded-xl border border-gray-100">
         <h4 class="text-sm font-bold text-gray-800 mb-3">Kolom Terdaftar:</h4>
@@ -76,6 +77,7 @@
         <div class="flex justify-end gap-3 mt-4"><x-button variant="outline" type="button" onclick="closeModal('modalAturKolomProses')">Tutup</x-button><x-button variant="primary" type="submit">Simpan</x-button></div>
     </form>
 </x-modal>
+@endif
 
 <!-- ================= MODAL TAMBAH DINAMIS TERBIT ================= -->
 <x-modal id="modalTambahTerbit" title="Input Data Terbit" description="Masukkan data dokumen terbit pada bulan tertentu.">

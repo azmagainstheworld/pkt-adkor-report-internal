@@ -64,4 +64,33 @@ class User extends Authenticatable
         // Kita anggap online jika aktivitas terakhir kurang dari 5 menit yang lalu
         return $this->last_seen_at->gt(Carbon::now()->subMinutes(5));
     }
+
+    // ==========================================
+    // RBAC HELPER METHODS
+    // ==========================================
+
+    /**
+     * Apakah user adalah Super Admin (level tertinggi, tidak bisa diubah/dihapus).
+     */
+    public function isSuperAdmin(): bool
+    {
+        return $this->role === 'super_admin';
+    }
+
+    /**
+     * Apakah user adalah Admin atau lebih tinggi (Super Admin juga bernilai true).
+     * Gunakan ini untuk memproteksi fitur-fitur administratif.
+     */
+    public function isAdmin(): bool
+    {
+        return in_array($this->role, ['admin', 'super_admin']);
+    }
+
+    /**
+     * Apakah user adalah Karyawan biasa (level terendah).
+     */
+    public function isKaryawan(): bool
+    {
+        return $this->role === 'karyawan';
+    }
 }

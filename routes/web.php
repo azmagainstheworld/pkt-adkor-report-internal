@@ -78,14 +78,16 @@ Route::middleware('auth')->group(function () {
     Route::post('/program-strategis', [ProgramStrategisController::class, 'store'])->name('program-strategis.store');
     Route::put('/program-strategis/{id}', [ProgramStrategisController::class, 'update'])->name('program-strategis.update');
     Route::delete('/program-strategis/{id}', [ProgramStrategisController::class, 'destroy'])->name('program-strategis.destroy');
+    Route::delete('/program-strategis-bulk/destroy', [ProgramStrategisController::class, 'destroyBulk'])->name('program-strategis.destroyBulk');
     Route::post('/program-strategis/import', [\App\Http\Controllers\ProgramStrategisController::class, 'import'])->name('program-strategis.import');
     Route::get('/program-strategis/export/excel', [\App\Http\Controllers\ProgramStrategisController::class, 'exportExcel'])->name('program-strategis.export.excel');
     Route::get('/program-strategis/export/pdf', [\App\Http\Controllers\ProgramStrategisController::class, 'exportPdf'])->name('program-strategis.export.pdf');
-    Route::post('/program-strategis/kolom', [\App\Http\Controllers\ProgramStrategisController::class, 'storeKolomDinamis'])->name('program-strategis.kolom.store');
-    Route::delete('/program-strategis/kolom/{id}', [\App\Http\Controllers\ProgramStrategisController::class, 'destroyKolomDinamis'])->name('program-strategis.kolom.destroy');
+    Route::post('/program-strategis/kolom', [\App\Http\Controllers\ProgramStrategisController::class, 'storeKolomDinamis'])->name('program-strategis.kolom.store')->middleware('role.admin');
+    Route::delete('/program-strategis/kolom/{id}', [\App\Http\Controllers\ProgramStrategisController::class, 'destroyKolomDinamis'])->name('program-strategis.kolom.destroy')->middleware('role.admin');
 
     // Karyawan Resource
     Route::resource('karyawan', KaryawanController::class);
+    Route::delete('/karyawan-bulk/destroy', [KaryawanController::class, 'destroyBulk'])->name('karyawan.destroyBulk');
     
     // ==========================================
     // MANAJEMEN KELUARGA KARYAWAN (ANTI-ERROR)
@@ -106,8 +108,8 @@ Route::middleware('auth')->group(function () {
 
     Route::post('/karyawan/import', [KaryawanController::class, 'import'])->name('karyawan.import');
     Route::post('/karyawan/import-keluarga', [KaryawanController::class, 'importKeluarga'])->name('karyawan.keluarga.import');
-    Route::post('/karyawan/kolom-dinamis', [KaryawanController::class, 'storeKolomDinamis'])->name('karyawan.kolom.store');
-    Route::delete('/karyawan/kolom-dinamis/{id}', [KaryawanController::class, 'destroyKolomDinamis'])->name('karyawan.kolom.destroy');
+    Route::post('/karyawan/kolom-dinamis', [KaryawanController::class, 'storeKolomDinamis'])->name('karyawan.kolom.store')->middleware('role.admin');
+    Route::delete('/karyawan/kolom-dinamis/{id}', [KaryawanController::class, 'destroyKolomDinamis'])->name('karyawan.kolom.destroy')->middleware('role.admin');
     Route::get('/karyawan/export/excel', [KaryawanController::class, 'exportExcel'])->name('karyawan.export.excel');
     Route::get('/karyawan/export/pdf', [KaryawanController::class, 'exportPdf'])->name('karyawan.export.pdf');
     Route::get('/karyawan/template/excel', [KaryawanController::class, 'downloadTemplate'])->name('karyawan.template.excel');
@@ -121,12 +123,14 @@ Route::middleware('auth')->group(function () {
     
     Route::delete('/ketidakhadiran/bulanan/{ketidakhadiran}', [KetidakhadiranController::class, 'destroyBulanan'])
         ->name('ketidakhadiran.destroyBulanan');
+    Route::delete('/ketidakhadiran/bulanan-bulk/destroy', [KetidakhadiranController::class, 'destroyBulananBulk'])->name('ketidakhadiran.destroyBulananBulk');
     
     Route::post('/ketidakhadiran/harian', [KetidakhadiranController::class, 'storeHarian'])
         ->name('ketidakhadiran.storeHarian');
     
     Route::delete('/ketidakhadiran/harian/{harian}', [KetidakhadiranController::class, 'destroyHarian'])
         ->name('ketidakhadiran.destroyHarian');
+    Route::delete('/ketidakhadiran/harian-bulk/destroy', [KetidakhadiranController::class, 'destroyHarianBulk'])->name('ketidakhadiran.destroyHarianBulk');
     
     Route::get('/ketidakhadiran/harian', [KetidakhadiranController::class, 'harian'])
         ->name('ketidakhadiran.harian');
@@ -141,6 +145,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/anggaran', [AnggaranController::class, 'store'])->name('anggaran.store');
     Route::put('/anggaran/{anggaran}', [AnggaranController::class, 'update'])->name('anggaran.update');
     Route::delete('/anggaran/{anggaran}', [AnggaranController::class, 'destroy'])->name('anggaran.destroy');
+    Route::delete('/anggaran-bulk/destroy', [AnggaranController::class, 'destroyBulk'])->name('anggaran.destroyBulk');
     Route::post('/anggaran/import', [AnggaranController::class, 'import'])->name('anggaran.import');
     Route::get('/anggaran/export/excel', [AnggaranController::class, 'exportExcel'])->name('anggaran.export.excel');
     Route::get('/anggaran/export/pdf', [AnggaranController::class, 'exportPdf'])->name('anggaran.export.pdf');
@@ -152,10 +157,12 @@ Route::middleware('auth')->group(function () {
     Route::post('/perizinan-perkantoran/store', [PerizinanPerkantoranController::class, 'store'])->name('perizinan-perkantoran.store');
     Route::put('/perizinan-perkantoran/{id}', [PerizinanPerkantoranController::class, 'update'])->name('perizinan-perkantoran.update');
     Route::delete('/perizinan-perkantoran/{id}', [PerizinanPerkantoranController::class, 'destroy'])->name('perizinan-perkantoran.destroy');
+    Route::delete('/perizinan-perkantoran-bulk/destroy', [PerizinanPerkantoranController::class, 'destroyBulkTerbit'])->name('perizinan-perkantoran.destroyBulk');
 
     Route::post('/perizinan-proses-list', [PerizinanPerkantoranController::class, 'storeProses'])->name('perizinan-proses.store');
     Route::put('/perizinan-proses-list/{id}', [PerizinanPerkantoranController::class, 'updateProses'])->name('perizinan-proses.update');
     Route::delete('/perizinan-proses-list/{id}', [PerizinanPerkantoranController::class, 'destroyProses'])->name('perizinan-proses.destroy');
+    Route::delete('/perizinan-proses-bulk/destroy', [PerizinanPerkantoranController::class, 'destroyBulkProses'])->name('perizinan-proses.destroyBulk');
 
     Route::post('/perizinan-perkantoran/import', [PerizinanPerkantoranController::class, 'import'])->name('perizinan-perkantoran.import');
     Route::get('/perizinan-perkantoran/export/excel', [PerizinanPerkantoranController::class, 'exportExcel'])->name('perizinan-perkantoran.export.excel');
@@ -177,19 +184,22 @@ Route::middleware('auth')->group(function () {
     Route::post('/pelaporan', [PelaporanController::class, 'store'])->name('pelaporan.store');
     Route::put('/pelaporan/{id}', [PelaporanController::class, 'update'])->name('pelaporan.update');
     Route::delete('/pelaporan/{id}', [PelaporanController::class, 'destroy'])->name('pelaporan.destroy');
+    Route::delete('/pelaporan-bulk/destroy', [PelaporanController::class, 'destroyBulk'])->name('pelaporan.destroyBulk');
+    Route::get('/pelaporan-bulk/destroy', function() { return redirect()->route('pelaporan.index'); });
     Route::post('/pelaporan/import', [PelaporanController::class, 'import'])->name('pelaporan.import');
     Route::get('/pelaporan/export/excel', [PelaporanController::class, 'exportExcel'])->name('pelaporan.export.excel');
     Route::get('/pelaporan/export/pdf', [PelaporanController::class, 'exportPdf'])->name('pelaporan.export.pdf');
     Route::get('/pelaporan/template/excel', [PelaporanController::class, 'downloadTemplate'])->name('pelaporan.template.excel');
 
     // Rute Pengaturan Kolom Dinamis (Pelaporan)
-    Route::post('/kolom-dinamis', [PelaporanController::class, 'storeKolomDinamis'])->name('kolom-dinamis.store');
-    Route::delete('/kolom-dinamis/{id}', [PelaporanController::class, 'destroyKolomDinamis'])->name('kolom-dinamis.destroy');
+    Route::post('/kolom-dinamis', [PelaporanController::class, 'storeKolomDinamis'])->name('kolom-dinamis.store')->middleware('role.admin');
+    Route::delete('/kolom-dinamis/{id}', [PelaporanController::class, 'destroyKolomDinamis'])->name('kolom-dinamis.destroy')->middleware('role.admin');
 
     Route::get('/masalah-kendala', [MasalahKendalaController::class, 'index'])->name('masalah-kendala.index');
     Route::post('/masalah-kendala', [MasalahKendalaController::class, 'store'])->name('masalah-kendala.store');
     Route::put('/masalah-kendala/{id}', [MasalahKendalaController::class, 'update'])->name('masalah-kendala.update');
     Route::delete('/masalah-kendala/{id}', [MasalahKendalaController::class, 'destroy'])->name('masalah-kendala.destroy');
+    Route::delete('/masalah-kendala-bulk/destroy', [MasalahKendalaController::class, 'destroyBulk'])->name('masalah-kendala.destroyBulk');
     Route::post('/masalah-kendala/import', [MasalahKendalaController::class, 'import'])->name('masalah-kendala.import');
     Route::get('/masalah-kendala/export/excel', [MasalahKendalaController::class, 'exportExcel'])->name('masalah-kendala.export.excel');
     Route::get('/masalah-kendala/export/pdf', [MasalahKendalaController::class, 'exportPdf'])->name('masalah-kendala.export.pdf');
@@ -204,6 +214,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/kearsipan/pa-non-teknik/tekstual/dokumen', [PaTekstualController::class, 'storeDokumen'])->name('pa-tekstual.storeDokumen');
     Route::post('/kearsipan/pa-non-teknik/tekstual/update-bulan', [PaTekstualController::class, 'updateBulan'])->name('pa-tekstual.updateBulan');
     Route::delete('/kearsipan/pa-non-teknik/tekstual/destroy-bulan', [PaTekstualController::class, 'destroyBulan'])->name('pa-tekstual.destroyBulan');
+    Route::delete('/kearsipan/pa-non-teknik/tekstual/bulk-destroy', [PaTekstualController::class, 'destroyBulk'])->name('pa-tekstual.destroyBulk');
     Route::post('/kearsipan/pa-non-teknik/tekstual/import', [PaTekstualController::class, 'importExcel'])->name('pa-tekstual.import');
     Route::get('/kearsipan/pa-non-teknik/tekstual/export/excel', [PaTekstualController::class, 'exportExcel'])->name('pa-tekstual.export.excel');
     Route::get('/kearsipan/pa-non-teknik/tekstual/export/pdf', [PaTekstualController::class, 'exportPdf'])->name('pa-tekstual.export.pdf');
@@ -216,6 +227,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/non-teknik-non-tekstual/dokumen', [PaNonTekstualController::class, 'storeDokumen'])->name('non-teknik-non-tekstual.storeDokumen');
     Route::post('/non-teknik-non-tekstual/update-bulan', [PaNonTekstualController::class, 'updateBulan'])->name('non-teknik-non-tekstual.updateBulan');
     Route::delete('/non-teknik-non-tekstual/destroy-bulan', [PaNonTekstualController::class, 'destroyBulan'])->name('non-teknik-non-tekstual.destroyBulan');
+    Route::delete('/non-teknik-non-tekstual/bulk-destroy', [PaNonTekstualController::class, 'destroyBulk'])->name('non-teknik-non-tekstual.destroyBulk');
 
     Route::post('/non-teknik-non-tekstual/import', [PaNonTekstualController::class, 'importExcel'])->name('non-teknik-non-tekstual.import');
     Route::get('/non-teknik-non-tekstual/export/excel', [PaNonTekstualController::class, 'exportExcel'])->name('non-teknik-non-tekstual.export.excel');
@@ -229,6 +241,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/kearsipan/pa-teknik/dokumen', [PaTeknikController::class, 'storeDokumen'])->name('pa-teknik.storeDokumen');
     Route::post('/kearsipan/pa-teknik/update-bulan', [PaTeknikController::class, 'updateBulan'])->name('pa-teknik.updateBulan');
     Route::delete('/kearsipan/pa-teknik/destroy-bulan', [PaTeknikController::class, 'destroyBulan'])->name('pa-teknik.destroyBulan');
+    Route::delete('/kearsipan/pa-teknik/bulk-destroy', [PaTeknikController::class, 'destroyBulk'])->name('pa-teknik.destroyBulk');
 
     Route::post('/kearsipan/pa-teknik/import', [PaTeknikController::class, 'importExcel'])->name('pa-teknik.import');
     Route::get('/kearsipan/pa-teknik/export/excel', [PaTeknikController::class, 'exportExcel'])->name('pa-teknik.export.excel');
@@ -241,6 +254,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/kearsipan/dof/dokumen', [DofController::class, 'storeDokumen'])->name('dof.storeDokumen');
     Route::post('/kearsipan/dof/update-bulan', [DofController::class, 'updateBulan'])->name('dof.updateBulan');
     Route::delete('/kearsipan/dof/destroy-bulan', [DofController::class, 'destroyBulan'])->name('dof.destroyBulan');
+    Route::delete('/kearsipan/dof/bulk-destroy', [DofController::class, 'destroyBulk'])->name('dof.destroyBulk');
 
     Route::post('/kearsipan/dof/import', [DofController::class, 'importExcel'])->name('dof.import');
     Route::get('/kearsipan/dof/export/excel', [DofController::class, 'exportExcel'])->name('dof.export.excel');
@@ -258,6 +272,7 @@ Route::middleware('auth')->group(function () {
     Route::delete('/administrasi/jasa-kurir/master/{id}', [JasaKurirController::class, 'destroyMaster'])->name('jasakurir.master.destroy');
     Route::post('/administrasi/jasa-kurir/data', [JasaKurirController::class, 'storeData'])->name('jasakurir.data.store');
     Route::delete('/administrasi/jasa-kurir/data/{tahun}/{bulan}', [JasaKurirController::class, 'destroyData'])->name('jasakurir.data.destroy');
+    Route::delete('/administrasi/jasa-kurir/data-bulk/destroy', [JasaKurirController::class, 'destroyBulk'])->name('jasakurir.data.destroyBulk');
     Route::post('/administrasi/jasa-kurir/import', [JasaKurirController::class, 'import'])->name('jasakurir.import');
     Route::get('/administrasi/jasa-kurir/export/excel', [JasaKurirController::class, 'exportExcel'])->name('jasakurir.export.excel');
     Route::get('/administrasi/jasa-kurir/export/pdf', [JasaKurirController::class, 'exportPdf'])->name('jasakurir.export.pdf');
@@ -267,6 +282,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/administrasi/pengiriman-dokumen', [PengirimanDokumenController::class, 'index'])->name('pengiriman-dokumen.index');
     Route::post('/administrasi/pengiriman-dokumen/store', [PengirimanDokumenController::class, 'store'])->name('pengiriman-dokumen.store');
     Route::delete('/administrasi/pengiriman-dokumen/{id}', [PengirimanDokumenController::class, 'destroy'])->name('pengiriman-dokumen.destroy');
+    Route::delete('/administrasi/pengiriman-dokumen-bulk/destroy', [PengirimanDokumenController::class, 'destroyBulk'])->name('pengiriman-dokumen.destroyBulk');
+    Route::get('/administrasi/pengiriman-dokumen-bulk/destroy', function() { return redirect()->route('pengiriman-dokumen.index'); });
     Route::post('/pengiriman-dokumen/import', [PengirimanDokumenController::class, 'import'])->name('pengiriman-dokumen.import');
     Route::get('/pengiriman-dokumen/export/excel', [PengirimanDokumenController::class, 'exportExcel'])->name('pengiriman-dokumen.export.excel');
     Route::get('/pengiriman-dokumen/export/pdf', [PengirimanDokumenController::class, 'exportPdf'])->name('pengiriman-dokumen.export.pdf');
@@ -286,10 +303,11 @@ Route::middleware('auth')->group(function () {
     Route::post('/administrasi/jasa-fotocopy/store', [App\Http\Controllers\JasaFotocopyController::class, 'store'])->name('jasafotocopy.store');
     Route::put('/administrasi/jasa-fotocopy/{id}', [App\Http\Controllers\JasaFotocopyController::class, 'update'])->name('jasafotocopy.update');
     Route::delete('/administrasi/jasa-fotocopy/{id}', [App\Http\Controllers\JasaFotocopyController::class, 'destroy'])->name('jasafotocopy.destroy');
+    Route::delete('/administrasi/jasa-fotocopy-bulk/destroy', [App\Http\Controllers\JasaFotocopyController::class, 'destroyBulk'])->name('jasafotocopy.destroyBulk');
     
     // Fitur Tambahan
-    Route::post('/administrasi/jasa-fotocopy/kolom-dinamis', [App\Http\Controllers\JasaFotocopyController::class, 'storeKolomDinamis'])->name('jasafotocopy.kolom.store');
-    Route::delete('/administrasi/jasa-fotocopy/kolom-dinamis/{id}', [App\Http\Controllers\JasaFotocopyController::class, 'destroyKolomDinamis'])->name('jasafotocopy.kolom.destroy');
+    Route::post('/administrasi/jasa-fotocopy/kolom-dinamis', [App\Http\Controllers\JasaFotocopyController::class, 'storeKolomDinamis'])->name('jasafotocopy.kolom.store')->middleware('role.admin');
+    Route::delete('/administrasi/jasa-fotocopy/kolom-dinamis/{id}', [App\Http\Controllers\JasaFotocopyController::class, 'destroyKolomDinamis'])->name('jasafotocopy.kolom.destroy')->middleware('role.admin');
     Route::post('/administrasi/jasa-fotocopy/import', [App\Http\Controllers\JasaFotocopyController::class, 'importExcel'])->name('jasafotocopy.import');
     Route::get('/administrasi/jasa-fotocopy/export/excel', [App\Http\Controllers\JasaFotocopyController::class, 'exportExcel'])->name('jasafotocopy.export.excel');
     Route::get('/administrasi/jasa-fotocopy/export/pdf', [App\Http\Controllers\JasaFotocopyController::class, 'exportPdf'])->name('jasafotocopy.export.pdf');
@@ -309,14 +327,15 @@ Route::middleware('auth')->group(function () {
         Route::post('/import/excel', [SuratController::class, 'importExcel'])->name('import.excel');
         
         // 4. Pengaturan Kolom Dinamis (Khusus Modul Surat)
-        Route::post('/kolom-dinamis', [SuratController::class, 'storeKolomDinamis'])->name('kolom-dinamis.store');
-        Route::delete('/kolom-dinamis/{id}', [SuratController::class, 'destroyKolomDinamis'])->name('kolom-dinamis.destroy');
+        Route::post('/kolom-dinamis', [SuratController::class, 'storeKolomDinamis'])->name('kolom-dinamis.store')->middleware('role.admin');
+        Route::delete('/kolom-dinamis/{id}', [SuratController::class, 'destroyKolomDinamis'])->name('kolom-dinamis.destroy')->middleware('role.admin');
 
         // 5. CRUD Data Satuan (Posisikan /{id} di bawah agar tidak bentrok dengan rute statis di atasnya)
         Route::post('/', [SuratController::class, 'store'])->name('store');
         Route::get('/{id}', [SuratController::class, 'show'])->name('show'); // Rute ke halaman detail baru
         Route::put('/{id}', [SuratController::class, 'update'])->name('update');
         Route::delete('/{id}', [SuratController::class, 'destroy'])->name('destroy');
+        Route::delete('/bulk/destroy', [SuratController::class, 'destroyBulk'])->name('destroyBulk');
         
     });
     
@@ -361,6 +380,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/administrasi/pemeliharaan/rutin', [PemeliharaanController::class, 'storeRutin'])->name('pemeliharaan-rutin.store');
     Route::post('/administrasi/pemeliharaan/rutin/bulan', [PemeliharaanController::class, 'updateRutinBulan'])->name('pemeliharaan-rutin.updateBulan');
     Route::delete('/administrasi/pemeliharaan/rutin/bulan', [PemeliharaanController::class, 'destroyRutinBulan'])->name('pemeliharaan-rutin.destroyBulan');
+    Route::delete('/administrasi/pemeliharaan/rutin/bulan-bulk/destroy', [PemeliharaanController::class, 'destroyRutinBulk'])->name('pemeliharaan-rutin.destroyBulk');
     Route::post('/administrasi/pemeliharaan/rutin/import', [PemeliharaanController::class, 'importRutin'])->name('pemeliharaan-rutin.import');
     Route::get('/administrasi/pemeliharaan/rutin/export/excel', [PemeliharaanController::class, 'exportExcelRutin'])->name('pemeliharaan-rutin.export.excel');
     Route::get('/administrasi/pemeliharaan/rutin/export/pdf', [PemeliharaanController::class, 'exportPdfRutin'])->name('pemeliharaan-rutin.export.pdf');
@@ -371,6 +391,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/administrasi/pemeliharaan/peralatan', [PemeliharaanController::class, 'storePeralatan'])->name('pemeliharaan-peralatan.store');
     Route::post('/administrasi/pemeliharaan/peralatan/bulan', [PemeliharaanController::class, 'updatePeralatanBulan'])->name('pemeliharaan-peralatan.updateBulan');
     Route::delete('/administrasi/pemeliharaan/peralatan/bulan', [PemeliharaanController::class, 'destroyPeralatanBulan'])->name('pemeliharaan-peralatan.destroyBulan');
+    Route::delete('/administrasi/pemeliharaan/peralatan/bulan-bulk/destroy', [PemeliharaanController::class, 'destroyPeralatanBulk'])->name('pemeliharaan-peralatan.destroyBulk');
     Route::post('/administrasi/pemeliharaan/peralatan/import', [PemeliharaanController::class, 'importPeralatan'])->name('pemeliharaan-peralatan.import');
     Route::get('/administrasi/pemeliharaan/peralatan/export/excel', [PemeliharaanController::class, 'exportExcelPeralatan'])->name('pemeliharaan-peralatan.export.excel');
     Route::get('/administrasi/pemeliharaan/peralatan/export/pdf', [PemeliharaanController::class, 'exportPdfPeralatan'])->name('pemeliharaan-peralatan.export.pdf');
@@ -378,6 +399,10 @@ Route::middleware('auth')->group(function () {
     Route::get('/administrasi/undangan', [UndanganController::class, 'index'])->name('undangan.index');
     Route::post('/administrasi/undangan', [UndanganController::class, 'store'])->name('undangan.store');
     Route::delete('/administrasi/undangan/{id}', [UndanganController::class, 'destroy'])->name('undangan.destroy');
+    Route::post('/administrasi/undangan/detail', [UndanganController::class, 'storeDetail'])->name('undangan.detail.store');
+    Route::put('/administrasi/undangan/detail/{id}', [UndanganController::class, 'updateDetail'])->name('undangan.detail.update');
+    Route::delete('/administrasi/undangan/detail/{id}', [UndanganController::class, 'destroyDetail'])->name('undangan.detail.destroy');
+    Route::delete('/administrasi/undangan/detail-bulk', [UndanganController::class, 'destroyBulkDetail'])->name('undangan.detail.destroyBulk');
     Route::post('/administrasi/undangan/import', [UndanganController::class, 'import'])->name('undangan.import');
     Route::get('/administrasi/undangan/export/excel', [UndanganController::class, 'exportExcel'])->name('undangan.export.excel');
     Route::get('/administrasi/undangan/export/pdf', [UndanganController::class, 'exportPdf'])->name('undangan.export.pdf');
@@ -386,12 +411,14 @@ Route::middleware('auth')->group(function () {
     // ==========================================
     // MANAJEMEN PENGGUNA (ADMIN)
     // ==========================================
-    Route::get('/admin/manajemen-pengguna', [UserController::class, 'index'])->name('admin.users.index');
-    Route::get('/admin/manajemen-pengguna/create', [UserController::class, 'create'])->name('admin.users.create');
-    Route::post('/admin/manajemen-pengguna', [UserController::class, 'store'])->name('admin.users.store');
-    Route::patch('/admin/manajemen-pengguna/{user}/toggle', [UserController::class, 'toggleStatus'])->name('admin.users.toggle');
-    Route::patch('/admin/manajemen-pengguna/{user}/password', [UserController::class, 'changePassword'])->name('admin.users.password.update');
-    Route::delete('/admin/manajemen-pengguna/{user}', [UserController::class, 'destroy'])->name('admin.users.destroy');
+    Route::middleware('role.superadmin')->group(function () {
+        Route::get('/admin/manajemen-pengguna', [UserController::class, 'index'])->name('admin.users.index');
+        Route::get('/admin/manajemen-pengguna/create', [UserController::class, 'create'])->name('admin.users.create');
+        Route::post('/admin/manajemen-pengguna', [UserController::class, 'store'])->name('admin.users.store');
+        Route::patch('/admin/manajemen-pengguna/{user}/toggle', [UserController::class, 'toggleStatus'])->name('admin.users.toggle');
+        Route::patch('/admin/manajemen-pengguna/{user}/password', [UserController::class, 'changePassword'])->name('admin.users.password.update');
+        Route::delete('/admin/manajemen-pengguna/{user}', [UserController::class, 'destroy'])->name('admin.users.destroy');
+    });
 
     Route::get('/admin/log-audit', [AuditLogController::class, 'index'])->name('log-audit');
 

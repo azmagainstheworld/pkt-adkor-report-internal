@@ -55,8 +55,8 @@ class AnggaranController extends Controller
             ->values();
 
         // 'all' = opsi "Semua Tahun" / "Semua Bulan"
-        $selectedYear = $request->input('year', 'all');
-        $selectedMonth = $request->input('month', 'all');
+        $selectedYear = $request->input('year', $request->input('tahun', 'all'));
+        $selectedMonth = $request->input('month', $request->input('bulan', 'all'));
 
         $kategoriOrder = array_keys($this->kategoriList);
 
@@ -292,7 +292,7 @@ class AnggaranController extends Controller
 
         AnggaranAdministrasi::create($data);
 
-        return redirect()->route('anggaran.index', ['tahun' => $request->tahun, 'bulan' => $request->bulan])
+        return redirect()->route('anggaran.index', ['year' => $request->tahun, 'month' => $request->bulan])
             ->with('success', 'Data anggaran bulan ' . $request->bulan . ' ' . $request->tahun . ' berhasil ditambahkan.');
     }
 
@@ -324,7 +324,7 @@ class AnggaranController extends Controller
 
         $anggaran->update($validated);
 
-        return redirect()->route('anggaran.index', ['tahun' => $validated['tahun'], 'bulan' => $validated['bulan']])
+        return redirect()->route('anggaran.index', ['year' => $validated['tahun'], 'month' => $validated['bulan']])
                          ->with('success', 'Data anggaran berhasil diperbarui.');
     }
 
@@ -334,7 +334,7 @@ class AnggaranController extends Controller
         $bulan = $anggaran->bulan;
         $anggaran->delete();
 
-        return redirect()->route('anggaran.index', ['tahun' => $tahun, 'bulan' => $bulan])
+        return redirect()->route('anggaran.index', ['year' => $tahun, 'month' => $bulan])
                          ->with('success', 'Data anggaran berhasil dihapus.');
     }
 
@@ -372,5 +372,18 @@ class AnggaranController extends Controller
             return redirect()->back()->with('error', 'File template tidak ditemukan.');
         }
         return response()->download($filePath);
+    }
+
+    public function destroyBulk(\Illuminate\Http\Request $request)
+    {
+        $ids = $request->ids;
+        \Illuminate\Support\Facades\Log::info("Bulk delete IDs received: " . json_encode($ids));
+        
+        if ($ids && is_array($ids)) {
+            $deleted = \App\Models\AnggaranAdministrasi::whereIn('id', $ids)->delete();
+            \Illuminate\Support\Facades\Log::info("Deleted count: " . $deleted);
+            return redirect()->back()->with('success', 'Berhasil menghapus data secara massal.');
+        }
+        return redirect()->back()->with('error_modal', 'Tidak ada data yang dipilih.');
     }
 }

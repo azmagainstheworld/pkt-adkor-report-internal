@@ -96,20 +96,37 @@
                         <div class="px-4 py-2 bg-gray-50 border-y border-gray-100 mt-1"><p class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Konfigurasi</p></div>
                         <div class="py-1">
                             <button type="button" onclick="openModal('modalMasterRutin'); toggleDropdown('dropdownOpsiRutin')" class="w-full text-left text-gray-700 px-4 py-2 text-xs hover:bg-gray-50 flex items-center gap-2 font-medium"><svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"></path></svg> Atur Dokumen Kegiatan</button>
-                            <button type="button" onclick="openModal('modalAturKolomRutin'); toggleDropdown('dropdownOpsiRutin')" class="w-full text-left text-gray-700 px-4 py-2 text-xs hover:bg-gray-50 flex items-center gap-2 font-medium border-t border-gray-50"><svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg> Atur Kolom Tambahan</button>
+                            @if(auth()->check() && auth()->user()->isAdmin())
+<button type="button" onclick="openModal('modalAturKolomRutin'); toggleDropdown('dropdownOpsiRutin')" class="w-full text-left text-gray-700 px-4 py-2 text-xs hover:bg-gray-50 flex items-center gap-2 font-medium border-t border-gray-50"><svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg> Atur Kolom Tambahan</button>
+@endif
                         </div>
                     </div>
                 </div>
 
+                                <button type="button" id="btnModeBulkRutin" onclick="toggleBulkModeRutin()" class="inline-flex items-center justify-center gap-2 px-3 py-1.5 text-xs font-medium bg-red-50 text-red-600 border border-red-200 rounded-xl hover:bg-red-100 transition-colors shadow-sm outline-none focus:ring-2 focus:ring-red-300 mr-2">
+                    <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg> Mode Hapus Massal
+                </button>
                 <x-button variant="primary" onclick="openModalTambahRutin()" class="!py-2 text-xs bg-[#F7941E] hover:bg-orange-600 border-none">
                     <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg> Tambah Data
                 </x-button>
             </div>
         </div>
 
-        <div class="overflow-x-auto">
+                <form id="bulkDeleteFormRutin" action="{{ route('pemeliharaan-rutin.destroyBulk') }}" method="POST" onsubmit="return confirm('Hapus data pemeliharaan rutin terpilih?')">
+            @csrf
+            @method('DELETE')
+            
+            <div id="btnGroupBulkRutin" class="hidden flex justify-between items-center px-4 py-2 bg-red-50 border-b border-red-100">
+                <span class="text-xs text-red-600 font-semibold">Data terpilih untuk dihapus</span>
+                <div class="flex gap-2">
+                    <button type="button" onclick="cancelAllRutin()" class="px-3 py-1.5 bg-white border border-gray-300 text-gray-700 rounded-lg text-xs font-medium hover:bg-gray-50">Batal</button>
+                    <button type="submit" class="px-3 py-1.5 bg-red-600 text-white rounded-lg text-xs font-medium hover:bg-red-700">Hapus Terpilih</button>
+                </div>
+            </div>
+
+            <div id="tableContainerBulkRutin" class="hide-bulk overflow-x-auto">
             @php
-                $headersRutin = ['Tahun', 'Bulan'];
+                $headersRutin = ['<input type="checkbox" id="selectAllBulkRutin" onclick="toggleSelectAllRutin()">', 'Tahun', 'Bulan'];
                 foreach($masterRutin as $master) { $headersRutin[] = $master->nama_kegiatan; }
                 if(isset($kolomRutin)) { foreach($kolomRutin as $k) { $headersRutin[] = $k->nama_kolom; } }
                 $headersRutin[] = 'Aksi';
@@ -117,6 +134,7 @@
             <x-table :headers="$headersRutin">
                 @forelse($dataRutinTable as $row)
                     <tr class="hover:bg-gray-50 transition-colors text-xs whitespace-nowrap">
+                        <td class="px-3 py-2 text-center align-middle"><input type="checkbox" name="ids[]" class="cb-bulk-rutin" value="{{ $row['tahun'] }}|{{ $row['bulan'] }}" onclick="toggleCheckboxRutin()"></td>
                         <td class="px-4 py-3 text-gray-700 font-medium text-center">{{ $row['tahun'] }}</td>
                         <td class="px-4 py-3 text-gray-900 font-medium text-center">{{ $row['bulan'] }}</td>
                         @foreach($masterRutin as $master)
@@ -145,7 +163,8 @@
                     <tr><td colspan="{{ count($headersRutin) }}" class="px-6 py-10 text-center text-gray-500 text-sm">Belum ada data pemeliharaan rutin.</td></tr>
                 @endforelse
             </x-table>
-        </div>
+            </div>
+        </form>
     </x-card>
 
     <!-- ================= TABEL 2: PERALATAN ================= -->
@@ -168,20 +187,37 @@
                         <div class="px-4 py-2 bg-gray-50 border-y border-gray-100 mt-1"><p class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Konfigurasi</p></div>
                         <div class="py-1">
                             <button type="button" onclick="openModal('modalMasterPeralatan'); toggleDropdown('dropdownOpsiPeralatan')" class="w-full text-left text-gray-700 px-4 py-2 text-xs hover:bg-gray-50 flex items-center gap-2 font-medium"><svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"></path></svg> Atur Dokumen Peralatan</button>
-                            <button type="button" onclick="openModal('modalAturKolomPeralatan'); toggleDropdown('dropdownOpsiPeralatan')" class="w-full text-left text-gray-700 px-4 py-2 text-xs hover:bg-gray-50 flex items-center gap-2 font-medium border-t border-gray-50"><svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg> Atur Kolom Tambahan</button>
+                            @if(auth()->check() && auth()->user()->isAdmin())
+<button type="button" onclick="openModal('modalAturKolomPeralatan'); toggleDropdown('dropdownOpsiPeralatan')" class="w-full text-left text-gray-700 px-4 py-2 text-xs hover:bg-gray-50 flex items-center gap-2 font-medium border-t border-gray-50"><svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg> Atur Kolom Tambahan</button>
+@endif
                         </div>
                     </div>
                 </div>
 
+                                <button type="button" id="btnModeBulkPeralatan" onclick="toggleBulkModePeralatan()" class="inline-flex items-center justify-center gap-2 px-3 py-1.5 text-xs font-medium bg-red-50 text-red-600 border border-red-200 rounded-xl hover:bg-red-100 transition-colors shadow-sm outline-none focus:ring-2 focus:ring-red-300 mr-2">
+                    <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg> Mode Hapus Massal
+                </button>
                 <x-button variant="primary" onclick="openModalTambahPeralatan()" class="!py-2 text-xs bg-[#0056A3] hover:bg-blue-800 border-none">
                     <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg> Tambah Data
                 </x-button>
             </div>
         </div>
 
-        <div class="overflow-x-auto">
+                <form id="bulkDeleteFormPeralatan" action="{{ route('pemeliharaan-peralatan.destroyBulk') }}" method="POST" onsubmit="return confirm('Hapus data perbaikan peralatan terpilih?')">
+            @csrf
+            @method('DELETE')
+            
+            <div id="btnGroupBulkPeralatan" class="hidden flex justify-between items-center px-4 py-2 bg-red-50 border-b border-red-100">
+                <span class="text-xs text-red-600 font-semibold">Data terpilih untuk dihapus</span>
+                <div class="flex gap-2">
+                    <button type="button" onclick="cancelAllPeralatan()" class="px-3 py-1.5 bg-white border border-gray-300 text-gray-700 rounded-lg text-xs font-medium hover:bg-gray-50">Batal</button>
+                    <button type="submit" class="px-3 py-1.5 bg-red-600 text-white rounded-lg text-xs font-medium hover:bg-red-700">Hapus Terpilih</button>
+                </div>
+            </div>
+
+            <div id="tableContainerBulkPeralatan" class="hide-bulk overflow-x-auto">
             @php
-                $headersAlat = ['Tahun', 'Bulan'];
+                $headersAlat = ['<input type="checkbox" id="selectAllBulkPeralatan" onclick="toggleSelectAllPeralatan()">', 'Tahun', 'Bulan'];
                 foreach($masterPeralatan as $master) { $headersAlat[] = $master->nama_peralatan; }
                 if(isset($kolomPeralatan)) { foreach($kolomPeralatan as $k) { $headersAlat[] = $k->nama_kolom; } }
                 $headersAlat[] = 'Aksi';
@@ -189,6 +225,7 @@
             <x-table :headers="$headersAlat">
                 @forelse($dataPeralatanTable as $row)
                     <tr class="hover:bg-gray-50 transition-colors text-xs whitespace-nowrap">
+                        <td class="px-3 py-2 text-center align-middle"><input type="checkbox" name="ids[]" class="cb-bulk-peralatan" value="{{ $row['tahun'] }}|{{ $row['bulan'] }}" onclick="toggleCheckboxPeralatan()"></td>
                         <td class="px-4 py-3 text-gray-700 font-medium text-center">{{ $row['tahun'] }}</td>
                         <td class="px-4 py-3 text-gray-900 font-medium text-center">{{ $row['bulan'] }}</td>
                         @foreach($masterPeralatan as $master)
@@ -217,7 +254,8 @@
                     <tr><td colspan="{{ count($headersAlat) }}" class="px-6 py-10 text-center text-gray-500 text-sm">Belum ada data rincian perbaikan.</td></tr>
                 @endforelse
             </x-table>
-        </div>
+            </div>
+        </form>
     </x-card>
 
     <!-- MODAL HAPUS KONFIRMASI -->
@@ -271,7 +309,8 @@
     </x-modal>
 
     <!-- Modal Atur Kolom Rutin -->
-    <x-modal id="modalAturKolomRutin" title="Pengaturan Kolom (Tabel Rutin)">
+    @if(auth()->user()->isAdmin())
+<x-modal id="modalAturKolomRutin" title="Pengaturan Kolom (Tabel Rutin)">
         <div class="mb-6 bg-gray-50 p-4 rounded-xl border border-gray-100 max-h-48 overflow-y-auto">
             @if(isset($kolomRutin) && $kolomRutin->count() > 0)
                 @foreach($kolomRutin as $kolom)
@@ -299,9 +338,11 @@
             <div class="flex justify-end gap-3 mt-4"><x-button variant="outline" type="button" onclick="closeModal('modalAturKolomRutin')">Tutup</x-button><x-button variant="primary" type="submit">Simpan</x-button></div>
         </form>
     </x-modal>
+@endif
 
     <!-- Modal Atur Kolom Peralatan -->
-    <x-modal id="modalAturKolomPeralatan" title="Pengaturan Kolom (Tabel Peralatan)">
+    @if(auth()->user()->isAdmin())
+<x-modal id="modalAturKolomPeralatan" title="Pengaturan Kolom (Tabel Peralatan)">
         <div class="mb-6 bg-gray-50 p-4 rounded-xl border border-gray-100 max-h-48 overflow-y-auto">
             @if(isset($kolomPeralatan) && $kolomPeralatan->count() > 0)
                 @foreach($kolomPeralatan as $kolom)
@@ -329,6 +370,7 @@
             <div class="flex justify-end gap-3 mt-4"><x-button variant="outline" type="button" onclick="closeModal('modalAturKolomPeralatan')">Tutup</x-button><x-button variant="primary" type="submit">Simpan</x-button></div>
         </form>
     </x-modal>
+@endif
 
     <!-- ================= IMPORT EXCEL MODALS ================= -->
     <x-import-modal id="modalImportRutin" route="{{ route('pemeliharaan-rutin.import') }}" title="Import Data Pemeliharaan Rutin" templateRoute="{{ route('template.download', 'pemeliharaan-rutin') }}" />
@@ -481,6 +523,89 @@
     </x-modal>
 
 </main>
+
+    <script>
+        // TABEL 1 (RUTIN)
+        function toggleBulkModeRutin() {
+            let container = document.getElementById("tableContainerBulkRutin");
+            let btn = document.getElementById("btnModeBulkRutin");
+            if (container.classList.contains("hide-bulk")) {
+                container.classList.remove("hide-bulk");
+                if(btn) { btn.classList.replace("bg-red-50", "bg-red-600"); btn.classList.replace("text-red-600", "text-white"); }
+            } else {
+                container.classList.add("hide-bulk");
+                cancelAllRutin();
+                if(btn) { btn.classList.replace("bg-red-600", "bg-red-50"); btn.classList.replace("text-white", "text-red-600"); }
+            }
+        }
+        function toggleSelectAllRutin() {
+            let selectAll = document.getElementById("selectAllBulkRutin");
+            let checkboxes = document.querySelectorAll(".cb-bulk-rutin");
+            checkboxes.forEach(cb => cb.checked = selectAll.checked);
+            toggleDeleteBtnRutin();
+        }
+        function toggleCheckboxRutin() {
+            let selectAll = document.getElementById("selectAllBulkRutin");
+            let checkboxes = document.querySelectorAll(".cb-bulk-rutin");
+            selectAll.checked = Array.from(checkboxes).every(cb => cb.checked);
+            toggleDeleteBtnRutin();
+        }
+        function toggleDeleteBtnRutin() {
+            let group = document.getElementById("btnGroupBulkRutin");
+            if (group) {
+                let checked = document.querySelectorAll(".cb-bulk-rutin:checked").length > 0;
+                if (checked) { group.classList.remove("hidden"); } 
+                else { group.classList.add("hidden"); }
+            }
+        }
+        function cancelAllRutin() {
+            let selectAll = document.getElementById("selectAllBulkRutin");
+            if (selectAll) selectAll.checked = false;
+            let checkboxes = document.querySelectorAll(".cb-bulk-rutin");
+            checkboxes.forEach(cb => cb.checked = false);
+            toggleDeleteBtnRutin();
+        }
+
+        // TABEL 2 (PERALATAN)
+        function toggleBulkModePeralatan() {
+            let container = document.getElementById("tableContainerBulkPeralatan");
+            let btn = document.getElementById("btnModeBulkPeralatan");
+            if (container.classList.contains("hide-bulk")) {
+                container.classList.remove("hide-bulk");
+                if(btn) { btn.classList.replace("bg-red-50", "bg-red-600"); btn.classList.replace("text-red-600", "text-white"); }
+            } else {
+                container.classList.add("hide-bulk");
+                cancelAllPeralatan();
+                if(btn) { btn.classList.replace("bg-red-600", "bg-red-50"); btn.classList.replace("text-white", "text-red-600"); }
+            }
+        }
+        function toggleSelectAllPeralatan() {
+            let selectAll = document.getElementById("selectAllBulkPeralatan");
+            let checkboxes = document.querySelectorAll(".cb-bulk-peralatan");
+            checkboxes.forEach(cb => cb.checked = selectAll.checked);
+            toggleDeleteBtnPeralatan();
+        }
+        function toggleCheckboxPeralatan() {
+            let selectAll = document.getElementById("selectAllBulkPeralatan");
+            let checkboxes = document.querySelectorAll(".cb-bulk-peralatan");
+            selectAll.checked = Array.from(checkboxes).every(cb => cb.checked);
+            toggleDeleteBtnPeralatan();
+        }
+        function toggleDeleteBtnPeralatan() {
+            let group = document.getElementById("btnGroupBulkPeralatan");
+            if (group) {
+                let checked = document.querySelectorAll(".cb-bulk-peralatan:checked").length > 0;
+                if (checked) { group.classList.remove("hidden"); } 
+                else { group.classList.add("hidden"); }
+            }
+        }
+        function cancelAllPeralatan() {
+            let selectAll = document.getElementById("selectAllBulkPeralatan");
+            if (selectAll) selectAll.checked = false;
+            let checkboxes = document.querySelectorAll(".cb-bulk-peralatan");
+            checkboxes.forEach(cb => cb.checked = false);
+            toggleDeleteBtnPeralatan();
+        }
 
 <script>
     function openModal(id) { document.getElementById(id).classList.remove('hidden'); }

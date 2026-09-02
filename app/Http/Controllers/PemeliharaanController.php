@@ -178,6 +178,26 @@ class PemeliharaanController extends Controller
         return back()->with('success', 'Pemeliharaan Rutin diperbarui.');
     }
 
+        public function destroyRutinBulk(\Illuminate\Http\Request $request)
+    {
+        $request->validate([
+            'ids' => 'required|array',
+        ]);
+
+        $count = 0;
+        foreach($request->ids as $val) {
+            $parts = explode('|', $val);
+            if(count($parts) == 2) {
+                $tahun = $parts[0];
+                $bulan = $parts[1];
+                \App\Models\PemeliharaanRutinData::where('tahun', $tahun)->where('bulan', $bulan)->delete();
+                $count++;
+            }
+        }
+
+        return redirect()->back()->with('success', $count . ' Data pemeliharaan rutin berhasil dihapus.');
+    }
+
     public function destroyRutinBulan(Request $request)
     {
         PemeliharaanRutinData::where('tahun', $request->tahun)->where('bulan', $request->bulan)->delete();
@@ -216,6 +236,26 @@ class PemeliharaanController extends Controller
         return back()->with('success', 'Rincian Peralatan diperbarui.');
     }
 
+        public function destroyPeralatanBulk(\Illuminate\Http\Request $request)
+    {
+        $request->validate([
+            'ids' => 'required|array',
+        ]);
+
+        $count = 0;
+        foreach($request->ids as $val) {
+            $parts = explode('|', $val);
+            if(count($parts) == 2) {
+                $tahun = $parts[0];
+                $bulan = $parts[1];
+                \App\Models\PemeliharaanPeralatanData::where('tahun', $tahun)->where('bulan', $bulan)->delete();
+                $count++;
+            }
+        }
+
+        return redirect()->back()->with('success', $count . ' Data perbaikan peralatan berhasil dihapus.');
+    }
+
     public function destroyPeralatanBulan(Request $request)
     {
         PemeliharaanPeralatanData::where('tahun', $request->tahun)->where('bulan', $request->bulan)->delete();
@@ -227,6 +267,7 @@ class PemeliharaanController extends Controller
     // ==========================================
     public function storeKolomDinamis(Request $request)
     {
+        abort_if(!auth()->user()->isAdmin(), 403, 'Akses ditolak.');
         $request->validate(['modul' => 'required|string', 'nama_kolom' => 'required|string|max:100', 'tipe_input' => 'required|in:text,number,date,dropdown,currency']);
         $isDuplicate = DB::table('dynamic_columns')->where('modul', $request->modul)->whereRaw('LOWER(nama_kolom) = ?', [strtolower(trim($request->nama_kolom))])->exists();
         if ($isDuplicate) return back()->with('error_modal', 'Kolom "' . $request->nama_kolom . '" sudah ada!')->with('failed_modul', $request->modul);
@@ -241,6 +282,7 @@ class PemeliharaanController extends Controller
     }
 
     public function destroyKolomDinamis($id) {
+        abort_if(!auth()->user()->isAdmin(), 403, 'Akses ditolak.');
         DB::table('dynamic_columns')->where('id', $id)->delete();
         return back()->with('success', 'Kolom dinamis dihapus.');
     }

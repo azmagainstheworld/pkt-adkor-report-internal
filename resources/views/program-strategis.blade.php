@@ -8,6 +8,8 @@
     /* Jangan nowrap untuk sel isi agar teks turun ke bawah jika kepanjangan */
     td { white-space: normal !important; vertical-align: top; }
     th { white-space: nowrap !important; }
+    /* Sembunyikan kolom pertama jika ada class hide-bulk */
+    .hide-bulk th:first-child, .hide-bulk td:first-child { display: none !important; }
 </style>
 
 <main class="flex-1 overflow-y-auto p-8 relative bg-[#F8F9FA]">
@@ -65,10 +67,12 @@
                     <div id="dropdownOpsiSuper" class="hidden origin-top-right absolute right-0 mt-2 w-56 rounded-xl shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-50">
                         <div class="py-1" role="menu">
                             
-                            <button type="button" onclick="openModal('modalAturKolom')" class="w-full text-left px-4 py-2.5 text-xs text-gray-700 hover:bg-orange-50 hover:text-orange-700 flex items-center gap-2">
+                            @if(auth()->check() && auth()->user()->isAdmin())
+<button type="button" onclick="openModal('modalAturKolom')" class="w-full text-left px-4 py-2.5 text-xs text-gray-700 hover:bg-orange-50 hover:text-orange-700 flex items-center gap-2">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"></path></svg>
                                 Atur Kolom Tambahan
                             </button>
+@endif
                             
                             <div class="border-t border-gray-100 my-1"></div>
                             
@@ -90,19 +94,35 @@
                         </div>
                     </div>
                 </div>
+                <button type="button" id="btnModeBulk" onclick="toggleBulkMode()" class="inline-flex items-center justify-center gap-2 px-3 py-1.5 text-xs font-medium bg-red-50 text-red-600 border border-red-200 rounded-xl hover:bg-red-100 transition-colors shadow-sm outline-none focus:ring-2 focus:ring-red-300">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                    Hapus semua
+                </button>
 
                 <x-button type="button" onclick="openModalTambahMaster()" class="!py-1.5 !px-3 text-xs bg-orange-500 hover:bg-orange-600 text-white border-none font-medium flex items-center gap-1 shadow-sm rounded-xl">
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
                     Tambah Sasaran & Program Strategis
                 </x-button>
 
-                <x-button variant="primary" onclick="openModalTambah()" class="!py-1.5 !px-3 text-xs flex items-center gap-1 shadow-sm rounded-xl border-none font-medium text-white">+ Tambah Rincian Data</x-button>
+                                <x-button variant="primary" onclick="openModalTambah()" class="!py-1.5 !px-3 text-xs flex items-center gap-1 shadow-sm rounded-xl border-none font-medium text-white">+ Tambah Rincian Data</x-button>
             </div>
         </div>
 
-        <div class="overflow-x-auto w-full">
+                <form id="bulkDeleteForm" action="{{ route('program-strategis.destroyBulk') }}" method="POST" onsubmit="return confirm('Hapus data terpilih?')">
+            @csrf
+            @method('DELETE')
+            
+            <div id="btnGroupBulk" class="hidden justify-between items-center px-4 py-2 bg-red-50 border-b border-red-100">
+                <span class="text-xs text-red-600 font-semibold flex items-center gap-2"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg><span id="selectedCount">0</span> data terpilih untuk dihapus</span>
+                <div class="flex gap-2">
+                    <button type="button" onclick="cancelAll()" class="px-3 py-1.5 bg-white border border-gray-300 text-gray-700 rounded-lg text-xs font-medium hover:bg-gray-50">Batal</button>
+                    <button type="submit" class="px-3 py-1.5 bg-red-600 text-white rounded-lg text-xs font-medium hover:bg-red-700">Hapus Terpilih</button>
+                </div>
+            </div>
+
+            <div id="tableContainerBulk" class="hide-bulk overflow-x-auto w-full">
             @php
-                $headers = ['Tahun', 'Bulan', 'Sasaran', 'Program Strategis', 'Program Kegiatan', 'Target Waktu', 'Realisasi (%)', 'Progress Saat Ini', 'Kendala'];
+                $headers = ['<input type="checkbox" id="selectAllBulk" onclick="toggleSelectAll()">', 'Tahun', 'Bulan', 'Sasaran', 'Program Strategis', 'Program Kegiatan', 'Target Waktu', 'Realisasi (%)', 'Progress Saat Ini', 'Kendala'];
                 if(isset($kolomDinamis)) {
                     foreach($kolomDinamis as $k) {
                         $headers[] = $k->nama_kolom;
@@ -129,6 +149,7 @@
                         @endphp
                         
                         <tr class="hover:bg-gray-50 transition-colors text-[13px] border-b border-gray-100">
+                            <td class="px-3 py-2 text-center align-middle"><input type="checkbox" name="ids[]" class="cb-bulk" value="{{ $row->id }}" onclick="toggleCheckbox()"></td>
                             @if($index === 0)
                                 <td rowspan="{{ $rowspan }}" class="p-4 text-gray-700 font-bold text-center border-r border-gray-100 align-top">{{ $row->tahun }}</td>
                                 <td rowspan="{{ $rowspan }}" class="p-4 text-gray-700 font-bold text-center border-r border-gray-100 align-top">{{ ($row->bulan && is_numeric($row->bulan)) ? $bulanIndo[(int)$row->bulan] : '-' }}</td>
@@ -140,15 +161,15 @@
                             
                             @if($index === 0)
                                 <td rowspan="{{ $rowspan }}" class="p-4 text-gray-700 text-center border-r border-gray-100 align-top">
-                                    @if($row->target_waktu_start && $row->target_waktu_end)
-                                        {{ \Carbon\Carbon::parse($row->target_waktu_start)->format('d/m/Y') }}<br>s.d<br>{{ \Carbon\Carbon::parse($row->target_waktu_end)->format('d/m/Y') }}
+                                                                        @if($row->target_waktu_start)
+                                        {{ \Carbon\Carbon::parse($row->target_waktu_start)->format('d/m/Y') }}
                                     @else
                                         -
                                     @endif
                                 </td>
                             @endif
                             
-                            <td class="p-4 text-gray-700 text-center font-medium border-r border-gray-100">{{ $row->realisasi }}</td>
+                            <td class="p-4 text-gray-700 text-center font-medium border-r border-gray-100">{{ (!empty($row->realisasi) && $row->realisasi !== '-' && !str_ends_with(trim($row->realisasi), '%')) ? trim($row->realisasi) . '%' : ($row->realisasi ?? '-') }}</td>
                             <td class="p-4 text-gray-700 border-r border-gray-100 min-w-[300px] whitespace-pre-line">{!! e($row->progress_saat_ini) !!}</td>
                             
                             @if($index === 0)
@@ -187,8 +208,8 @@
                     <tr><td colspan="{{ count($headers) }}" class="px-6 py-10 text-center text-gray-500 text-sm">Belum ada data program strategis.</td></tr>
                 @endforelse
             </x-table>
-        </div>
-        
+            </div>
+        </form>
         <!-- Paginator -->
         @if(method_exists($groupedProgram, 'links'))
             <div class="p-4 border-t border-gray-100 bg-gray-50 flex justify-end">
@@ -199,54 +220,58 @@
 
     <x-delete-modal id="modalHapus" title="Hapus Data" message="Data program strategis ini akan dihapus secara permanen. Lanjutkan?" />
 
-    <!-- MODAL ATUR KOLOM -->
+    @if(auth()->user()->isAdmin())
+<!-- MODAL ATUR KOLOM -->
     <x-modal id="modalAturKolom" title="Pengaturan Kolom Tambahan" description="Tambah atau hapus kolom khusus pada tabel Program Strategis.">
-        <form action="{{ route('program-strategis.kolom.store') }}" method="POST" class="mb-6">
-            @csrf
-            <input type="hidden" name="modul" value="program_strategis">
-            
-            <div class="flex gap-3 items-end">
-                <div class="flex-1">
-                    <label class="block text-xs font-medium text-gray-700 mb-1">Nama Kolom Baru</label>
-                    <input type="text" name="nama_kolom" placeholder="Misal: Catatan Auditor" required class="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:border-orange-500 outline-none">
-                </div>
-                <div class="w-32">
-                    <label class="block text-xs font-medium text-gray-700 mb-1">Tipe Data</label>
-                    <select name="tipe_data" class="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:border-orange-500 outline-none cursor-pointer bg-white">
-                        <option value="text">Teks Pendek</option>
-                        <option value="number">Angka</option>
-                        <option value="date">Tanggal</option>
-                    </select>
-                </div>
-                <x-button variant="primary" type="submit" class="!py-1.5 !px-4">Tambah</x-button>
-            </div>
-        </form>
-
-        <div class="border-t border-gray-100 pt-4">
-            <h4 class="text-xs font-bold text-gray-700 mb-3 uppercase tracking-wider">Kolom Aktif Saat Ini</h4>
-            @if(isset($kolomDinamis) && count($kolomDinamis) > 0)
-                <div class="grid grid-cols-2 gap-3">
-                    @foreach($kolomDinamis as $kol)
-                        <div class="flex justify-between items-center bg-gray-50 px-3 py-2 rounded border border-gray-200">
-                            <div>
-                                <p class="text-sm font-medium text-gray-800">{{ $kol->nama_kolom }}</p>
-                                <p class="text-[10px] text-gray-500 uppercase">{{ $kol->tipe_data }}</p>
-                            </div>
-                            <button type="button" onclick="openDeleteModal('modalHapusKolom', '{{ route('program-strategis.kolom.destroy', $kol->id) }}')" class="text-red-500 hover:text-red-700 p-1">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                            </button>
+        <div class="mb-6 bg-gray-50 p-4 rounded-xl border border-gray-100">
+            <h4 class="text-sm font-bold text-gray-800 mb-3">Kolom Terdaftar:</h4>
+            @if(isset($kolomDinamis) && $kolomDinamis->count() > 0)
+                @foreach($kolomDinamis as $kolom)
+                    <div class="flex justify-between items-center bg-white p-3 rounded-lg border border-gray-200 mb-2 shadow-sm">
+                        <div>
+                            <p class="text-sm font-semibold text-gray-800">{{ $kolom->nama_kolom }}</p>
+                            <p class="text-[11px] text-gray-500">Tipe: <span class="uppercase font-bold text-gray-700">{{ $kolom->tipe_input }}</span> 
+                                @if($kolom->tipe_input === 'dropdown' && $kolom->pilihan_dropdown) | Opsi: {{ implode(', ', json_decode($kolom->pilihan_dropdown)) }} @endif
+                            </p>
                         </div>
-                    @endforeach
-                </div>
+                        <button type="button" onclick="openDeleteModal('modalHapusKolom', '{{ route('program-strategis.kolom.destroy', $kolom->id) }}')" class="text-red-500 hover:text-red-700 p-1 rounded hover:bg-red-50 transition-colors">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                        </button>
+                    </div>
+                @endforeach
             @else
-                <p class="text-sm text-gray-500 italic">Belum ada kolom tambahan. Tabel menggunakan kolom standar.</p>
+                <p class="text-xs text-gray-500 italic">Belum ada kolom tambahan. Tabel menggunakan kolom standar.</p>
             @endif
         </div>
-        
-        <div class="flex justify-end mt-6 pt-4 border-t border-gray-100">
-            <x-button variant="outline" type="button" onclick="closeModal('modalAturKolom')">Tutup</x-button>
-        </div>
+        <form action="{{ route('program-strategis.kolom.store') }}" method="POST" class="border-t pt-4">
+            @csrf <input type="hidden" name="modul" value="program_strategis">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-medium mb-1">Nama Kolom</label>
+                    <input type="text" name="nama_kolom" placeholder="Misal: Catatan Auditor" required class="w-full px-3 py-2 border rounded-lg text-sm outline-none focus:border-orange-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium mb-1">Tipe Input</label>
+                    <select name="tipe_input" id="tipeInputProgram" required class="w-full px-3 py-2 border rounded-lg text-sm outline-none focus:border-orange-500" onchange="toggleDropdownConfig('tipeInputProgram', 'dropdownConfigAreaProgram')">
+                        <option value="text">Teks Singkat</option>
+                        <option value="number">Angka Kuantitas Biasa</option>
+                        <option value="currency">Harga / Uang (Titik Otomatis)</option>
+                        <option value="date">Tanggal</option>
+                        <option value="dropdown">Dropdown (Pilihan)</option>
+                    </select>
+                </div>
+                <div class="md:col-span-2 hidden" id="dropdownConfigAreaProgram">
+                    <label class="block text-xs font-medium text-gray-700 mb-1">Pilihan Dropdown (Pisahkan dengan koma)</label>
+                    <input type="text" name="pilihan_dropdown" placeholder="Cth: Tinggi, Sedang, Rendah" class="w-full px-3 py-2 border rounded-lg text-sm outline-none focus:border-orange-500">
+                </div>
+            </div>
+            <div class="flex justify-end gap-3 mt-4">
+                <x-button variant="outline" type="button" onclick="closeModal('modalAturKolom')">Tutup</x-button>
+                <x-button variant="primary" type="submit" class="!bg-orange-500 hover:!bg-orange-600 border-none text-white">Simpan</x-button>
+            </div>
+        </form>
     </x-modal>
+@endif
 
     <x-delete-modal id="modalHapusKolom" title="Hapus Kolom Tambahan" message="Kolom ini akan dihilangkan dari tabel dan formulir secara permanen. Lanjutkan?" />
 
@@ -261,16 +286,19 @@
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1.5">Bulan & Tahun (Periode) <span class="text-red-500">*</span></label>
                 <input type="month" name="periode" id="add_master_periode" required class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:border-orange-500 outline-none cursor-pointer">
+                    <span class="error-msg hidden text-red-500 text-xs mt-1">Wajib diisi</span>
             </div>
             
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1.5">Sasaran <span class="text-red-500">*</span></label>
                 <input type="text" name="sasaran" placeholder="Misal: Peningkatan Kinerja..." required class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:border-orange-500 outline-none">
+                    <span class="error-msg hidden text-red-500 text-xs mt-1">Wajib diisi</span>
             </div>
 
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1.5">Nama Program Strategis <span class="text-red-500">*</span></label>
                 <input type="text" name="program_strategis" placeholder="Misal: Implementasi Sistem A..." required class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:border-orange-500 outline-none">
+                    <span class="error-msg hidden text-red-500 text-xs mt-1">Wajib diisi</span>
             </div>
 
             <div class="flex justify-end gap-3 mt-4 border-t border-gray-100 pt-4">
@@ -298,35 +326,29 @@
                         @endforeach
                     @endif
                 </select>
+                    <span class="error-msg hidden text-red-500 text-xs mt-1">Wajib diisi</span>
                 <p class="text-xs text-gray-400 mt-1">Kalau belum ada, bikin dulu lewat tombol "+ Sasaran & Program Induk" di luar ya!</p>
             </div>
 
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1.5">Program Kegiatan (Baru) <span class="text-red-500">*</span></label>
                 <textarea name="deskripsi_kegiatan" id="add_kegiatan" rows="2" required placeholder="Jelaskan detail kegiatan..." class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:border-orange-500 outline-none"></textarea>
+                    <span class="error-msg hidden text-red-500 text-xs mt-1">Wajib diisi</span>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="col-span-2">
-                    <label class="block text-sm font-medium text-gray-700 mb-1.5">Status Kegiatan <span class="text-red-500">*</span></label>
-                    <select name="status" required class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:border-orange-500 outline-none cursor-pointer bg-white">
-                        <option value="-">- (Belum Dimulai)</option>
+                    <label class="block text-sm font-medium text-gray-700 mb-1.5">Status <span class="text-red-500">*</span></label>
+                    <select name="status" required class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:border-orange-500 outline-none bg-white">
                         <option value="In Progress">In Progress</option>
                         <option value="Selesai">Selesai</option>
                         <option value="Hold">Hold</option>
-                        <option value="Tercapai">Tercapai</option>
-                        <option value="Berjalan">Berjalan</option>
-                        <option value="Tertunda">Tertunda</option>
                     </select>
-                </div>
+                    <span class="error-msg hidden text-red-500 text-xs mt-1">Wajib diisi</span></div>
                 
-                <div class="col-span-1">
-                    <label class="block text-sm font-medium text-gray-700 mb-1.5">Target Waktu Mulai</label>
+                                <div class="col-span-2">
+                    <label class="block text-sm font-medium text-gray-700 mb-1.5">Target Waktu</label>
                     <input type="date" name="target_waktu_start" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:border-orange-500 outline-none">
-                </div>
-                <div class="col-span-1">
-                    <label class="block text-sm font-medium text-gray-700 mb-1.5">Target Waktu Selesai</label>
-                    <input type="date" name="target_waktu_end" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:border-orange-500 outline-none">
                 </div>
                 
                 <div class="md:col-span-2">
@@ -389,6 +411,7 @@
                 <select name="sasaran_program_select" id="edit_sp_select" required class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm bg-gray-100 outline-none cursor-not-allowed" style="pointer-events: none;" tabindex="-1" readonly>
                     <!-- Opsi akan dimasukkan via JS saat Edit diklik -->
                 </select>
+                    <span class="error-msg hidden text-red-500 text-xs mt-1">Wajib diisi</span>
             </div>
 
             <div class="md:col-span-2">
@@ -397,26 +420,17 @@
             </div>
             
             <div class="md:col-span-2">
-                <label class="block text-sm font-medium text-gray-700 mb-1.5">Status Kegiatan <span class="text-red-500">*</span></label>
-                <select name="status" id="edit_status" required class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:border-orange-500 outline-none cursor-pointer bg-white">
-                    <option value="-">- (Belum Dimulai)</option>
+                <label class="block text-sm font-medium text-gray-700 mb-1.5">Status <span class="text-red-500">*</span></label>
+                <select name="status" id="edit_status" required class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:border-orange-500 outline-none">
                     <option value="In Progress">In Progress</option>
                     <option value="Selesai">Selesai</option>
                     <option value="Hold">Hold</option>
-                    <option value="Tercapai">Tercapai</option>
-                    <option value="Berjalan">Berjalan</option>
-                    <option value="Tertunda">Tertunda</option>
                 </select>
-            </div>
+                    <span class="error-msg hidden text-red-500 text-xs mt-1">Wajib diisi</span></div>
 
-            <div class="col-span-1">
-                <label class="block text-sm font-medium text-gray-700 mb-1.5">Target Waktu Mulai</label>
+                        <div class="col-span-2">
+                <label class="block text-sm font-medium text-gray-700 mb-1.5">Target Waktu</label>
                 <input type="date" name="target_waktu_start" id="edit_target_start" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:border-orange-500 outline-none">
-            </div>
-            
-            <div class="col-span-1">
-                <label class="block text-sm font-medium text-gray-700 mb-1.5">Target Waktu Selesai</label>
-                <input type="date" name="target_waktu_end" id="edit_target_end" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:border-orange-500 outline-none">
             </div>
 
             <div class="md:col-span-2 grid grid-cols-2 gap-x-6 gap-y-4 bg-gray-50 p-4 rounded-xl border border-gray-100 mt-2">
@@ -469,8 +483,8 @@
     </x-modal>
 </main>
 
-<script>
-    function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+    <script>
+        
     function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
     
     function toggleDropdown(id) {
@@ -538,7 +552,7 @@
 
         document.getElementById('edit_deskripsi').value = data.deskripsi_kegiatan || '';
         document.getElementById('edit_target_start').value = data.target_waktu_start || '';
-        document.getElementById('edit_target_end').value = data.target_waktu_end || '';
+        
         document.getElementById('edit_realisasi').value = data.realisasi || '';
         document.getElementById('edit_progress').value = data.progress_saat_ini || '';
         document.getElementById('edit_kendala').value = (data.kendala && data.kendala !== '-') ? data.kendala : '';
@@ -594,5 +608,69 @@
             });
         });
     });
+let isBulkMode = false;
+
+function toggleBulkMode() {
+    isBulkMode = !isBulkMode;
+    const container = document.getElementById('tableContainerBulk');
+    const btnGroup = document.getElementById('btnGroupBulk');
+    if (container) {
+        if (isBulkMode) {
+            container.classList.remove('hide-bulk');
+            if(btnGroup) {
+                btnGroup.classList.remove('hidden');
+                btnGroup.classList.add('flex');
+            }
+        } else {
+            container.classList.add('hide-bulk');
+            if(btnGroup) {
+                btnGroup.classList.add('hidden');
+                btnGroup.classList.remove('flex');
+            }
+            cancelAllBtnOnly();
+        }
+    }
+}
+
+function toggleSelectAll() {
+    const selectAll = document.getElementById('selectAllBulk');
+    const checkboxes = document.querySelectorAll('.cb-bulk');
+    checkboxes.forEach(cb => cb.checked = selectAll.checked);
+    updateSelectedCount();
+}
+
+function toggleCheckbox() {
+    const selectAll = document.getElementById('selectAllBulk');
+    const checkboxes = document.querySelectorAll('.cb-bulk');
+    const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+    if(selectAll) selectAll.checked = allChecked;
+    updateSelectedCount();
+}
+
+function updateSelectedCount() {
+    const count = document.querySelectorAll('.cb-bulk:checked').length;
+    const countEl = document.getElementById('selectedCount');
+    if (countEl) countEl.textContent = count;
+}
+
+function cancelAllBtnOnly() {
+    const selectAll = document.getElementById('selectAllBulk');
+    if (selectAll) selectAll.checked = false;
+    const checkboxes = document.querySelectorAll('.cb-bulk');
+    checkboxes.forEach(cb => cb.checked = false);
+    updateSelectedCount();
+}
+
+function cancelAll() {
+    cancelAllBtnOnly();
+    isBulkMode = false;
+    const container = document.getElementById('tableContainerBulk');
+    if (container) container.classList.add('hide-bulk');
+    const btnGroup = document.getElementById('btnGroupBulk');
+    if (btnGroup) {
+        btnGroup.classList.add('hidden');
+        btnGroup.classList.remove('flex');
+    }
+}
 </script>
 @endsection

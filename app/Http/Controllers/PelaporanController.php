@@ -175,6 +175,41 @@ class PelaporanController extends Controller
         return back()->with('success', 'Data laporan berhasil diperbarui.');
     }
 
+        public function destroyBulk(\Illuminate\Http\Request $request)
+    {
+        // Fitur Hapus Semua (Delete All Pages)
+        if ($request->input('delete_all_pages') == '1') {
+            // Re-apply current filters to delete ALL matching data
+            $query = \App\Models\Pelaporan::query();
+            
+            if ($request->filled('tahun') && $request->tahun !== 'semua') {
+                $query->whereYear('tanggal', $request->tahun);
+            }
+            if ($request->filled('bulan') && $request->bulan !== 'semua') {
+                $bulanMap = [
+                    'Januari'=>1,'Februari'=>2,'Maret'=>3,'April'=>4,'Mei'=>5,'Juni'=>6,
+                    'Juli'=>7,'Agustus'=>8,'September'=>9,'Oktober'=>10,'November'=>11,'Desember'=>12
+                ];
+                if(isset($bulanMap[$request->bulan])) {
+                    $query->whereMonth('tanggal', $bulanMap[$request->bulan]);
+                }
+            }
+            
+            $count = $query->count();
+            $query->delete();
+            
+            return redirect()->back()->with('success', $count . ' Data pelaporan (seluruh halaman) berhasil dihapus.');
+        }
+
+        // Hapus Massal Biasa (Hanya halaman saat ini)
+        if ($request->has('ids') && is_array($request->ids)) {
+            \App\Models\Pelaporan::whereIn('id', $request->ids)->delete();
+            return redirect()->back()->with('success', count($request->ids) . ' Data pelaporan berhasil dihapus.');
+        }
+
+        return redirect()->back()->with('error', 'Tidak ada data yang dipilih.');
+    }
+
     public function destroy($id)
     {
         Pelaporan::findOrFail($id)->delete();
@@ -203,6 +238,7 @@ class PelaporanController extends Controller
 
     public function storeKolomDinamis(Request $request)
     {
+        abort_if(!auth()->user()->isAdmin(), 403, 'Akses ditolak.');
         $request->validate([
             'modul'      => 'required|string',
             'nama_kolom' => 'required|string|max:100',
@@ -230,6 +266,7 @@ class PelaporanController extends Controller
 
     public function destroyKolomDinamis($id)
     {
+        abort_if(!auth()->user()->isAdmin(), 403, 'Akses ditolak.');
         \Illuminate\Support\Facades\DB::table('dynamic_columns')->where('id', $id)->delete();
         return back()->with('success', 'Kolom dinamis berhasil dihapus.');
     }
@@ -277,7 +314,10 @@ class PelaporanController extends Controller
         }
         $dataRincian = $query->orderBy('tanggal', 'desc')->get();
         
-        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.pelaporan', compact('dataRincian'))->setPaper('a4', 'landscape');
+        // Load kolom dinamis agar tidak error di tampilan PDF
+        $kolomDinamis = \Illuminate\Support\Facades\DB::table('dynamic_columns')->where('modul', 'pelaporan')->get();
+        
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.pelaporan', compact('dataRincian', 'tahun', 'bulan', 'kolomDinamis'))->setPaper('a4', 'landscape');
         return $pdf->download('Data_Pelaporan.pdf');
     }
 }

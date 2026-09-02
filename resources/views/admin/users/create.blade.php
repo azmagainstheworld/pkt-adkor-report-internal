@@ -73,6 +73,24 @@
                         <span class="error-msg text-red-500 text-[10px] mt-1 hidden">Wajib diisi!</span>
                     </div>
                 </div>
+
+                <!-- Field Role -->
+                <div class="pt-2 border-t border-gray-100">
+                    <label for="role" class="block text-sm font-medium text-gray-700 mb-1.5">Role / Hak Akses <span class="text-red-500">*</span></label>
+                    <select name="role" id="role" required
+                            class="w-full px-4 py-2.5 bg-white border @error('role') border-red-500 bg-red-50 @else border-gray-300 @enderror rounded-lg text-sm focus:outline-none focus:border-blue-500 cursor-pointer">
+                        <option value="" disabled {{ old('role') ? '' : 'selected' }}>-- Pilih Role --</option>
+                        <option value="karyawan" {{ old('role') === 'karyawan' ? 'selected' : '' }}>
+                            👤 Karyawan — Akses data & input biasa
+                        </option>
+                        <option value="admin" {{ old('role') === 'admin' ? 'selected' : '' }}>
+                            🛡️ Admin — Akses penuh + kelola pengguna & kolom
+                        </option>
+                        {{-- Super Admin hanya bisa dibuat via seeder/artisan, tidak tersedia di form --}}
+                    </select>
+                    <p class="text-[11px] text-gray-400 mt-1.5">Super Admin tidak dapat didaftarkan melalui form. Hubungi pengembang sistem.</p>
+                    @error('role') <p class="text-red-500 text-xs mt-1.5 font-medium">{{ $message }}</p> @enderror
+                </div>
             </div>
 
             <!-- Tombol Aksi -->

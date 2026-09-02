@@ -135,6 +135,36 @@ class PengirimanDokumenController extends Controller
         }
     }
 
+        public function destroyBulk(\Illuminate\Http\Request $request)
+    {
+        // Fitur Hapus Semua (Delete All Pages)
+        if ($request->input('delete_all_pages') == '1') {
+            $query = \App\Models\PengirimanDokumen::query();
+            
+            if ($request->filled('tahun') && $request->tahun !== 'semua') {
+                $query->where('tahun', $request->tahun);
+            }
+            if ($request->filled('bulan') && $request->bulan !== 'semua') {
+                $query->where('bulan', $request->bulan);
+            }
+            
+            $count = $query->count();
+            $query->delete();
+            
+            return redirect()->back()->with('success', $count . ' Data pengiriman dokumen (seluruh halaman) berhasil dihapus.');
+        }
+
+        // Hapus Massal Biasa
+        $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'exists:pengiriman_dokumen,id',
+        ]);
+
+        \App\Models\PengirimanDokumen::whereIn('id', $request->ids)->delete();
+
+        return redirect()->back()->with('success', count($request->ids) . ' Data pengiriman dokumen berhasil dihapus.');
+    }
+
     public function destroy($id)
     {
         try {
@@ -201,6 +231,7 @@ class PengirimanDokumenController extends Controller
 
     public function storeKolomDinamis(Request $request)
     {
+        abort_if(!auth()->user()->isAdmin(), 403, 'Akses ditolak.');
         $request->validate(['modul' => 'required|string', 'nama_kolom' => 'required|string|max:100', 'tipe_input' => 'required|in:text,number,date,dropdown,currency']);
         if (DB::table('dynamic_columns')->where('modul', $request->modul)->whereRaw('LOWER(nama_kolom) = ?', [strtolower(trim($request->nama_kolom))])->exists()) {
             return back()->with('error_modal', 'Kolom sudah ada!')->with('failed_modul', $request->modul);
@@ -217,6 +248,7 @@ class PengirimanDokumenController extends Controller
 
     public function destroyKolomDinamis($id)
     {
+        abort_if(!auth()->user()->isAdmin(), 403, 'Akses ditolak.');
         DB::table('dynamic_columns')->where('id', $id)->delete();
         return back()->with('success', 'Kolom dinamis berhasil dihapus.');
     }

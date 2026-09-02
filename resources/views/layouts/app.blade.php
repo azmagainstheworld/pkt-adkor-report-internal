@@ -174,11 +174,14 @@
                             Cetak Laporan Bulanan
                         </a>
 
+                        
+                        @if(auth()->check() && auth()->user()->isSuperAdmin())
                         <!-- Manajemen Pengguna -->
                         <a href="/admin/manajemen-pengguna" class="flex items-center gap-3 px-3 py-2.5 {{ request()->is('admin/manajemen-pengguna') ? 'bg-pkt-jingga text-white shadow-md' : 'text-blue-100 hover:bg-white/10' }} rounded-lg font-medium transition-colors text-sm">
                             <svg class="w-5 h-5 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
                             Manajemen Pengguna
                         </a>
+                        @endif
 
                         <a href="/admin/log-audit" class="flex items-center gap-3 px-3 py-2.5 {{ request()->is('admin/log-audit') ? 'bg-pkt-jingga text-white shadow-md' : 'text-blue-100 hover:bg-white/10' }} rounded-lg font-medium transition-colors text-sm">
                             <svg class="w-5 h-5 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
@@ -214,14 +217,14 @@
                 <div class="w-1/3 flex justify-start"></div>
                 <div class="w-1/3 flex justify-center">
                     <form method="GET" action="{{ url()->current() }}" class="relative w-full max-w-lg m-0">
-                        @foreach(request()->except('search') as $key => $value)
+                        @foreach(request()->except(['search', 'page']) as $key => $value)
                             <input type="hidden" name="{{ $key }}" value="{{ $value }}">
                         @endforeach
                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                             <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                         </div>
                         <div class="relative">
-                            <input type="search" name="search" value="{{ request('search') }}" class="block w-full pl-10 pr-10 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50 placeholder-gray-400 focus:outline-none focus:bg-white focus:border-blue-500 transition-colors" placeholder="Cari data di halaman ini... (Tekan Enter)">
+                            <input type="text" name="search" value="{{ request('search') }}" class="block w-full pl-10 pr-10 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50 placeholder-gray-400 focus:outline-none focus:bg-white focus:border-blue-500 transition-colors" placeholder="Cari data di halaman ini... (Tekan Enter)">
                             
                             @if(request('search'))
                                 <a href="{{ request()->fullUrlWithoutQuery('search') }}" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-red-500 transition-colors" title="Hapus Pencarian">

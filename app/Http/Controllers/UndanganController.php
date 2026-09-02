@@ -73,11 +73,24 @@ class UndanganController extends Controller
         // 4. TARIK DEFINISI KOLOM DINAMIS
         $kolomDinamis = DB::table('dynamic_columns')->where('modul', 'undangan')->get();
 
+                // 5. QUERY DAFTAR RINCIAN (TABEL 2)
+        $detailQuery = \App\Models\UndanganDetail::join('undangan', 'undangan_details.undangan_id', '=', 'undangan.id')
+            ->select('undangan_details.*', 'undangan.tahun', 'undangan.bulan');
+            
+        if ($tahunFilter != 'semua') $detailQuery->where('undangan.tahun', $tahunFilter);
+        if ($bulanFilter != 'semua') $detailQuery->where('undangan.bulan', $bulanFilter);
+        
+        $detailQuery->orderBy('undangan.tahun', 'desc')
+            ->orderByRaw("FIELD(undangan.bulan, '" . implode("','", $masterMonths) . "') DESC")
+            ->orderBy('undangan_details.created_at', 'desc');
+            
+        $detailsData = $detailQuery->get();
+
         return view('undangan', compact(
             'tableData', 'chartData', 
             'tahunFilter', 'bulanFilter', 
             'totalIntern', 'totalEkstern', 
-            'tahunTersedia', 'bulanTersedia', 'kolomDinamis'
+            'tahunTersedia', 'bulanTersedia', 'kolomDinamis', 'detailsData'
         ));
     }
 
@@ -117,6 +130,7 @@ class UndanganController extends Controller
     // ==========================================
     public function storeKolomDinamis(Request $request)
     {
+        abort_if(!auth()->user()->isAdmin(), 403, 'Akses ditolak.');
         $request->validate([
             'modul'      => 'required|string',
             'nama_kolom' => 'required|string|max:100',
@@ -152,6 +166,7 @@ class UndanganController extends Controller
 
     public function destroyKolomDinamis($id)
     {
+        abort_if(!auth()->user()->isAdmin(), 403, 'Akses ditolak.');
         DB::table('dynamic_columns')->where('id', $id)->delete();
         return back()->with('success', 'Kolom dinamis berhasil dihapus.');
     }
@@ -170,5 +185,15 @@ class UndanganController extends Controller
 
     public function downloadTemplate(Request $request) {
         return redirect()->back()->with('error_modal', 'Template Excel Undangan sedang dalam tahap pengembangan akhir. Harap tunggu update selanjutnya.');
+    }
+
+    public function destroyBulkDetail(\Illuminate\Http\Request $request)
+    {
+        $ids = $request->ids;
+        if ($ids && is_array($ids)) {
+            \Illuminate\Support\Facades\DB::table('undangan_detail')->whereIn('id', $ids)->delete();
+            return redirect()->back()->with('success', 'Berhasil menghapus data rincian secara massal.');
+        }
+        return redirect()->back()->with('error_modal', 'Tidak ada data yang dipilih.');
     }
 }

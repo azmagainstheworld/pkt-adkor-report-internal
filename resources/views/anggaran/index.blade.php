@@ -6,6 +6,9 @@
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
 
 <!-- Main Scrollable Content -->
+<style>
+.hide-bulk th:first-child, .hide-bulk td:first-child { display: none !important; }
+</style>
 <main class="flex-1 overflow-y-auto p-8 relative bg-[#F8F9FA]">
 
     <!-- Panggil Modal Notifikasi Sukses -->
@@ -101,6 +104,7 @@
             </div>
         </div>
     </x-card>
+    </form>
 
     <!-- ================= ACTION BAR MINIMALIS ================= -->
     <div class="flex justify-end items-center mb-5 flex-wrap gap-4">
@@ -135,7 +139,8 @@
                     </a>
                 </div>
 
-                <!-- Kategori 2: Atur Kolom -->
+                @if(auth()->check() && auth()->user()->isAdmin())
+<!-- Kategori 2: Atur Kolom -->
                 <div class="px-4 py-2 bg-gray-50 border-y border-gray-100 mt-1">
                     <p class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Tampilan Teks</p>
                 </div>
@@ -145,11 +150,15 @@
                         Atur Kolom Tabel
                     </button>
                 </div>
+@endif
             </div>
         </div>
 
         <!-- Tambah Data Utama (Paling Kanan / Ujung) -->
         <div>
+                        <button type="button" id="btnModeBulk" onclick="toggleBulkMode()" class="inline-flex justify-center items-center gap-2 rounded-xl border border-red-200 text-red-600 bg-red-50 px-4 py-2.5 text-sm font-medium hover:bg-red-100 transition-colors shadow-sm mr-3">
+                Hapus Semua
+            </button>
             <button type="button" onclick="openModalTambah()" class="inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-pkt-jingga hover:bg-orange-600 rounded-xl shadow-sm transition-colors border-none outline-none focus:ring-2 focus:ring-orange-300">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
                 Tambah Laporan Bulan Ini
@@ -160,7 +169,24 @@
     <!-- ========================================================================= -->
 
     <!-- ================= TABEL 1: RINCIAN PER BULAN, DIKELOMPOKKAN PER KATEGORI ================= -->
-    <x-card class="!rounded-xl overflow-visible !p-0 shadow-sm border border-gray-100 mb-8 bg-white">
+        <form id="bulkDeleteForm" action="{{ route('anggaran.destroyBulk') }}" method="POST" >
+        @csrf
+        @method('DELETE')
+        
+        <div id="btnGroupBulk" class="hidden justify-between items-center px-4 py-2 bg-red-50 rounded-t-xl border-b border-red-100">
+            <span class="text-xs text-red-600 font-semibold flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                <span id="selectedCount">0</span> data terpilih untuk dihapus
+            </span>
+            <div class="flex gap-2">
+                <button type="button" onclick="cancelAll()" class="px-3 py-1.5 text-xs font-medium text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors shadow-sm">Batal</button>
+                <button type="submit" class="px-3 py-1.5 text-xs font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors shadow-sm flex items-center gap-1.5">
+                    Hapus Terpilih
+                </button>
+            </div>
+        </div>
+
+    <x-card class="!rounded-xl overflow-visible !p-0 shadow-sm border border-gray-100 mb-8 bg-white hide-bulk" id="tableContainerBulk">
         <div class="p-5 border-b border-gray-100 bg-white">
             <h3 class="font-bold text-gray-900 text-lg mb-1">Rincian Realisasi Penggunaan dan Sisa Anggaran</h3>
             <p class="text-sm text-gray-600">
@@ -171,7 +197,7 @@
 
         <div class="overflow-x-auto">
             @php
-                $tableHeadersRincian = ['Tahun', 'Bulan', 'Detail', 'Anggaran RKAP', 'Komitmen', 'Realisasi', 'Realisasi + Komitmen', '% Realisasi+Komitmen', 'Sisa Anggaran', '% Sisa Anggaran'];
+                $tableHeadersRincian = ['<input type="checkbox" id="selectAllBulk" onclick="toggleSelectAll()">', 'Tahun', 'Bulan', 'Detail', 'Anggaran RKAP', 'Komitmen', 'Realisasi', 'Realisasi + Komitmen', '% Realisasi+Komitmen', 'Sisa Anggaran', '% Sisa Anggaran'];
                 if(isset($kolomDinamis)) { foreach($kolomDinamis as $k) { $tableHeadersRincian[] = $k->nama_kolom; } }
                 $tableHeadersRincian[] = 'Aksi';
             @endphp
@@ -183,7 +209,7 @@
                         <tr class="bg-blue-50/70">
                             <td class="px-6 py-2.5 text-gray-700 font-semibold text-center align-middle whitespace-nowrap">{{ $entry['tahun'] }}</td>
                             <td class="px-6 py-2.5 text-gray-700 font-semibold text-center align-middle whitespace-nowrap">{{ $entry['bulan'] }}</td>
-                            <td class="px-6 py-2.5 font-extrabold text-blue-900 text-left align-middle" colspan="{{ 9 + (isset($kolomDinamis) ? count($kolomDinamis) : 0) }}">{{ $kategoriList[$kat] }}</td>
+                            <td class="px-6 py-2.5 font-extrabold text-blue-900 text-left align-middle" colspan="{{ 10 + (isset($kolomDinamis) ? count($kolomDinamis) : 0) }}">{{ $kategoriList[$kat] }}</td>
                         </tr>
 
                         <!-- Baris Detail -->
@@ -201,6 +227,7 @@
                                 $tambahan = is_string($anggaran->data_tambahan) ? json_decode($anggaran->data_tambahan, true) : ($anggaran->data_tambahan ?? []);
                             @endphp
                             <tr class="hover:bg-gray-100 transition-colors text-sm">
+                                <td class="px-3 py-2 text-center align-middle"><input type="checkbox" name="ids[]" class="cb-bulk" value="{{ $anggaran->id }}" onclick="toggleCheckbox()"></td>
                                 <td class="px-6 py-3 text-gray-700 text-center align-middle whitespace-nowrap">{{ $entry['tahun'] }}</td>
                                 <td class="px-6 py-3 text-gray-600 text-center align-middle whitespace-nowrap">{{ $entry['bulan'] }}</td>
                                 <td class="px-6 py-3 font-bold text-gray-900 text-left align-middle">{{ $anggaran->detail_anggaran }}</td>
@@ -272,7 +299,7 @@
                         $totPercSisa = $totRkap > 0 ? ($totSisa / $totRkap) * 100 : 0;
                     @endphp
                     <tr class="bg-yellow-50/50 border-t-2 border-b-2 border-yellow-200 shadow-sm">
-                        <td class="px-6 py-4 font-extrabold text-gray-900 text-right align-middle" colspan="3">SUBTOTAL {{ strtoupper($entry['bulan']) }} {{ $entry['tahun'] }}</td>
+                        <td class="px-6 py-4 font-extrabold text-gray-900 text-right align-middle" colspan="4">SUBTOTAL {{ strtoupper($entry['bulan']) }} {{ $entry['tahun'] }}</td>
                         <td class="px-6 py-4 text-gray-900 font-extrabold font-mono text-center align-middle">Rp{{ number_format($totRkap, 0, ',', '.') }}</td>
                         <td class="px-6 py-4 text-gray-900 font-extrabold font-mono text-center align-middle">Rp{{ number_format($totKomitmen, 0, ',', '.') }}</td>
                         <td class="px-6 py-4 text-gray-900 font-extrabold font-mono text-center align-middle">Rp{{ number_format($totRealisasi, 0, ',', '.') }}</td>
@@ -284,7 +311,7 @@
                     </tr>
                     
                 @empty
-                    <tr><td colspan="15" class="px-6 py-10 text-center text-gray-500 text-sm">Belum ada data anggaran untuk filter yang dipilih.</td></tr>
+                    <tr><td colspan="16" class="px-6 py-10 text-center text-gray-500 text-sm">Belum ada data anggaran untuk filter yang dipilih.</td></tr>
                 @endforelse
             </x-table>
         </div>
@@ -293,6 +320,8 @@
             <div>{{ $detailTable->links() }}</div>
         </div>
     </x-card>
+
+    </form>
 
     <!-- ================= TABEL 2: RINGKASAN TOTAL GABUNGAN PER BULAN ================= -->
     <x-card class="!rounded-xl overflow-visible !p-0 shadow-sm border border-gray-100 mb-8 bg-white">
@@ -362,7 +391,8 @@
     <x-delete-modal id="modalHapusKolom" title="Hapus Kolom Tambahan" message="Kolom ini akan dihilangkan dari sistem. Lanjutkan?" />
     <x-delete-modal id="modalHapusAnggaran" title="Hapus Data Anggaran" message="Apakah Anda yakin ingin menghapus data anggaran ini? Tindakan ini akan mempengaruhi rekapitulasi realisasi dan sisa anggaran pada bulan terkait." />
 
-    <!-- MODAL ATUR KOLOM -->
+    @if(auth()->user()->isAdmin())
+<!-- MODAL ATUR KOLOM -->
     <x-modal id="modalAturKolom" title="Pengaturan Kolom Anggaran" description="Kelola kolom ekstra khusus untuk formulir Anggaran.">
         <div class="mb-6 bg-gray-50 p-4 rounded-xl border border-gray-100">
             <h4 class="text-sm font-bold text-gray-800 mb-3">Kolom Terdaftar Saat Ini:</h4>
@@ -402,6 +432,7 @@
             <div class="flex justify-end gap-3 mt-4"><x-button variant="outline" type="button" onclick="closeModal('modalAturKolom')">Tutup</x-button><x-button variant="primary" type="submit">Simpan</x-button></div>
         </form>
     </x-modal>
+@endif
 
     <!-- MODAL TAMBAH ANGGARAN -->
     <x-modal id="modalTambahAnggaran" title="Tambah Laporan Anggaran Bulanan Korporat" description="Masukkan data mentah anggaran untuk bulan laporan. Kalkulasi persentase dan sisa akan dilakukan otomatis oleh sistem.">
@@ -731,13 +762,20 @@
         const mIdx = bulanIndoList.indexOf(data.bulan) + 1;
         const monthNumStr = mIdx < 10 ? '0' + mIdx : mIdx;
         
-        document.getElementById('periode_input').value = data.tahun + '-' + monthNumStr;
-        document.getElementById('kategori').value = data.kategori;
-        document.getElementById('detail_anggaran').value = data.detail;
-        document.getElementById('rkap').value = new Intl.NumberFormat('id-ID').format(data.rkap);
-        document.getElementById('komitmen').value = new Intl.NumberFormat('id-ID').format(data.komitmen);
-        document.getElementById('realisasi').value = new Intl.NumberFormat('id-ID').format(data.realisasi);
-        document.getElementById('keterangan').value = data.keterangan;
+                document.getElementById('periode_input').value = data.tahun + '-' + monthNumStr;
+        form.querySelector('select[name="kategori"]').value = data.kategori;
+        form.querySelector('input[name="detail_anggaran"]').value = data.detail;
+        
+        document.getElementById('rkap_input').value = new Intl.NumberFormat('id-ID').format(data.rkap);
+        document.getElementById('rkap_hidden').value = data.rkap;
+        
+        document.getElementById('komitmen_input').value = new Intl.NumberFormat('id-ID').format(data.komitmen);
+        document.getElementById('komitmen_hidden').value = data.komitmen;
+        
+        document.getElementById('realisasi_input').value = new Intl.NumberFormat('id-ID').format(data.realisasi);
+        document.getElementById('realisasi_hidden').value = data.realisasi;
+        
+        form.querySelector('textarea[name="keterangan"]').value = data.keterangan || '';
 
         if (data.tambahan) {
             try {
@@ -848,5 +886,73 @@
             });
         });
     });
+</script>
+
+<script>
+
+let isBulkMode = false;
+
+function toggleBulkMode() {
+    isBulkMode = !isBulkMode;
+    const container = document.getElementById('tableContainerBulk');
+    const btnGroup = document.getElementById('btnGroupBulk');
+    if (container) {
+        if (isBulkMode) {
+            container.classList.remove('hide-bulk');
+            if(btnGroup) {
+                btnGroup.classList.remove('hidden');
+                btnGroup.classList.add('flex');
+            }
+        } else {
+            container.classList.add('hide-bulk');
+            if(btnGroup) {
+                btnGroup.classList.add('hidden');
+                btnGroup.classList.remove('flex');
+            }
+            cancelAllBtnOnly();
+        }
+    }
+}
+
+function toggleSelectAll() {
+    const selectAll = document.getElementById('selectAllBulk');
+    const checkboxes = document.querySelectorAll('.cb-bulk');
+    checkboxes.forEach(cb => cb.checked = selectAll.checked);
+    updateSelectedCount();
+}
+
+function toggleCheckbox() {
+    const selectAll = document.getElementById('selectAllBulk');
+    const checkboxes = document.querySelectorAll('.cb-bulk');
+    const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+    if(selectAll) selectAll.checked = allChecked;
+    updateSelectedCount();
+}
+
+function updateSelectedCount() {
+    const count = document.querySelectorAll('.cb-bulk:checked').length;
+    const countEl = document.getElementById('selectedCount');
+    if (countEl) countEl.textContent = count;
+}
+
+function cancelAllBtnOnly() {
+    const selectAll = document.getElementById('selectAllBulk');
+    if (selectAll) selectAll.checked = false;
+    const checkboxes = document.querySelectorAll('.cb-bulk');
+    checkboxes.forEach(cb => cb.checked = false);
+    updateSelectedCount();
+}
+
+function cancelAll() {
+    cancelAllBtnOnly();
+    isBulkMode = false;
+    const container = document.getElementById('tableContainerBulk');
+    if (container) container.classList.add('hide-bulk');
+    const btnGroup = document.getElementById('btnGroupBulk');
+    if (btnGroup) {
+        btnGroup.classList.add('hidden');
+        btnGroup.classList.remove('flex');
+    }
+}
 </script>
 @endsection

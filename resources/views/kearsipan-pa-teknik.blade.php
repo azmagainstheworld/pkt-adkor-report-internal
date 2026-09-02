@@ -95,22 +95,37 @@
                             <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"></path></svg>
                             Atur Dokumen Master
                         </button>
-                        <button type="button" onclick="openModal('modalAturKolom1'); toggleDropdown('dropdownOpsi1')" class="w-full text-left text-gray-700 px-4 py-2 text-xs hover:bg-gray-50 flex items-center gap-2 font-medium border-t border-gray-50">
+                        @if(auth()->check() && auth()->user()->isAdmin())
+<button type="button" onclick="openModal('modalAturKolom1'); toggleDropdown('dropdownOpsi1')" class="w-full text-left text-gray-700 px-4 py-2 text-xs hover:bg-gray-50 flex items-center gap-2 font-medium border-t border-gray-50">
                             <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
                             Atur Kolom Tambahan
                         </button>
+@endif
                     </div>
                 </div>
             </div>
 
-            <x-button variant="primary" onclick="openModalTambah(1)" class="!py-1.5 !px-3 text-xs bg-orange-600 hover:bg-orange-700 border-none">
+                            <button type="button" id="btnModeBulk1" onclick="toggleBulkMode1()" class="inline-flex items-center justify-center gap-2 px-3 py-1.5 text-xs font-medium bg-red-50 text-red-600 border border-red-200 rounded-xl hover:bg-red-100 transition-colors shadow-sm outline-none focus:ring-2 focus:ring-red-300 mr-2">
+                    <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg> Mode Hapus Massal
+                </button>
+                <x-button variant="primary" onclick="openModalTambah(1)" class="!py-1.5 !px-3 text-xs bg-orange-600 hover:bg-orange-700 border-none">
                 <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
                 Tambah Data
             </x-button>
         </div>
-        <div class="overflow-x-auto">
+                <form id="bulkDeleteForm1" action="{{ route('pa-teknik.destroyBulk') }}" method="POST" onsubmit="return confirm('Hapus data terpilih pada Tabel 1?')">
+            @csrf
+            @method('DELETE')
+            <div id="btnGroupBulk1" class="hidden flex justify-between items-center px-4 py-2 bg-red-50 border-b border-red-100">
+                <span class="text-xs text-red-600 font-semibold">Data terpilih untuk dihapus</span>
+                <div class="flex gap-2">
+                    <button type="button" onclick="cancelAll1()" class="px-3 py-1.5 bg-white border border-gray-300 text-gray-700 rounded-lg text-xs font-medium hover:bg-gray-50">Batal</button>
+                    <button type="submit" class="px-3 py-1.5 bg-red-600 text-white rounded-lg text-xs font-medium hover:bg-red-700">Hapus Terpilih</button>
+                </div>
+            </div>
+            <div id="tableContainerBulk1" class="hide-bulk overflow-x-auto">
             @php
-                $headTabel1 = ['Tahun', 'Bulan'];
+                $headTabel1 = ['<input type="checkbox" id="selectAllBulk1" onclick="toggleSelectAll1()">', 'Tahun', 'Bulan'];
                 foreach($masterTabel1 as $master) { $headTabel1[] = $master->nama_kegiatan; }
                 if(isset($kolomTabel1)) { foreach($kolomTabel1 as $k) { $headTabel1[] = $k->nama_kolom; } }
                 $headTabel1[] = 'Aksi';
@@ -118,6 +133,7 @@
             <x-table :headers="$headTabel1">
                 @forelse($paginatedTable1 as $row)
                     <tr class="hover:bg-gray-50 transition-colors text-xs whitespace-nowrap">
+                        <td class="px-3 py-2 text-center align-middle"><input type="checkbox" name="ids[]" class="cb-bulk-1" value="1|{{ $row['tahun'] }}|{{ $row['bulan'] }}" onclick="toggleCheckbox1()"></td>
                         <td class="px-4 py-3 text-gray-700 font-medium text-center">{{ $row['tahun'] }}</td>
                         <td class="px-4 py-3 text-gray-900 font-medium text-center">{{ $row['bulan'] }}</td>
                         @foreach($masterTabel1 as $master)
@@ -205,22 +221,37 @@
                             <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"></path></svg>
                             Atur Dokumen Master
                         </button>
-                        <button type="button" onclick="openModal('modalAturKolom2'); toggleDropdown('dropdownOpsi2')" class="w-full text-left text-gray-700 px-4 py-2 text-xs hover:bg-gray-50 flex items-center gap-2 font-medium border-t border-gray-50">
+                        @if(auth()->check() && auth()->user()->isAdmin())
+<button type="button" onclick="openModal('modalAturKolom2'); toggleDropdown('dropdownOpsi2')" class="w-full text-left text-gray-700 px-4 py-2 text-xs hover:bg-gray-50 flex items-center gap-2 font-medium border-t border-gray-50">
                             <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
                             Atur Kolom Tambahan
                         </button>
+@endif
                     </div>
                 </div>
             </div>
 
-            <x-button variant="primary" onclick="openModalTambah(2)" class="!py-1.5 !px-3 text-xs bg-orange-600 hover:bg-orange-700 border-none">
+                            <button type="button" id="btnModeBulk2" onclick="toggleBulkMode2()" class="inline-flex items-center justify-center gap-2 px-3 py-1.5 text-xs font-medium bg-red-50 text-red-600 border border-red-200 rounded-xl hover:bg-red-100 transition-colors shadow-sm outline-none focus:ring-2 focus:ring-red-300 mr-2">
+                    <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg> Mode Hapus Massal
+                </button>
+                <x-button variant="primary" onclick="openModalTambah(2)" class="!py-1.5 !px-3 text-xs bg-orange-600 hover:bg-orange-700 border-none">
                 <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
                 Tambah Data
             </x-button>
         </div>
-        <div class="overflow-x-auto">
+                <form id="bulkDeleteForm2" action="{{ route('pa-teknik.destroyBulk') }}" method="POST" onsubmit="return confirm('Hapus data terpilih pada Tabel 2?')">
+            @csrf
+            @method('DELETE')
+            <div id="btnGroupBulk2" class="hidden flex justify-between items-center px-4 py-2 bg-red-50 border-b border-red-100">
+                <span class="text-xs text-red-600 font-semibold">Data terpilih untuk dihapus</span>
+                <div class="flex gap-2">
+                    <button type="button" onclick="cancelAll2()" class="px-3 py-1.5 bg-white border border-gray-300 text-gray-700 rounded-lg text-xs font-medium hover:bg-gray-50">Batal</button>
+                    <button type="submit" class="px-3 py-1.5 bg-red-600 text-white rounded-lg text-xs font-medium hover:bg-red-700">Hapus Terpilih</button>
+                </div>
+            </div>
+            <div id="tableContainerBulk2" class="hide-bulk overflow-x-auto">
             @php
-                $headTabel2 = ['Tahun', 'Bulan'];
+                $headTabel2 = ['<input type="checkbox" id="selectAllBulk2" onclick="toggleSelectAll2()">', 'Tahun', 'Bulan'];
                 foreach($masterTabel2 as $master) { $headTabel2[] = $master->nama_kegiatan; }
                 if(isset($kolomTabel2)) { foreach($kolomTabel2 as $k) { $headTabel2[] = $k->nama_kolom; } }
                 $headTabel2[] = 'Aksi';
@@ -228,6 +259,7 @@
             <x-table :headers="$headTabel2">
                 @forelse($paginatedTable2 as $row)
                     <tr class="hover:bg-gray-50 transition-colors text-xs whitespace-nowrap">
+                        <td class="px-3 py-2 text-center align-middle"><input type="checkbox" name="ids[]" class="cb-bulk-2" value="2|{{ $row['tahun'] }}|{{ $row['bulan'] }}" onclick="toggleCheckbox2()"></td>
                         <td class="px-4 py-3 text-gray-700 font-medium text-center">{{ $row['tahun'] }}</td>
                         <td class="px-4 py-3 text-gray-900 font-medium text-center">{{ $row['bulan'] }}</td>
                         @foreach($masterTabel2 as $master)
@@ -340,7 +372,8 @@
     />
 
     <!-- ================= MODAL ATUR KOLOM (TABEL 1) ================= -->
-    <x-modal id="modalAturKolom1" title="Pengaturan Kolom Tambahan (Tabel 1)" description="Kelola kolom ekstra khusus untuk Tabel 1.">
+    @if(auth()->user()->isAdmin())
+<x-modal id="modalAturKolom1" title="Pengaturan Kolom Tambahan (Tabel 1)" description="Kelola kolom ekstra khusus untuk Tabel 1.">
         <div class="mb-6 bg-gray-50 p-4 rounded-xl border border-gray-100 max-h-48 overflow-y-auto">
             <h4 class="text-sm font-bold text-gray-800 mb-3">Kolom Terdaftar:</h4>
             @if(isset($kolomTabel1) && $kolomTabel1->count() > 0)
@@ -372,9 +405,11 @@
             <div class="flex justify-end gap-3 mt-4"><x-button variant="outline" type="button" onclick="closeModal('modalAturKolom1')">Tutup</x-button><x-button variant="primary" type="submit" class="bg-orange-600 hover:bg-orange-700 border-none">Simpan</x-button></div>
         </form>
     </x-modal>
+@endif
 
     <!-- ================= MODAL ATUR KOLOM (TABEL 2) ================= -->
-    <x-modal id="modalAturKolom2" title="Pengaturan Kolom Tambahan (Tabel 2)" description="Kelola kolom ekstra khusus untuk Tabel 2.">
+    @if(auth()->user()->isAdmin())
+<x-modal id="modalAturKolom2" title="Pengaturan Kolom Tambahan (Tabel 2)" description="Kelola kolom ekstra khusus untuk Tabel 2.">
         <div class="mb-6 bg-gray-50 p-4 rounded-xl border border-gray-100 max-h-48 overflow-y-auto">
             <h4 class="text-sm font-bold text-gray-800 mb-3">Kolom Terdaftar:</h4>
             @if(isset($kolomTabel2) && $kolomTabel2->count() > 0)
@@ -406,6 +441,7 @@
             <div class="flex justify-end gap-3 mt-4"><x-button variant="outline" type="button" onclick="closeModal('modalAturKolom2')">Tutup</x-button><x-button variant="primary" type="submit" class="bg-orange-600 hover:bg-orange-700 border-none">Simpan</x-button></div>
         </form>
     </x-modal>
+@endif
 
     <!-- MODAL TAMBAH DINAMIS -->
     <x-modal id="modalTambah" title="Tambah Data Dokumen" description="Pilih jenis dokumen dan masukkan jumlahnya.">

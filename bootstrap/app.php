@@ -31,6 +31,12 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->web(append: [
             \App\Http\Middleware\UpdateUserLastSeen::class,
         ]);
+
+        // Alias middleware RBAC untuk digunakan di routes
+        $middleware->alias([
+            'role.admin' => \App\Http\Middleware\IsAdminOrAbove::class,
+            'role.superadmin' => \App\Http\Middleware\IsSuperAdmin::class,
+        ]);
         
     })
     ->withExceptions(function (Exceptions $exceptions): void {

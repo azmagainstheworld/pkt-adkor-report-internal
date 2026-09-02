@@ -232,6 +232,30 @@ class DofController extends Controller
         return back()->with('success', "Data periode {$request->bulan} {$request->tahun} berhasil diperbarui.");
     }
 
+        public function destroyBulk(\Illuminate\Http\Request $request)
+    {
+        $request->validate([
+            'ids' => 'required|array',
+        ]);
+
+        $count = 0;
+        foreach($request->ids as $val) {
+            $parts = explode('|', $val);
+            if(count($parts) == 3) {
+                $kelompok = $parts[0];
+                $tahun = $parts[1];
+                $bulan = $parts[2];
+                \App\Models\DofData::where('kelompok_tabel', $kelompok)
+                    ->where('tahun', $tahun)
+                    ->where('bulan', $bulan)
+                    ->delete();
+                $count++;
+            }
+        }
+
+        return redirect()->back()->with('success', $count . ' Data berhasil dihapus secara massal.');
+    }
+
     public function destroyBulan(Request $request)
     {
         $masterIds = DofMaster::where('kelompok_tabel', $request->kelompok_tabel)->pluck('id');

@@ -25,7 +25,7 @@ class KetidakhadiranController extends Controller
 
         $tahunRaw = $request->input('tahun', now()->year);
         $tahun = $tahunRaw === 'semua' ? 'semua' : (int) $tahunRaw;
-        $bulanNama = $request->input('bulan', $bulanList[now()->month - 1]);
+        $bulanNama = $request->input('bulan', 'semua');
 
         if (!in_array($bulanNama, $bulanList, true) && $bulanNama != 'semua') {
             $bulanNama = $bulanList[now()->month - 1];
@@ -266,6 +266,7 @@ class KetidakhadiranController extends Controller
 
     public function storeKolomDinamis(Request $request)
     {
+        abort_if(!auth()->user()->isAdmin(), 403, 'Akses ditolak.');
         $request->validate([
             'modul' => 'required|string',
             'nama_kolom' => 'required|string|max:255',
@@ -302,6 +303,7 @@ class KetidakhadiranController extends Controller
 
     public function destroyKolomDinamis($id)
     {
+        abort_if(!auth()->user()->isAdmin(), 403, 'Akses ditolak.');
         DB::table('dynamic_columns')->where('id', $id)->delete();
         return back()->with('success', 'Kolom dinamis berhasil dihapus.');
     }
@@ -347,5 +349,25 @@ class KetidakhadiranController extends Controller
 
         $pdf = Pdf::loadView('pdf.ketidakhadiran', compact('karyawan', 'tahun', 'bulan'))->setPaper('a4', 'landscape');
         return $pdf->download('Data_Ketidakhadiran_'.$bulan.'_'.$tahun.'.pdf');
+    }
+
+    public function destroyBulananBulk(\Illuminate\Http\Request $request)
+    {
+        $ids = $request->ids;
+        if ($ids && is_array($ids)) {
+            \App\Models\Ketidakhadiran::whereIn('id', $ids)->delete();
+            return redirect()->back()->with('success', 'Berhasil menghapus data secara massal.');
+        }
+        return redirect()->back()->with('error_modal', 'Tidak ada data yang dipilih.');
+    }
+
+    public function destroyHarianBulk(\Illuminate\Http\Request $request)
+    {
+        $ids = $request->ids;
+        if ($ids && is_array($ids)) {
+            \App\Models\KetidakhadiranHarian::whereIn('id', $ids)->delete();
+            return redirect()->back()->with('success', 'Berhasil menghapus data secara massal.');
+        }
+        return redirect()->back()->with('error_modal', 'Tidak ada data yang dipilih.');
     }
 }

@@ -171,6 +171,27 @@ class JasaFotocopyController extends Controller
         return back()->with('success', 'Data berhasil diperbarui!');
     }
 
+        public function destroyBulk(\Illuminate\Http\Request $request)
+    {
+        if ($request->delete_all_pages == '1') {
+            $query = \App\Models\JasaFotocopy::query();
+            if ($request->tahun && $request->tahun != 'semua') $query->where('tahun', $request->tahun);
+            if ($request->bulan && $request->bulan != 'semua') $query->where('bulan', $request->bulan);
+            
+            $count = $query->count();
+            $query->delete();
+            return redirect()->back()->with('success', $count . ' Data jasa fotocopy (dari semua halaman) berhasil dihapus.');
+        } else {
+            $request->validate([
+                'ids' => 'required|array',
+                'ids.*' => 'exists:jasa_fotocopy,id',
+            ]);
+
+            \App\Models\JasaFotocopy::whereIn('id', $request->ids)->delete();
+            return redirect()->back()->with('success', count($request->ids) . ' Data jasa fotocopy berhasil dihapus.');
+        }
+    }
+
     public function destroy($id)
     {
         JasaFotocopy::findOrFail($id)->delete();
@@ -179,6 +200,7 @@ class JasaFotocopyController extends Controller
 
     public function storeKolomDinamis(Request $request)
     {
+        abort_if(!auth()->user()->isAdmin(), 403, 'Akses ditolak.');
         $request->validate(['modul' => 'required|string', 'nama_kolom' => 'required|string|max:100', 'tipe_input' => 'required|in:text,number,date,dropdown,currency']);
         $isDuplicate = DB::table('dynamic_columns')->where('modul', $request->modul)->whereRaw('LOWER(nama_kolom) = ?', [strtolower(trim($request->nama_kolom))])->exists();
         if ($isDuplicate) return back()->with('error_modal', 'Kolom dengan nama "' . $request->nama_kolom . '" sudah ada!')->with('failed_modul', $request->modul);
@@ -197,6 +219,7 @@ class JasaFotocopyController extends Controller
 
     public function destroyKolomDinamis($id)
     {
+        abort_if(!auth()->user()->isAdmin(), 403, 'Akses ditolak.');
         DB::table('dynamic_columns')->where('id', $id)->delete();
         return back()->with('success', 'Kolom dinamis berhasil dihapus.');
     }
@@ -218,7 +241,7 @@ class JasaFotocopyController extends Controller
         $tahun = $request->input('tahun', 'semua');
         $bulan = $request->input('bulan', 'semua');
         try {
-            return Excel::download(new \App\Exports\JasaFotocopyExport($tahun, $bulan), 'Data_Jasa_Fotocopy.xlsx');
+            return Excel::download(new \App\Exports\JasaFotocopyExport(false, $tahun, $bulan), 'Data_Jasa_Fotocopy.xlsx');
         } catch (\Exception $e) {
             return redirect()->back()->with('error_modal', 'Gagal Export Excel. Detail: ' . $e->getMessage());
         }

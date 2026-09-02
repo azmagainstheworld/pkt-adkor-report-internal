@@ -112,22 +112,27 @@
                     </a>
                 </div>
 
-                <!-- Kategori 2: Atur Kolom -->
+                @if(auth()->check() && auth()->user()->isAdmin())
+<!-- Kategori 2: Atur Kolom -->
                 <div class="px-4 py-2 bg-gray-50 border-y border-gray-100 mt-1">
                     <p class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Tampilan Teks</p>
                 </div>
                 <div class="py-1" role="none">
                     <button type="button" onclick="openModal('modalAturKolom'); toggleDropdown('dropdownOpsiSuper')" class="text-gray-700 w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 flex items-center gap-2.5 font-medium transition-colors">
                         <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
-                        Atur Kolom Harian
+                        Atur Kolom
                     </button>
                 </div>
+@endif
             </div>
         </div>
 
         <!-- Tambah Data Utama (Paling Kanan / Ujung) -->
         <div>
-            <button type="button" onclick="bukaModalTambah()" class="inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-pkt-jingga hover:bg-orange-600 rounded-xl shadow-sm transition-colors border-none outline-none focus:ring-2 focus:ring-orange-300">
+                            <button type="button" id="btnModeBulk" onclick="toggleBulkMode()" class="inline-flex justify-center items-center gap-2 rounded-xl border border-red-200 text-red-600 bg-red-50 px-4 py-2.5 text-sm font-medium hover:bg-red-100 transition-colors shadow-sm">
+                    Hapus Semua
+                </button>
+                <button type="button" onclick="bukaModalTambah()" class="inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-pkt-jingga hover:bg-orange-600 rounded-xl shadow-sm transition-colors border-none outline-none focus:ring-2 focus:ring-orange-300">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
                 Tambah Data
             </button>
@@ -136,14 +141,33 @@
     </div>
     <!-- ========================================================================= -->
 
-    <x-card class="!rounded-xl overflow-visible !p-0 shadow-sm border border-gray-100">
-        <x-table :headers="['Tahun', 'Bulan', 'Nama', 'NPK', 'Keterangan', 'Dinas', 'Cuti', 'Izin', 'Training', 'Dispensasi', 'Detasering', 'Aksi']">
+        <!-- DATA TABLE SECTION -->
+    <form id="bulkDeleteForm" action="{{ route('ketidakhadiran.destroyBulananBulk') }}" method="POST" onsubmit="return confirm('Hapus data terpilih?')">
+        @csrf
+        @method('DELETE')
+        
+        <div id="btnGroup" class="hidden flex justify-between items-center px-4 py-2 bg-red-50 rounded-t-xl border-b border-red-100">
+            <span class="text-xs text-red-600 font-semibold flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                <span id="selectedCount">0</span> data terpilih untuk dihapus
+            </span>
+            <div class="flex gap-2">
+                <button type="button" onclick="cancelAll()" class="px-3 py-1.5 text-xs font-medium text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors shadow-sm">Batal</button>
+                <button type="submit" class="px-3 py-1.5 text-xs font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors shadow-sm flex items-center gap-1.5">
+                    Hapus Terpilih
+                </button>
+            </div>
+        </div>
+
+        <x-card class="!rounded-xl overflow-visible !p-0 shadow-sm border border-gray-100 hide-bulk" id="tableContainer">
+        <x-table :headers="['<input type=\'checkbox\' id=\'selectAll\' onclick=\'toggleSelectAll()\'>', 'Tahun', 'Bulan', 'Nama', 'NPK', 'Keterangan', 'Dinas', 'Cuti', 'Izin', 'Training', 'Dispensasi', 'Detasering', 'Aksi']">
             @forelse ($karyawan as $item)
                 <tr class="row-ketidakhadiran hover:bg-gray-50 transition-colors cursor-pointer" data-nama="{{ $item->nama }}" data-dinas="{{ $item->dinas ?? 0 }}" data-cuti="{{ $item->cuti ?? 0 }}" data-izin="{{ $item->izin ?? 0 }}" data-training="{{ $item->training ?? 0 }}" data-dispensasi="{{ $item->dispensasi ?? 0 }}" data-detasering="{{ $item->detasering ?? 0 }}">
+                    <td class="px-6 py-4 text-center"><input type="checkbox" name="ids[]" class="cb-bulk" value="{{ $item->ketidakhadiran_id }}" onclick="toggleCheckbox()"></td>
                     <td class="px-6 py-4 text-gray-700 font-medium">{{ $item->tahun }}</td>
                     <td class="px-6 py-4 text-gray-600">{{ $item->bulan }}</td>
-                    <td class="px-6 py-4 font-medium text-gray-900">{{ $item->nama }}</td>
-                    <td class="px-6 py-4 text-gray-500 font-mono text-xs">{{ $item->npk }}</td>
+                    <td class="px-6 py-4 font-medium text-gray-900">{!! request('search') ? preg_replace('/(' . preg_quote(request('search'), '/') . ')/i', '<mark class="bg-yellow-200 px-1 rounded text-yellow-900">$1</mark>', $item->nama) : $item->nama !!}</td>
+                    <td class="px-6 py-4 text-gray-500 font-mono text-xs">{!! request('search') ? preg_replace('/(' . preg_quote(request('search'), '/') . ')/i', '<mark class="bg-yellow-200 px-1 rounded text-yellow-900">$1</mark>', $item->npk) : $item->npk !!}</td>
                     <td class="px-6 py-4 text-gray-500 truncate max-w-[160px]" title="{{ $item->keterangan }}">{{ $item->keterangan ?? '-' }}</td>
                     <td class="px-6 py-4 text-gray-700 {{ !$item->dinas ? 'opacity-40' : '' }}">{{ $item->dinas ?? 0 }}</td>
                     <td class="px-6 py-4 text-gray-700 {{ !$item->cuti ? 'opacity-40' : '' }}">{{ $item->cuti ?? 0 }}</td>
@@ -168,12 +192,14 @@
             <div>{{ $karyawan->links() }}</div>
         </div>
     </x-card>
+    </form>
 
     <x-delete-modal id="modalHapusBulanan" title="Hapus Data Bulanan" message="Apakah Anda yakin ingin menghapus seluruh data ketidakhadiran karyawan ini untuk bulan yang dipilih?" />
     <x-delete-modal id="modalHapusKolom" title="Hapus Kolom Tambahan" message="Kolom ini akan dihilangkan dari tabel harian. Lanjutkan?" />
 
     <!-- ================= MODAL ATUR KOLOM DINAMIS ================= -->
-    <x-modal id="modalAturKolom" title="Pengaturan Kolom Tambahan (Harian)" description="Kelola kolom ekstra khusus untuk formulir Ketidakhadiran Harian.">
+    @if(auth()->user()->isAdmin())
+<x-modal id="modalAturKolom" title="Pengaturan Kolom Tambahan (Harian)" description="Kelola kolom ekstra khusus untuk formulir Ketidakhadiran Harian.">
         <div class="mb-6 bg-gray-50 p-4 rounded-xl border border-gray-100">
             <h4 class="text-sm font-bold text-gray-800 mb-3">Kolom Terdaftar Saat Ini:</h4>
             @if(isset($kolomDinamis) && $kolomDinamis->count() > 0)
@@ -228,6 +254,7 @@
             </div>
         </form>
     </x-modal>
+@endif
 
     <!-- ================= MODAL TAMBAH / EDIT DATA ================= -->
     <x-modal id="modalTambahData" title="Tambah / Edit Data Ketidakhadiran" description="Pilih input per hari, atau langsung isi total 1 bulan sekaligus">
@@ -349,27 +376,27 @@
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1.5">Dinas</label>
-                <input type="text" name="dinas" value="0" class="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500">
+                <input type="number" min="0" oninput="if(this.value.length > 1 && this.value.startsWith('0')) this.value = parseInt(this.value, 10);" name="dinas" value="0" class="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500">
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1.5">Cuti</label>
-                <input type="text" name="cuti" value="0" class="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500">
+                <input type="number" min="0" oninput="if(this.value.length > 1 && this.value.startsWith('0')) this.value = parseInt(this.value, 10);" name="cuti" value="0" class="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500">
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1.5">Izin</label>
-                <input type="text" name="izin" value="0" class="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500">
+                <input type="number" min="0" oninput="if(this.value.length > 1 && this.value.startsWith('0')) this.value = parseInt(this.value, 10);" name="izin" value="0" class="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500">
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1.5">Training</label>
-                <input type="text" name="training" value="0" class="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500">
+                <input type="number" min="0" oninput="if(this.value.length > 1 && this.value.startsWith('0')) this.value = parseInt(this.value, 10);" name="training" value="0" class="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500">
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1.5">Dispensasi</label>
-                <input type="text" name="dispensasi" value="0" class="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500">
+                <input type="number" min="0" oninput="if(this.value.length > 1 && this.value.startsWith('0')) this.value = parseInt(this.value, 10);" name="dispensasi" value="0" class="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500">
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1.5">Detasering</label>
-                <input type="text" name="detasering" value="0" class="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500">
+                <input type="number" min="0" oninput="if(this.value.length > 1 && this.value.startsWith('0')) this.value = parseInt(this.value, 10);" name="detasering" value="0" class="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500">
             </div>
             <p class="md:col-span-2 text-xs text-gray-400">Menyimpan form ini akan MENIMPA angka yang sudah ada untuk karyawan & bulan yang sama.</p>
         </form>
@@ -388,6 +415,9 @@
         templateRoute="{{ route('template.download', 'ketidakhadiran') }}" 
     />
 
+<style>
+    .hide-bulk th:first-child, .hide-bulk td:first-child { display: none !important; }
+</style>
 </main>
 
 <script>
@@ -708,5 +738,102 @@
     }
 
     window.onload = function () { renderChartsKetidakhadiran(); };
+
+</script>
+
+<script>
+
+function toggleCheckbox() {
+    let selectAll = document.getElementById("selectAll");
+    let checkboxes = document.querySelectorAll(".cb-item");
+    let allChecked = Array.from(checkboxes).every(cb => cb.checked);
+    selectAll.checked = allChecked;
+    toggleDeleteButton();
+}
+function toggleDeleteButton() {
+    let checkboxes = document.querySelectorAll(".cb-item");
+    let checkedCount = Array.from(checkboxes).filter(cb => cb.checked).length;
+    let btnGroup = document.getElementById("btnGroup");
+    document.getElementById("selectedCount").innerText = checkedCount;
+    if (checkedCount > 0) {
+        btnGroup.classList.remove("hidden");
+    } else {
+        btnGroup.classList.add("hidden");
+    }
+}
+function cancelAll() {
+    let selectAll = document.getElementById("selectAll");
+    let checkboxes = document.querySelectorAll(".cb-item");
+    if(selectAll) selectAll.checked = false;
+    checkboxes.forEach(cb => cb.checked = false);
+    toggleDeleteButton();
+}
+
+</script>
+<script>
+let isBulkMode = false;
+
+function toggleBulkMode() {
+    isBulkMode = !isBulkMode;
+    const container = document.getElementById('tableContainer');
+    const btnGroup = document.getElementById('btnGroup');
+    if (container) {
+        if (isBulkMode) {
+            container.classList.remove('hide-bulk');
+            if(btnGroup) {
+                btnGroup.classList.remove('hidden');
+                btnGroup.classList.add('flex');
+            }
+        } else {
+            container.classList.add('hide-bulk');
+            if(btnGroup) {
+                btnGroup.classList.add('hidden');
+                btnGroup.classList.remove('flex');
+            }
+            cancelAllBtnOnly();
+        }
+    }
+}
+
+function toggleSelectAll() {
+    const selectAll = document.getElementById('selectAll');
+    const checkboxes = document.querySelectorAll('.cb-bulk');
+    checkboxes.forEach(cb => cb.checked = selectAll.checked);
+    updateSelectedCount();
+}
+
+function toggleCheckbox() {
+    const selectAll = document.getElementById('selectAll');
+    const checkboxes = document.querySelectorAll('.cb-bulk');
+    const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+    if(selectAll) selectAll.checked = allChecked;
+    updateSelectedCount();
+}
+
+function updateSelectedCount() {
+    const count = document.querySelectorAll('.cb-bulk:checked').length;
+    const countEl = document.getElementById('selectedCount');
+    if (countEl) countEl.textContent = count;
+}
+
+function cancelAllBtnOnly() {
+    const selectAll = document.getElementById('selectAll');
+    if (selectAll) selectAll.checked = false;
+    const checkboxes = document.querySelectorAll('.cb-bulk');
+    checkboxes.forEach(cb => cb.checked = false);
+    updateSelectedCount();
+}
+
+function cancelAll() {
+    cancelAllBtnOnly();
+    isBulkMode = false;
+    const container = document.getElementById('tableContainer');
+    if (container) container.classList.add('hide-bulk');
+    const btnGroup = document.getElementById('btnGroup');
+    if (btnGroup) {
+        btnGroup.classList.add('hidden');
+        btnGroup.classList.remove('flex');
+    }
+}
 </script>
 @endsection

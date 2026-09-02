@@ -125,17 +125,14 @@
                         </a>
                     </div>
                 </div>
-                <x-button variant="primary" onclick="bukaModalTambah()" class="!bg-[#F7941E] hover:!bg-orange-600 border-none !rounded-xl !py-2 shadow-sm text-xs">
-                    <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-                    Tambah Data
-                </x-button>
+                
             </div>
         </div>
 
         @php
             $headers = ['Tahun', 'Bulan', 'Undangan Intern', 'Undangan Ekstern'];
             if(isset($kolomDinamis)) { foreach($kolomDinamis as $k) { $headers[] = $k->nama_kolom; } }
-            $headers[] = 'Aksi';
+            // $headers[] = 'Aksi';
         @endphp
 
         <div class="overflow-x-auto">
@@ -161,21 +158,7 @@
                             @endforeach
                         @endif
 
-                        <!-- KOLOM AKSI EDIT DAN HAPUS -->
-                        <td class="px-6 py-4 text-center">
-                            <div class="flex gap-2 justify-center">
-                                <button type="button" onclick="editDataUndangan({{ json_encode($row) }})" class="p-1.5 text-amber-500 hover:bg-amber-50 rounded-md border border-amber-200" title="Edit Data">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
-                                </button>
-                                <form action="{{ route('undangan.destroy', $row->id) }}" method="POST" class="inline" onsubmit="return confirm('Yakin ingin menghapus data ini?');">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="p-1.5 text-red-500 hover:bg-red-50 rounded-md border border-red-200" title="Hapus Data">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                                    </button>
-                                </form>
-                            </div>
-                        </td>
+                        <!-- Aksi dihapus untuk tabel rekap -->
                     </tr>
                 @empty
                     <tr><td colspan="{{ count($headers) }}" class="px-6 py-10 text-center text-gray-500">Tidak ada data untuk filter yang dipilih.</td></tr>
@@ -191,6 +174,120 @@
                 @endif
             </x-table>
         </div>
+    
+    </x-card>
+
+<!-- ================= TABEL RINCIAN UNDANGAN (TABEL 2) ================= -->
+    <x-card class="!rounded-xl overflow-visible !p-0 shadow-sm border border-gray-100 bg-white mt-8 mb-8">
+        <div class="p-5 border-b border-gray-100 bg-white flex justify-between items-center">
+            <div>
+                <h3 class="font-bold text-gray-900 text-lg">Rincian Agenda Undangan</h3>
+                <p class="text-xs text-gray-400">Daftar agenda undangan internal dan eksternal</p>
+            </div>
+            
+                        <div class="flex gap-3">
+                <div class="relative dropdown-container">
+                    <x-button variant="outline" type="button" onclick="toggleActionDropdown('dropdownUndanganDetail')" class="!rounded-xl !py-2 shadow-sm text-xs font-medium text-blue-600 border-blue-200 hover:bg-blue-50 flex items-center gap-1.5 min-w-[140px] justify-center">
+                        <svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
+                        Opsi Lanjutan
+                        <svg class="w-3 h-3 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </x-button>
+
+                    <div id="dropdownUndanganDetail" class="hidden absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-xl border border-gray-100 z-50 py-2 origin-top-right transition-all duration-200">
+                        <div class="px-4 py-2 border-b border-gray-100">
+                            <span class="text-[10px] font-bold text-gray-400 tracking-wider uppercase">Ekspor & Impor</span>
+                        </div>
+                        <a href="javascript:void(0)" onclick="openModal('modalImportUndangan'); document.getElementById('dropdownUndanganDetail').classList.add('hidden')" class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                            <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                            Import dari Excel
+                        </a>
+                        <a href="{{ route('undangan.export.excel', request()->query()) }}" class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                            <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                            Export Excel
+                        </a>
+                        <a href="{{ route('undangan.export.pdf', request()->query()) }}" class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                            <svg class="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
+                            Export Laporan PDF
+                        </a>
+                        <div class="px-4 py-2 border-y border-gray-100 mt-1 bg-gray-50/50">
+                            <span class="text-[10px] font-bold text-gray-400 tracking-wider uppercase">Konfigurasi</span>
+                        </div>
+                        <a href="javascript:void(0)" onclick="openModal('modalAturKolom'); document.getElementById('dropdownUndanganDetail').classList.add('hidden')" class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                            <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"></path></svg>
+                            Atur Kolom Tambahan
+                        </a>
+                    </div>
+                </div>
+
+                                <button type="button" id="btnModeBulkDetail" onclick="toggleBulkMode('detail')" class="px-4 py-2 bg-red-50 text-red-600 border border-red-200 rounded-xl hover:bg-red-100 transition-colors text-xs font-semibold flex items-center shadow-sm">
+                    <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                    Mode Hapus Massal
+                </button>
+                <x-button variant="primary" onclick="openModal('modalTambahDetail')" class="!bg-[#F7941E] hover:!bg-orange-600 border-none !rounded-xl !py-2 shadow-sm text-xs">
+                    <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                    Tambah Rincian
+                </x-button>
+            </div>
+        </div>
+
+                <form id="bulkDeleteDetailForm" action="{{ route('undangan.detail.destroyBulk') }}" method="POST" onsubmit="return confirm('Hapus data terpilih?')">
+            @csrf
+            @method('DELETE')
+            
+            <div id="btnGroupDetail" class="hidden flex justify-between items-center px-4 py-2 bg-red-50 border-b border-red-100">
+                <span class="text-xs text-red-600 font-semibold">Data terpilih untuk dihapus</span>
+                <div class="flex gap-2">
+                    <button type="button" onclick="cancelAll('detail')" class="px-3 py-1.5 bg-white border border-gray-300 text-gray-700 rounded-lg text-xs font-medium hover:bg-gray-50">Batal</button>
+                    <button type="submit" class="px-3 py-1.5 bg-red-600 text-white rounded-lg text-xs font-medium hover:bg-red-700">Hapus Terpilih</button>
+                </div>
+            </div>
+
+            <div id="tableContainerDetail" class="hide-bulk-detail overflow-x-auto">
+                        @php
+                $headersDetail = [
+                    '<input type="checkbox" id="selectAllDetail" onclick="toggleSelectAll(\'detail\')">',
+                    'No.', 'Tahun', 'Bulan', 'Jenis Undangan', 'Agenda', 'Aksi'
+                ];
+            @endphp
+            <x-table :headers="$headersDetail">
+                @if(empty($detailsData) || count($detailsData) === 0)
+                    <tr><td colspan="7" class="px-6 py-10 text-center text-gray-500">Tidak ada rincian undangan.</td></tr>
+                @else
+                    @foreach($detailsData as $index => $detail)
+                        <tr class="hover:bg-gray-50 transition-colors text-sm border-b border-gray-100 last:border-0">
+                            <td class="px-6 py-4 text-center"><input type="checkbox" name="ids[]" class="cb-detail" value="{{ $detail->id }}" onclick="toggleCheckbox('detail')"></td>
+                            <td class="px-6 py-4 text-gray-700 font-medium whitespace-nowrap">{{ $index + 1 }}</td>
+                            <td class="px-6 py-4 text-gray-700 font-medium whitespace-nowrap">{{ $detail->tahun }}</td>
+                            <td class="px-6 py-4 text-gray-900 font-medium whitespace-nowrap">{{ $detail->bulan }}</td>
+                            <td class="px-6 py-4 text-gray-700">
+                                @if($detail->jenis_undangan == 'Internal')
+                                    <span class="px-2.5 py-1 bg-blue-50 text-blue-700 rounded-md text-xs font-semibold border border-blue-100">Internal</span>
+                                @else
+                                    <span class="px-2.5 py-1 bg-orange-50 text-orange-700 rounded-md text-xs font-semibold border border-orange-100">Eksternal</span>
+                                @endif
+                            </td>
+                            <td class="px-6 py-4 text-gray-700">{{ $detail->agenda ?? '-' }}</td>
+                            
+                            <td class="px-6 py-4 text-center">
+                                <div class="flex gap-2 justify-center">
+                                    <button type="button" onclick="editDataDetail({{ json_encode($detail) }})" class="p-1.5 text-amber-500 hover:bg-amber-50 rounded-md border border-amber-200" title="Edit Data">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                                    </button>
+                                    <form action="{{ route('undangan.detail.destroy', $detail->id) }}" method="POST" class="inline" onsubmit="return confirm('Yakin ingin menghapus rincian ini?');">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="p-1.5 text-red-500 hover:bg-red-50 rounded-md border border-red-200" title="Hapus Data">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    @endforeach
+                @endif
+            </x-table>
+            </div>
+        </form>
     </x-card>
 
     <x-delete-modal id="modalHapusKolom" title="Hapus Kolom Tambahan" message="Kolom ini akan dihilangkan dari tabel dan formulir. Lanjutkan?" />
@@ -228,7 +325,8 @@
     </x-modal>
 
     <!-- ================= BLUEPRINT: MODAL ATUR KOLOM ================= -->
-    <x-modal id="modalAturKolom" title="Pengaturan Kolom Tambahan" description="Kelola kolom ekstra khusus untuk modul Undangan.">
+    @if(auth()->user()->isAdmin())
+<x-modal id="modalAturKolom" title="Pengaturan Kolom Tambahan" description="Kelola kolom ekstra khusus untuk modul Undangan.">
         <div class="mb-6 bg-gray-50 p-4 rounded-xl border border-gray-100 max-h-48 overflow-y-auto">
             <h4 class="text-sm font-bold text-gray-800 mb-3">Kolom Terdaftar Saat Ini:</h4>
             @if(isset($kolomDinamis) && $kolomDinamis->count() > 0)
@@ -263,6 +361,7 @@
             <div class="flex justify-end gap-3 mt-4"><x-button variant="outline" type="button" onclick="closeModal('modalAturKolom')">Tutup</x-button><x-button variant="primary" type="submit" class="!bg-blue-600 hover:!bg-blue-700 border-none">Simpan Kolom</x-button></div>
         </form>
     </x-modal>
+@endif
 
     <!-- ================= MODAL TAMBAH DATA (SEKALIGUS) ================= -->
     <x-modal id="modalTambah" title="Input Data Undangan" description="Pilih periode dan masukkan total undangan untuk bulan tersebut. (Bersifat overwrite)">
@@ -385,9 +484,128 @@
         </x-slot>
     </x-modal>
 
+        <!-- ================= MODAL TAMBAH RINCIAN ================= -->
+    <x-modal id="modalTambahDetail" title="Tambah Rincian Undangan">
+        <form action="{{ route('undangan.detail.store') }}" method="POST" class="space-y-4">
+            @csrf
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Tahun <span class="text-red-500">*</span></label>
+                    <input name="tahun" type="number" required placeholder="Contoh: 2026" class="w-full px-4 py-2 border border-gray-200 rounded-xl bg-white text-sm text-gray-700 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 transition-colors" />
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Bulan <span class="text-red-500">*</span></label>
+                    <select name="bulan" required class="w-full px-4 py-2 border border-gray-200 rounded-xl bg-white text-sm text-gray-700 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 transition-colors">
+                        <option value="">Pilih Bulan...</option>
+                        @foreach(['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'] as $b)
+                            <option value="{{ $b }}">{{ $b }}</option>
+                        @endforeach
+                    </select>
+                </div>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Jenis Undangan <span class="text-red-500">*</span></label>
+                <select name="jenis_undangan" required class="w-full px-4 py-2 border border-gray-200 rounded-xl bg-white text-sm text-gray-700 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 transition-colors">
+                    <option value="">Pilih Jenis...</option>
+                    <option value="Internal">Internal</option>
+                    <option value="Eksternal">Eksternal</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Agenda (Teks Singkat)</label>
+                <textarea name="agenda" rows="3" placeholder="Contoh: Rapat Koordinasi Tahunan" class="w-full px-4 py-2 border border-gray-200 rounded-xl bg-white text-sm text-gray-700 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 transition-colors"></textarea>
+            </div>
+            
+            <div class="flex justify-end gap-3 pt-4 border-t border-gray-100">
+                <button type="button" onclick="closeModal('modalTambahDetail')" class="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-200 transition-colors text-sm font-medium shadow-sm">Batal</button>
+                <button type="submit" class="px-4 py-2 text-white bg-blue-600 border border-transparent rounded-xl hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors text-sm font-medium shadow-sm">Simpan Rincian</button>
+            </div>
+        </form>
+    </x-modal>
+
+    <!-- ================= MODAL EDIT RINCIAN ================= -->
+    <x-modal id="modalEditDetail" title="Edit Rincian Undangan">
+        <form id="formEditDetail" method="POST" class="space-y-4">
+            @csrf
+            @method('PUT')
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Tahun</label>
+                    <input id="edit_tahun" name="tahun" type="number" readonly class="w-full px-4 py-2 border border-gray-200 rounded-xl bg-gray-100 cursor-not-allowed text-sm text-gray-500 shadow-sm" />
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Bulan</label>
+                    <input id="edit_bulan" name="bulan" type="text" readonly class="w-full px-4 py-2 border border-gray-200 rounded-xl bg-gray-100 cursor-not-allowed text-sm text-gray-500 shadow-sm" />
+                </div>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Jenis Undangan <span class="text-red-500">*</span></label>
+                <select id="edit_jenis_undangan" name="jenis_undangan" required class="w-full px-4 py-2 border border-gray-200 rounded-xl bg-white text-sm text-gray-700 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 transition-colors">
+                    <option value="Internal">Internal</option>
+                    <option value="Eksternal">Eksternal</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Agenda (Teks Singkat)</label>
+                <textarea id="edit_agenda" name="agenda" rows="3" class="w-full px-4 py-2 border border-gray-200 rounded-xl bg-white text-sm text-gray-700 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 transition-colors"></textarea>
+            </div>
+            
+            <div class="flex justify-end gap-3 pt-4 border-t border-gray-100">
+                <button type="button" onclick="closeModal('modalEditDetail')" class="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-200 transition-colors text-sm font-medium shadow-sm">Batal</button>
+                <button type="submit" class="px-4 py-2 text-white bg-blue-600 border border-transparent rounded-xl hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors text-sm font-medium shadow-sm">Update Rincian</button>
+            </div>
+        </form>
+    </x-modal>
 </main>
 
-<script>
+    <script>
+        function toggleBulkMode(tipe) {
+            let container = document.getElementById("tableContainer" + (tipe === "detail" ? "Detail" : ""));
+            let btn = document.getElementById("btnModeBulk" + (tipe === "detail" ? "Detail" : ""));
+            if (container.classList.contains("hide-bulk-" + tipe)) {
+                container.classList.remove("hide-bulk-" + tipe);
+                if(btn) { btn.classList.replace("bg-red-50", "bg-red-600"); btn.classList.replace("text-red-600", "text-white"); }
+            } else {
+                container.classList.add("hide-bulk-" + tipe);
+                cancelAll(tipe);
+                if(btn) { btn.classList.replace("bg-red-600", "bg-red-50"); btn.classList.replace("text-white", "text-red-600"); }
+            }
+        }
+        function toggleSelectAll(tipe) {
+            let selectAll = document.getElementById("selectAll" + (tipe === "detail" ? "Detail" : ""));
+            let checkboxes = document.querySelectorAll(".cb-" + tipe);
+            checkboxes.forEach(cb => cb.checked = selectAll.checked);
+            toggleDeleteBtn(tipe);
+        }
+        function toggleCheckbox(tipe) {
+            let selectAll = document.getElementById("selectAll" + (tipe === "detail" ? "Detail" : ""));
+            let checkboxes = document.querySelectorAll(".cb-" + tipe);
+            selectAll.checked = Array.from(checkboxes).every(cb => cb.checked);
+            toggleDeleteBtn(tipe);
+        }
+        function toggleDeleteBtn(tipe) {
+            let group = document.getElementById("btnGroup" + (tipe === "detail" ? "Detail" : ""));
+            if (group) {
+                let checked = document.querySelectorAll(".cb-" + tipe + ":checked").length > 0;
+                if (checked) { group.classList.remove("hidden"); } 
+                else { group.classList.add("hidden"); }
+            }
+        }
+        function cancelAll(tipe) {
+            let selectAll = document.getElementById("selectAll" + (tipe === "detail" ? "Detail" : ""));
+            if (selectAll) selectAll.checked = false;
+            let checkboxes = document.querySelectorAll(".cb-" + tipe);
+            checkboxes.forEach(cb => cb.checked = false);
+            toggleDeleteBtn(tipe);
+        }
+        function editDataDetail(data) {
+            document.getElementById('formEditDetail').action = `/administrasi/undangan/detail/${data.id}`;
+            document.getElementById('edit_tahun').value = data.tahun;
+            document.getElementById('edit_bulan').value = data.bulan;
+            document.getElementById('edit_jenis_undangan').value = data.jenis_undangan;
+            document.getElementById('edit_agenda').value = data.agenda || '';
+            openModal('modalEditDetail');
+        }
     function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
     function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
 

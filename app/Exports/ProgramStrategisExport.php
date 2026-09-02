@@ -41,7 +41,7 @@ class ProgramStrategisExport implements FromCollection, WithHeadings, WithMappin
     {
         $headers = [
             'Tahun', 'Bulan', 'Sasaran', 'Program Strategis', 'Program Kegiatan', 
-            'Target Waktu Mulai', 'Target Waktu Selesai', 'Realisasi (%)', 
+            'Target Waktu', 'Realisasi (%)', 
             'Progress Saat Ini', 'Kendala', 'Keterangan Tambahan', 'Status'
         ];
         
@@ -71,8 +71,7 @@ class ProgramStrategisExport implements FromCollection, WithHeadings, WithMappin
             $isFirst ? $row->program_strategis : '',
             $row->deskripsi_kegiatan, // Tetap ngambil dari database
             $isFirst ? $row->target_waktu_start : '',
-            $isFirst ? $row->target_waktu_end : '',
-            $row->realisasi,
+            (!empty($row->realisasi) && $row->realisasi !== '-' && !str_ends_with(trim($row->realisasi), '%')) ? trim($row->realisasi) . '%' : ($row->realisasi ?? '-'),
             $row->progress_saat_ini,
             $isFirst ? $row->kendala : '',
             $isFirst ? $row->keterangan_tambahan : '',

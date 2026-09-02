@@ -78,6 +78,18 @@ class MasalahKendalaController extends Controller
         return back()->with('success', 'Data Masalah / Kendala berhasil diperbarui.');
     }
 
+        public function destroyBulk(\Illuminate\Http\Request $request)
+    {
+        $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'exists:masalah_kendala,id',
+        ]);
+
+        \App\Models\MasalahKendala::whereIn('id', $request->ids)->delete();
+
+        return redirect()->back()->with('success', count($request->ids) . ' Data masalah & kendala berhasil dihapus.');
+    }
+
     public function destroy($id)
     {
         MasalahKendala::findOrFail($id)->delete();
@@ -89,6 +101,7 @@ class MasalahKendalaController extends Controller
     // ====================================================================
     public function storeKolomDinamis(Request $request)
     {
+        abort_if(!auth()->user()->isAdmin(), 403, 'Akses ditolak.');
         $request->validate([
             'modul'      => 'required|string',
             'nama_kolom' => 'required|string|max:100',
@@ -124,6 +137,7 @@ class MasalahKendalaController extends Controller
 
     public function destroyKolomDinamis($id)
     {
+        abort_if(!auth()->user()->isAdmin(), 403, 'Akses ditolak.');
         DB::table('dynamic_columns')->where('id', $id)->delete();
         return back()->with('success', 'Kolom dinamis berhasil dihapus.');
     }

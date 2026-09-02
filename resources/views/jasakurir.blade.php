@@ -1,6 +1,9 @@
 @extends('layouts.app')
 
 @section('content')
+<style>
+.hide-bulk th:first-child, .hide-bulk td:first-child { display: none !important; }
+</style>
 <!-- Tambahkan Library Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
@@ -10,34 +13,34 @@
     <x-success-modal />
 
     <!-- ================= MODAL ERROR KUSTOM ================= -->
-    @if (session('error_modal'))
+        <!-- ================= MODAL ERROR KUSTOM & VALIDASI ================= -->
+    @if (session('error_modal') || $errors->any())
     <div id="errorModalCustom" class="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 text-center relative transform transition-all">
             <div class="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
             </div>
             <h3 class="text-xl font-bold text-gray-900 mb-2">Peringatan Sistem</h3>
-            <p class="text-sm text-gray-600 mb-6">{{ session('error_modal') }}</p>
-            <button type="button" onclick="document.getElementById('errorModalCustom').style.display='none';" class="w-full py-2.5 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-xl transition-colors shadow-lg shadow-red-600/20">
+            <div class="text-sm text-gray-500 mb-6 text-left">
+                @if(session('error_modal'))
+                    <p class="text-center">{{ session('error_modal') }}</p>
+                @else
+                    <p class="font-bold text-gray-700 mb-2">Gagal memproses data. Periksa inputan Anda:</p>
+                    <ul class="list-disc ml-5 text-xs text-red-500 space-y-1">
+                        @foreach ($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                @endif
+            </div>
+            <button onclick="document.getElementById('errorModalCustom').remove()" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-xl transition-colors">
                 Kembali & Perbaiki
             </button>
         </div>
     </div>
     @endif
 
-    @if ($errors->any())
-        <div class="mb-4 bg-red-50 border border-red-200 text-red-700 p-4 rounded-xl text-sm flex flex-col shadow-sm">
-            <div class="flex items-center mb-2">
-                <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
-                <span class="font-bold">Gagal memproses data. Periksa inputan Anda:</span>
-            </div>
-            <ul class="list-disc list-inside pl-8 text-xs">
-                @foreach ($errors->all() as $error)
-                    <li>{{ $error }}</li>
-                @endforeach
-            </ul>
-        </div>
-    @endif
+    
 
     <!-- Header Section -->
     <div class="flex justify-between items-end mb-6">
@@ -69,13 +72,14 @@
     </div>
 
     <!-- ================= CHART SECTION ================= -->
-    <x-card class="!rounded-xl overflow-visible shadow-sm border border-gray-100 mb-8 p-6 bg-white">
-        <div class="mb-4">
-            <h3 class="font-bold text-gray-900 text-lg">Statistik Penggunaan Jasa Kurir</h3>
-            <p class="text-xs text-gray-400">Total volume pengiriman dokumen/barang per ekspedisi (Tahun: {{ $tahunFilter }})</p>
-        </div>
-        <div class="h-80 w-full relative"><canvas id="kurirChart"></canvas></div>
-    </x-card>
+        <div class="mb-8">
+        <x-dynamic-chart 
+            id="kurirChart" 
+            title="Statistik Penggunaan Jasa Kurir" 
+            subtitle="Total volume pengiriman dokumen/barang per ekspedisi (Tahun: {{ $tahunFilter }})" 
+            type="bar" 
+        />
+    </div>
 
     <!-- ================= DATA TABLE SECTION ================= -->
     <x-card class="!rounded-xl overflow-visible !p-0 shadow-sm border border-gray-100 bg-white">
@@ -110,19 +114,27 @@
                             <svg class="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
                             Export Laporan PDF
                         </a>
-                        <div class="px-4 py-2 border-y border-gray-100 mt-1 bg-gray-50/50">
+                        @if(auth()->user()->isAdmin())
+<div class="px-4 py-2 border-y border-gray-100 mt-1 bg-gray-50/50">
                             <span class="text-[10px] font-bold text-gray-400 tracking-wider uppercase">Konfigurasi</span>
                         </div>
                         <a href="javascript:void(0)" onclick="openModal('modalAturKolom'); document.getElementById('dropdownKurir').classList.add('hidden')" class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
                             <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"></path></svg>
                             Atur Kolom Tambahan
                         </a>
+@endif
                     </div>
                 </div>
-                <x-button variant="outline" onclick="openModal('modalMasterKurir')" class="!rounded-xl !py-2 shadow-sm text-xs font-medium text-gray-600 border-gray-300 hover:bg-gray-50 flex items-center gap-1.5">
+                @if(auth()->user()->isAdmin())
+<x-button variant="outline" onclick="openModal('modalMasterKurir')" class="!rounded-xl !py-2 shadow-sm text-xs font-medium text-gray-600 border-gray-300 hover:bg-gray-50 flex items-center gap-1.5">
                     <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2h0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
                     Atur Ekspedisi
                 </x-button>
+@endif
+                                <button type="button" id="btnModeBulk" onclick="toggleBulkMode()" class="inline-flex items-center justify-center gap-2 px-3 py-1.5 text-xs font-medium bg-red-50 text-red-600 border border-red-200 rounded-xl hover:bg-red-100 transition-colors shadow-sm outline-none focus:ring-2 focus:ring-red-300">
+                    <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                    Hapus semua
+                </button>
                 <x-button variant="primary" onclick="bukaModalTambahData()" class="!bg-[#F7941E] hover:!bg-orange-600 border-none !rounded-xl !py-2 shadow-sm text-xs">
                     <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
                     Tambah Data
@@ -131,7 +143,7 @@
         </div>
 
         @php
-            $headers = ['Tahun', 'Bulan'];
+            $headers = ['<input type="checkbox" id="selectAllBulk" onclick="toggleSelectAll()">', 'Tahun', 'Bulan'];
             foreach($kurirMaster as $kurir) { $headers[] = strtoupper($kurir->nama_kurir); }
             $headers[] = 'Total';
             // Inject Header Kolom Dinamis
@@ -140,10 +152,24 @@
             $headers[] = 'Aksi'; 
         @endphp
 
-        <div class="overflow-x-auto">
+                <form id="bulkDeleteForm" action="{{ route('jasakurir.data.destroyBulk') }}" method="POST">
+            <input type="hidden" id="deleteAllPages" name="delete_all_pages" value="0">
+            @csrf
+            @method('DELETE')
+            
+            <div id="btnGroupBulk" class="hidden flex justify-between items-center px-4 py-2 bg-red-50 border-b border-red-100">
+                <span class="text-xs text-red-600 font-semibold">Data terpilih untuk dihapus</span>
+                <div class="flex gap-2">
+                    <button type="button" onclick="cancelAll()" class="px-3 py-1.5 bg-white border border-gray-300 text-gray-700 rounded-lg text-xs font-medium hover:bg-gray-50">Batal</button>
+                    <button type="submit" class="px-3 py-1.5 bg-red-600 text-white rounded-lg text-xs font-medium hover:bg-red-700">Hapus Terpilih</button>
+                </div>
+            </div>
+
+            <div id="tableContainerBulk" class="hide-bulk overflow-x-auto">
             <x-table :headers="$headers">
                 @forelse($tableData as $row)
                     <tr class="hover:bg-gray-50 transition-colors text-sm border-b border-gray-100 last:border-0">
+                        <td class="px-6 py-4 text-center align-middle"><input type="checkbox" name="ids[]" class="cb-bulk" value="{{ $row['tahun'] }}|{{ $row['bulan'] }}" onclick="toggleCheckbox()"></td>
                         <td class="px-6 py-4 text-gray-700 font-medium whitespace-nowrap">{{ $row['tahun'] }}</td>
                         <td class="px-6 py-4 text-gray-900 font-medium whitespace-nowrap">{{ $row['bulan'] }}</td>
                         
@@ -187,8 +213,8 @@
                     <tr><td colspan="{{ count($headers) }}" class="px-6 py-10 text-center text-gray-500">Belum ada data pengiriman untuk filter ini.</td></tr>
                 @endforelse
             </x-table>
-        </div>
-        
+            </div>
+        </form>
         <!-- PAGINATION TABEL JASA KURIR -->
         @if(method_exists($tableData, 'links'))
             <div class="p-4 border-t border-gray-100 bg-gray-50 rounded-b-xl">
@@ -234,7 +260,8 @@
     <x-delete-modal id="modalHapusMaster" title="Hapus Ekspedisi" message="Apakah Anda yakin ingin menghapus ekspedisi ini dari sistem? Pastikan tidak ada data yang terkait." />
 
     <!-- ================= MODAL ATUR KOLOM ================= -->
-    <x-modal id="modalAturKolom" title="Pengaturan Kolom Tambahan" description="Kelola kolom ekstra khusus untuk modul Jasa Kurir.">
+    @if(auth()->user()->isAdmin())
+<x-modal id="modalAturKolom" title="Pengaturan Kolom Tambahan" description="Kelola kolom ekstra khusus untuk modul Jasa Kurir.">
         <div class="mb-6 bg-gray-50 p-4 rounded-xl border border-gray-100 max-h-48 overflow-y-auto">
             <h4 class="text-sm font-bold text-gray-800 mb-3">Kolom Terdaftar Saat Ini:</h4>
             @if(isset($kolomDinamis) && $kolomDinamis->count() > 0)
@@ -269,6 +296,7 @@
             <div class="flex justify-end gap-3 mt-5"><x-button variant="outline" type="button" onclick="closeModal('modalAturKolom')">Tutup</x-button><x-button variant="primary" type="submit" class="!bg-blue-600 hover:!bg-blue-700 border-none">Simpan Kolom</x-button></div>
         </form>
     </x-modal>
+@endif
 
     <!-- ================= MODAL KELOLA MASTER KURIR ================= -->
     <x-modal id="modalMasterKurir" title="Pengaturan Ekspedisi" description="Kelola daftar jasa ekspedisi/kurir di dalam sistem.">
@@ -426,7 +454,49 @@
 </main>
 
 <!-- ================= JAVASCRIPT ================= -->
-<script>
+    <script>
+        function toggleBulkMode() {
+            let container = document.getElementById("tableContainerBulk");
+            let btn = document.getElementById("btnModeBulk");
+            if (container.classList.contains("hide-bulk")) {
+                container.classList.remove("hide-bulk");
+                if(btn) { btn.classList.replace("bg-red-50", "bg-red-600"); btn.classList.replace("text-red-600", "text-white"); }
+            } else {
+                container.classList.add("hide-bulk");
+                cancelAll();
+                if(btn) { btn.classList.replace("bg-red-600", "bg-red-50"); btn.classList.replace("text-white", "text-red-600"); }
+            }
+        }
+        function toggleSelectAll() {
+            let selectAll = document.getElementById("selectAllBulk");
+            let checkboxes = document.querySelectorAll(".cb-bulk");
+            checkboxes.forEach(cb => cb.checked = selectAll.checked);
+            let deleteAllInput = document.getElementById("deleteAllPages");
+            if (deleteAllInput) { deleteAllInput.value = selectAll.checked ? "1" : "0"; }
+            toggleDeleteBtn();
+        }
+        function toggleCheckbox() {
+            let selectAll = document.getElementById("selectAllBulk");
+            let checkboxes = document.querySelectorAll(".cb-bulk");
+            selectAll.checked = Array.from(checkboxes).every(cb => cb.checked);
+            toggleDeleteBtn();
+        }
+        function toggleDeleteBtn() {
+            let group = document.getElementById("btnGroupBulk");
+            if (group) {
+                let checked = document.querySelectorAll(".cb-bulk:checked").length > 0;
+                if (checked) { group.classList.remove("hidden"); } 
+                else { group.classList.add("hidden"); }
+            }
+        }
+        function cancelAll() {
+            let selectAll = document.getElementById("selectAllBulk");
+            if (selectAll) selectAll.checked = false;
+            let checkboxes = document.querySelectorAll(".cb-bulk");
+            checkboxes.forEach(cb => cb.checked = false);
+            toggleDeleteBtn();
+        }
+
     // Toggle action dropdown function
     function toggleActionDropdown(id) {
         const dropdown = document.getElementById(id);
@@ -594,7 +664,18 @@
 
     // ================= LOGIKA CHART.JS =================
     document.addEventListener('DOMContentLoaded', function() {
-        const canvasKurir = document.getElementById('kurirChart');
+                // 1. Strip leading zeros for all number inputs globally
+        document.addEventListener('input', function(e) {
+            if (e.target.type === 'number') {
+                let val = e.target.value;
+                if (val.length > 1 && val.startsWith('0') && !val.startsWith('0.')) {
+                    e.target.value = val.replace(/^0+/, '');
+                    if (e.target.value === '') e.target.value = '0';
+                }
+            }
+        });
+
+        const canvasKurir = document.getElementById('canvas_kurirChart');
         if (canvasKurir) {
             const ctx = canvasKurir.getContext('2d');
             const rawKurirMaster = {!! json_encode($kurirMaster) !!};
@@ -619,7 +700,14 @@
                 };
             });
 
-            new Chart(ctx, {
+                        window.chartInstances = window.chartInstances || {};
+            window.changeChartType = window.changeChartType || function(id, newType) {
+                if (window.chartInstances && window.chartInstances[id]) {
+                    window.chartInstances[id].config.type = newType;
+                    window.chartInstances[id].update();
+                }
+            };
+            window.chartInstances['kurirChart'] = new Chart(ctx, {
                 type: 'bar',
                 data: { labels: labels, datasets: datasets },
                 options: {

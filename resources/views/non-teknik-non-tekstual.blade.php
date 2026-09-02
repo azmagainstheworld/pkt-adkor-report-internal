@@ -95,10 +95,12 @@
                             <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2h0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
                             Atur Dokumen Master
                         </button>
-                        <button type="button" onclick="openModal('modalAturKolom'); toggleDropdown('dropdownOpsi')" class="w-full text-left text-gray-700 px-4 py-2 text-xs hover:bg-gray-50 flex items-center gap-2 font-medium border-t border-gray-50">
+                        @if(auth()->check() && auth()->user()->isAdmin())
+<button type="button" onclick="openModal('modalAturKolom'); toggleDropdown('dropdownOpsi')" class="w-full text-left text-gray-700 px-4 py-2 text-xs hover:bg-gray-50 flex items-center gap-2 font-medium border-t border-gray-50">
                             <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
                             Atur Kolom Tambahan
                         </button>
+@endif
                     </div>
                 </div>
             </div>
@@ -214,7 +216,8 @@
     </x-modal>
 
     <!-- ================= MODAL ATUR KOLOM ================= -->
-    <x-modal id="modalAturKolom" title="Pengaturan Kolom Tambahan" description="Kelola kolom ekstra khusus untuk modul ini.">
+    @if(auth()->user()->isAdmin())
+<x-modal id="modalAturKolom" title="Pengaturan Kolom Tambahan" description="Kelola kolom ekstra khusus untuk modul ini.">
         <div class="mb-6 bg-gray-50 p-4 rounded-xl border border-gray-100 max-h-48 overflow-y-auto">
             <h4 class="text-sm font-bold text-gray-800 mb-3">Kolom Terdaftar Saat Ini:</h4>
             @if(isset($kolomDinamis) && $kolomDinamis->count() > 0)
@@ -249,6 +252,7 @@
             <div class="flex justify-end gap-3 mt-4"><x-button variant="outline" type="button" onclick="closeModal('modalAturKolom')">Tutup</x-button><x-button variant="primary" type="submit" class="!bg-orange-500 hover:!bg-orange-600 border-none">Simpan Kolom</x-button></div>
         </form>
     </x-modal>
+@endif
 
     <!-- MODAL TAMBAH DINAMIS -->
     <x-modal id="modalTambah" title="Tambah Data Dokumen" description="Pilih jenis dokumen dan masukkan jumlahnya.">
@@ -358,6 +362,87 @@
     </x-modal>
     
 </main>
+
+    <script>
+        function toggleBulkMode1() {
+            let container = document.getElementById("tableContainerBulk1");
+            let btn = document.getElementById("btnModeBulk1");
+            if (container.classList.contains("hide-bulk")) {
+                container.classList.remove("hide-bulk");
+                if(btn) { btn.classList.replace("bg-red-50", "bg-red-600"); btn.classList.replace("text-red-600", "text-white"); }
+            } else {
+                container.classList.add("hide-bulk");
+                cancelAll1();
+                if(btn) { btn.classList.replace("bg-red-600", "bg-red-50"); btn.classList.replace("text-white", "text-red-600"); }
+            }
+        }
+        function toggleSelectAll1() {
+            let selectAll = document.getElementById("selectAllBulk1");
+            let checkboxes = document.querySelectorAll(".cb-bulk-1");
+            checkboxes.forEach(cb => cb.checked = selectAll.checked);
+            toggleDeleteBtn1();
+        }
+        function toggleCheckbox1() {
+            let selectAll = document.getElementById("selectAllBulk1");
+            let checkboxes = document.querySelectorAll(".cb-bulk-1");
+            selectAll.checked = Array.from(checkboxes).every(cb => cb.checked);
+            toggleDeleteBtn1();
+        }
+        function toggleDeleteBtn1() {
+            let group = document.getElementById("btnGroupBulk1");
+            if (group) {
+                let checked = document.querySelectorAll(".cb-bulk-1:checked").length > 0;
+                if (checked) { group.classList.remove("hidden"); } 
+                else { group.classList.add("hidden"); }
+            }
+        }
+        function cancelAll1() {
+            let selectAll = document.getElementById("selectAllBulk1");
+            if (selectAll) selectAll.checked = false;
+            let checkboxes = document.querySelectorAll(".cb-bulk-1");
+            checkboxes.forEach(cb => cb.checked = false);
+            toggleDeleteBtn1();
+        }
+
+        function toggleBulkMode2() {
+            let container = document.getElementById("tableContainerBulk2");
+            let btn = document.getElementById("btnModeBulk2");
+            if (container.classList.contains("hide-bulk")) {
+                container.classList.remove("hide-bulk");
+                if(btn) { btn.classList.replace("bg-red-50", "bg-red-600"); btn.classList.replace("text-red-600", "text-white"); }
+            } else {
+                container.classList.add("hide-bulk");
+                cancelAll2();
+                if(btn) { btn.classList.replace("bg-red-600", "bg-red-50"); btn.classList.replace("text-white", "text-red-600"); }
+            }
+        }
+        function toggleSelectAll2() {
+            let selectAll = document.getElementById("selectAllBulk2");
+            let checkboxes = document.querySelectorAll(".cb-bulk-2");
+            checkboxes.forEach(cb => cb.checked = selectAll.checked);
+            toggleDeleteBtn2();
+        }
+        function toggleCheckbox2() {
+            let selectAll = document.getElementById("selectAllBulk2");
+            let checkboxes = document.querySelectorAll(".cb-bulk-2");
+            selectAll.checked = Array.from(checkboxes).every(cb => cb.checked);
+            toggleDeleteBtn2();
+        }
+        function toggleDeleteBtn2() {
+            let group = document.getElementById("btnGroupBulk2");
+            if (group) {
+                let checked = document.querySelectorAll(".cb-bulk-2:checked").length > 0;
+                if (checked) { group.classList.remove("hidden"); } 
+                else { group.classList.add("hidden"); }
+            }
+        }
+        function cancelAll2() {
+            let selectAll = document.getElementById("selectAllBulk2");
+            if (selectAll) selectAll.checked = false;
+            let checkboxes = document.querySelectorAll(".cb-bulk-2");
+            checkboxes.forEach(cb => cb.checked = false);
+            toggleDeleteBtn2();
+        }
 
 <script>
     function openModal(id) { document.getElementById(id).classList.remove('hidden'); }

@@ -63,13 +63,32 @@
             </div>
         </form>
     </x-card>
+    </form>
 
     @if (!$karyawanTerpilih)
         <div class="p-6 bg-blue-50 border border-blue-100 rounded-xl text-sm text-blue-900 text-center">
             Pilih karyawan, tahun, dan bulan di atas untuk melihat rincian catatan harian.
         </div>
     @else
-        <x-card class="!rounded-xl overflow-visible !p-0 shadow-sm border border-gray-100">
+            <!-- DATA TABLE SECTION -->
+    <form id="bulkDeleteForm" action="{{ route('ketidakhadiran.destroyHarianBulk') }}" method="POST" onsubmit="return confirm('Hapus data terpilih?')">
+        @csrf
+        @method('DELETE')
+        
+        <div id="btnGroup" class="hidden flex justify-between items-center px-4 py-2 bg-red-50 rounded-t-xl border-b border-red-100">
+            <span class="text-xs text-red-600 font-semibold flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                <span id="selectedCount">0</span> data terpilih untuk dihapus
+            </span>
+            <div class="flex gap-2">
+                <button type="button" onclick="cancelAll()" class="px-3 py-1.5 text-xs font-medium text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors shadow-sm">Batal</button>
+                <button type="submit" class="px-3 py-1.5 text-xs font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors shadow-sm flex items-center gap-1.5">
+                    Hapus Terpilih
+                </button>
+            </div>
+        </div>
+
+        <x-card class="!rounded-xl overflow-visible !p-0 shadow-sm border border-gray-100 hide-bulk" id="tableContainer">
             <div class="p-5 border-b border-gray-100 bg-white">
                 <h3 class="font-bold text-gray-900 text-lg">{{ $karyawanTerpilih->nama }}</h3>
                 <p class="text-xs text-gray-400">NPK {{ $karyawanTerpilih->npk }} &bull; {{ $bulanNama }} {{ $tahun }} &bull; {{ $riwayat->count() }} catatan harian</p>
@@ -131,4 +150,47 @@
     <x-delete-modal id="modalHapusHarian" title="Hapus Catatan Harian" message="Apakah Anda yakin ingin menghapus catatan ini? Angka rekap bulanan terkait akan otomatis dikurangi 1." />
 
 </main>
+
+<script>
+function toggleBulkMode() {
+    let container = document.getElementById("tableContainer");
+    if (container.classList.contains("hide-bulk")) {
+        container.classList.remove("hide-bulk");
+    } else {
+        container.classList.add("hide-bulk");
+        cancelAll();
+    }
+}
+function toggleSelectAll() {
+    let selectAll = document.getElementById("selectAll");
+    let checkboxes = document.querySelectorAll(".cb-item");
+    checkboxes.forEach(cb => cb.checked = selectAll.checked);
+    toggleDeleteButton();
+}
+function toggleCheckbox() {
+    let selectAll = document.getElementById("selectAll");
+    let checkboxes = document.querySelectorAll(".cb-item");
+    let allChecked = Array.from(checkboxes).every(cb => cb.checked);
+    selectAll.checked = allChecked;
+    toggleDeleteButton();
+}
+function toggleDeleteButton() {
+    let checkboxes = document.querySelectorAll(".cb-item");
+    let checkedCount = Array.from(checkboxes).filter(cb => cb.checked).length;
+    let btnGroup = document.getElementById("btnGroup");
+    document.getElementById("selectedCount").innerText = checkedCount;
+    if (checkedCount > 0) {
+        btnGroup.classList.remove("hidden");
+    } else {
+        btnGroup.classList.add("hidden");
+    }
+}
+function cancelAll() {
+    let selectAll = document.getElementById("selectAll");
+    let checkboxes = document.querySelectorAll(".cb-item");
+    if(selectAll) selectAll.checked = false;
+    checkboxes.forEach(cb => cb.checked = false);
+    toggleDeleteButton();
+}
+</script>
 @endsection

@@ -21,7 +21,7 @@
         <thead>
             <tr>
                 <th rowspan="2">No</th>
-                <th rowspan="2">Nama</th>
+                <th rowspan="2">Tahun</th><th rowspan="2">Bulan</th><th rowspan="2">Nama</th>
                 <th rowspan="2">NPK</th>
                 <th rowspan="2">Keterangan</th>
                 <th colspan="6">Jumlah Hari</th>
@@ -34,7 +34,7 @@
             @foreach($karyawan as $index => $item)
                 <tr>
                     <td class="text-center">{{ $index + 1 }}</td>
-                    <td>{{ $item->nama }}</td>
+                    <td class="text-center">{{ $item->tahun }}</td><td class="text-center">{{ $item->bulan }}</td><td>{{ $item->nama }}</td>
                     <td class="text-center">{{ $item->npk }}</td>
                     <td>{{ $item->keterangan ?? '-' }}</td>
                     <td class="text-center">{{ $item->dinas ?? 0 }}</td>

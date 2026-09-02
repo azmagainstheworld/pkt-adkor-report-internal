@@ -19,7 +19,7 @@ class JasaKurirImport implements ToCollection
         DB::beginTransaction();
         try {
             // Kita hapus semua data lama agar import baru menimpa sepenuhnya
-            JasaKurirData::truncate();
+            JasaKurirData::query()->delete();
 
             foreach ($rows as $index => $row) {
                 // Skip empty rows

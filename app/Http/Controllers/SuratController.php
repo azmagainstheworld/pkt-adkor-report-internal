@@ -201,6 +201,18 @@ class SuratController extends Controller
     // ==========================================
     // 5. HAPUS DATA
     // ==========================================
+        public function destroyBulk(\Illuminate\Http\Request $request)
+    {
+        $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'exists:surats,id',
+        ]);
+
+        \App\Models\Surat::whereIn('id', $request->ids)->delete();
+
+        return redirect()->back()->with('success', count($request->ids) . ' Data surat berhasil dihapus.');
+    }
+
     public function destroy($id)
     {
         $surat = Surat::findOrFail($id);
@@ -282,6 +294,7 @@ class SuratController extends Controller
     // ==========================================
     public function storeKolomDinamis(Request $request)
     {
+        abort_if(!auth()->user()->isAdmin(), 403, 'Akses ditolak.');
         $request->validate([
             'modul'      => 'required|string',
             'nama_kolom' => 'required|string|max:100',
@@ -317,6 +330,7 @@ class SuratController extends Controller
 
     public function destroyKolomDinamis($id)
     {
+        abort_if(!auth()->user()->isAdmin(), 403, 'Akses ditolak.');
         DB::table('dynamic_columns')->where('id', $id)->delete();
         return back()->with('success', 'Kolom dinamis berhasil dihapus.');
     }
