@@ -9,6 +9,7 @@ use App\Models\PemeliharaanPeralatanMaster;
 use App\Models\PemeliharaanPeralatanData;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Maatwebsite\Excel\Facades\Excel;
 
@@ -59,6 +60,19 @@ class PemeliharaanController extends Controller
             if($a['tahun'] == $b['tahun']) return $monthsOrder[$b['bulan']] <=> $monthsOrder[$a['bulan']];
             return $b['tahun'] <=> $a['tahun'];
         });
+
+        // Paginate dataRutinTable
+        $page = $request->input('page', 1);
+        $perPage = 10;
+        $offset = ($page - 1) * $perPage;
+        $itemsForCurrentPage = array_slice($dataRutinTable, $offset, $perPage);
+        $dataRutinTablePaginated = new \Illuminate\Pagination\LengthAwarePaginator(
+            $itemsForCurrentPage,
+            count($dataRutinTable),
+            $perPage,
+            $page,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
 
         // =========================================================================
         // LOGIKA CHART (KEBAL FILTER BULAN AGAR SELALU 12 BULAN TAMPIL)
@@ -116,7 +130,7 @@ class PemeliharaanController extends Controller
 
         return view('pemeliharaan', compact(
             'tanggalToday', 'filterTahun', 'filterBulan', 'tahunTersedia',
-            'masterRutin', 'dataRutinTable', 
+            'masterRutin', 'dataRutinTablePaginated', 
             'masterPeralatan', 'dataPeralatanTable', 
             'chartData', 'chartColors',
             'kolomRutin', 'kolomPeralatan'
@@ -125,8 +139,8 @@ class PemeliharaanController extends Controller
 
     // ================= MASTER DOKUMEN =================
     public function storeMasterRutin(Request $request) {
-        $request->validate(['nama_kegiatan' => 'required|string']);
-        PemeliharaanRutinMaster::create(['nama_kegiatan' => $request->nama_kegiatan]);
+        $request->validate(['nama_pemeliharaan' => 'required|string']);
+        PemeliharaanRutinMaster::create(['nama_pemeliharaan' => $request->nama_pemeliharaan]);
         return back()->with('success', 'Kegiatan pemeliharaan rutin ditambahkan.');
     }
 
@@ -180,6 +194,17 @@ class PemeliharaanController extends Controller
 
         public function destroyRutinBulk(\Illuminate\Http\Request $request)
     {
+        if ($request->input('delete_all') == '1') {
+            $tahun = $request->input('filter_tahun', 'semua');
+            $bulan = $request->input('filter_bulan', 'semua');
+            $query = \App\Models\PemeliharaanRutinData::query();
+            if ($tahun !== 'semua') $query->where('tahun', $tahun);
+            if ($bulan !== 'semua') $query->where('bulan', $bulan);
+            
+            $count = $query->delete();
+            return back()->with('success', "Seluruh data pemeliharaan rutin berhasil dihapus.");
+        }
+
         $request->validate([
             'ids' => 'required|array',
         ]);
@@ -292,9 +317,10 @@ class PemeliharaanController extends Controller
     // ==========================================
     public function importRutin(Request $request) {
         set_time_limit(0);
-        $request->validate(['file_excel' => 'required|mimes:xlsx,xls,csv|max:51200']);
+        $request->validate(['file' => 'required|mimes:xlsx,xls,csv|max:51200']);
         try {
-            Excel::import(new \App\Imports\PemeliharaanRutinImport, $request->file('file_excel'));
+            \Illuminate\Support\Facades\Log::info('Import Rutin web UI triggered with file: ' . $request->file('file')->getClientOriginalName());
+            Excel::import(new \App\Imports\PemeliharaanRutinImport, $request->file('file'));
             return redirect()->back()->with('success', 'Data Pemeliharaan Rutin berhasil di-import!');
         } catch (\Exception $e) {
             return redirect()->back()->with('error_modal', 'Gagal Import Rutin: ' . $e->getMessage());
@@ -346,9 +372,9 @@ class PemeliharaanController extends Controller
     // ==========================================
     public function importPeralatan(Request $request) {
         set_time_limit(0);
-        $request->validate(['file_excel' => 'required|mimes:xlsx,xls,csv|max:51200']);
+        $request->validate(['file' => 'required|mimes:xlsx,xls,csv|max:51200']);
         try {
-            Excel::import(new \App\Imports\PemeliharaanPeralatanImport, $request->file('file_excel'));
+            Excel::import(new \App\Imports\PemeliharaanPeralatanImport, $request->file('file'));
             return redirect()->back()->with('success', 'Data Rincian Perbaikan Peralatan berhasil di-import!');
         } catch (\Exception $e) {
             return redirect()->back()->with('error_modal', 'Gagal Import Peralatan: ' . $e->getMessage());

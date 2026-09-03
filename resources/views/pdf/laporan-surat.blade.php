@@ -23,8 +23,8 @@
         .keluar { color: #F7941E; font-weight: bold; }
         
         /* Badge Status */
-        .status-terkirim { color: #047481; background-color: #e6fffa; border: 1px solid #b2f5ea; padding: 2px 5px; rounded: 3px; font-size: 8px; font-weight: bold;}
-        .status-batal { color: #c53030; background-color: #fff5f5; border: 1px solid #feb2b2; padding: 2px 5px; rounded: 3px; font-size: 8px; font-weight: bold;}
+        .status-terkirim { color: #047481; background-color: #e6fffa; border: 1px solid #b2f5ea; padding: 2px 5px; border-radius: 3px; font-size: 8px; font-weight: bold;}
+        .status-batal { color: #c53030; background-color: #fff5f5; border: 1px solid #feb2b2; padding: 2px 5px; border-radius: 3px; font-size: 8px; font-weight: bold;}
 
         .footer { position: fixed; bottom: 0; width: 100%; text-align: center; font-size: 8px; color: #777; border-top: 1px solid #eee; padding-top: 5px; }
     </style>
@@ -38,45 +38,94 @@
         <p>Dicetak pada: {{ \Carbon\Carbon::now()->translatedFormat('d F Y, H:i') }} WiB</p>
     </div>
 
-    <!-- ================= Req 3: TABEL 1 (REKAPITULASI - READ ONLY) ================= -->
-    <div class="section-title">I. Tabel Akumulasi Laporan Bulanan (Hanya Status Terkirim)Saya mengerti sepenuhnya. Anda ingin mempertahankan **URL/Path lama** Anda agar tidak merubah link yang sudah tersebar di view atau modul lain, namun ingin menerapkan fungsi-fungsi baru ke dalam Controller tersebut.
+    <!-- TABEL 1 (REKAPITULASI) -->
+    <div class="section-title">I. Tabel Akumulasi Laporan Bulanan (Hanya Status Terkirim)</div>
+    <table>
+        <thead>
+            <tr>
+                <th width="15%">Tahun</th>
+                <th width="25%">Bulan</th>
+                <th width="30%">Surat Masuk</th>
+                <th width="30%">Surat Keluar</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if($rekapData->count() > 0)
+                @foreach($rekapData as $rekap)
+                <tr>
+                    <td class="text-center">{{ $rekap->tahun }}</td>
+                    <td class="text-center">{{ $rekap->bulan }}</td>
+                    <td class="text-center font-bold text-[#0056A3]">{{ $rekap->total_masuk }}</td>
+                    <td class="text-center font-bold text-[#F7941E]">{{ $rekap->total_keluar }}</td>
+                </tr>
+                @endforeach
+                <tr style="background-color: #f9fafb;">
+                    <td colspan="2" class="text-right font-bold">GRAND TOTAL :</td>
+                    <td class="text-center font-bold text-[#0056A3]">{{ $rekapData->sum('total_masuk') }}</td>
+                    <td class="text-center font-bold text-[#F7941E]">{{ $rekapData->sum('total_keluar') }}</td>
+                </tr>
+            @else
+                <tr>
+                    <td colspan="4" class="text-center">Tidak ada data rekapitulasi.</td>
+                </tr>
+            @endif
+        </tbody>
+    </table>
 
-Berikut adalah **perbaikan final** untuk `SuratController.php` dan View Anda. Saya telah menyesuaikan fungsi Controller agar menangani data transaksional (satuan) dan sinkron dengan **URL standar Laravel** yang kemungkinan besar Anda gunakan di routes lama Anda.
+    <!-- TABEL 2 (DETAIL) -->
+    <div class="section-title" style="page-break-before: always;">II. Rincian Surat Satuan (Semua Status)</div>
+    <table>
+        <thead>
+            <tr>
+                <th width="5%">No.</th>
+                <th width="8%">Tahun</th>
+                <th width="12%">Bulan</th>
+                <th width="15%">Nomor Surat</th>
+                <th width="10%">Tgl Surat</th>
+                <th width="12%">Drafter</th>
+                <th width="18%">Judul Surat</th>
+                <th width="10%">Status</th>
+                <th width="10%">Jenis Surat</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if($detailData->count() > 0)
+                @foreach($detailData as $index => $row)
+                <tr>
+                    <td class="text-center">{{ $index + 1 }}</td>
+                    <td class="text-center">{{ $row->tahun }}</td>
+                    <td class="text-center">{{ $row->bulan }}</td>
+                    <td>{{ $row->nomor_surat }}</td>
+                    <td class="text-center">{{ $row->tanggal_surat }}</td>
+                    <td>{{ $row->drafter }}</td>
+                    <td>{{ $row->judul_surat }}</td>
+                    <td class="text-center">
+                        @if($row->status == 'Terkirim')
+                            <span class="status-terkirim">Terkirim</span>
+                        @else
+                            <span class="status-batal">Dibatalkan</span>
+                        @endif
+                    </td>
+                    <td class="text-center">
+                        @if($row->jenis_surat == 'Surat Masuk')
+                            <span class="masuk">S. Masuk</span>
+                        @else
+                            <span class="keluar">S. Keluar</span>
+                        @endif
+                    </td>
+                </tr>
+                @endforeach
+            @else
+                <tr>
+                    <td colspan="9" class="text-center">Tidak ada data surat satuan.</td>
+                </tr>
+            @endif
+        </tbody>
+    </table>
 
-### Checklist Penyesuaian
+    <div class="footer">
+        Dokumen ini digenerate secara otomatis oleh Sistem AdkorReport - PKT &copy; {{ date('Y') }}
+    </div>
 
-*   [cite: 1] **Model `Surat.php`**: Sudah dipastikan menangani *casting* tanggal dan array kolom dinamis.
-*   [ ] **Controller `SuratController.php`**: Diperbaiki total. Fungsi CRUD (`index`, `store`, `update`, `destroy`) sekarang menangani data satuan (transaksional), sinkron dengan URL standar, dan mendukung Impor/Ekspor Package baru.
-*   [ ] **View `surat-masuk-keluar.blade.php`**: View total dirombak untuk menampilkan Chart tren, Tabel Rekap Bulanan (Read-Only), dan Tabel Detail Satuan (CRUD). Form Tambah/Edit disesuaikan untuk input satuan.
-*   [ ] **Template PDF**: Disiapkan untuk menampilkan kedua tabel sesuai Req 2.
-
----
-
-### Langkah 1: Perbaikan Model (`app/Models/Surat.php`)
-
-Pondasi utama untuk casting data dinamis.
-
-```php
-<?php
-
-namespace App\Models;
-
-use App\Traits\Auditable; // Trait auditable Anda
-use Illuminate\Database\Eloquent\Model;
-
-class Surat extends Model
-{
-    use Auditable;
-
-    protected $auditModuleKey = 'surat';
-    protected $table = 'surat';
-    
-    // guarded id agar kolom lain otomatis bisa diisi massal
-    protected $guarded = ['id'];
-
-    // Casting array untuk kolom tambahan dinamis dan date (Req 5 & 1)
-    protected $casts = [
-        'data_tambahan' => 'array',
-        'tanggal_surat' => 'date', // Penting untuk formatting d/m/Y di View
-    ];
-}
+</body>
+</html>

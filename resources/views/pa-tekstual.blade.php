@@ -95,14 +95,18 @@
                         <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"></path></svg>
                         Atur Dokumen Master
                     </button>
+@if(auth()->check() && auth()->user()->isAdmin())
                     <button type="button" onclick="openModal('modalAturKolom1'); toggleDropdown('dropdownOpsiTekstual')" class="w-full text-left text-gray-700 px-4 py-2 text-sm hover:bg-gray-50 flex items-center gap-2 font-medium border-t border-gray-50">
                         <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
                         Atur Kolom Tambahan (Tabel 1)
                     </button>
-                    <button type="button" onclick="openModal('modalAturKolom2'); toggleDropdown('dropdownOpsiTekstual')" class="w-full text-left text-gray-700 px-4 py-2 text-sm hover:bg-gray-50 flex items-center gap-2 font-medium border-t border-gray-50">
+@endif
+                    @if(auth()->check() && auth()->user()->isAdmin())
+<button type="button" onclick="openModal('modalAturKolom2'); toggleDropdown('dropdownOpsiTekstual')" class="w-full text-left text-gray-700 px-4 py-2 text-sm hover:bg-gray-50 flex items-center gap-2 font-medium border-t border-gray-50">
                         <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
                         Atur Kolom Tambahan (Tabel 2)
                     </button>
+@endif
                 </div>
             </div>
         </div>

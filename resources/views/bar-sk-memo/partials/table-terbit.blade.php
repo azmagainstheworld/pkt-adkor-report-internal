@@ -4,11 +4,6 @@
         <h3 class="font-bold text-gray-900 text-base uppercase">TABEL BAR SK MEMO TERBIT</h3>
         
         <div class="flex items-center gap-2 flex-wrap">
-            <button type="button" id="btnModeBulkTerbit" onclick="toggleBulkMode('terbit')" class="inline-flex justify-center items-center gap-1.5 rounded-xl border border-red-300 shadow-sm px-3 py-1.5 bg-white text-xs font-medium text-red-600 hover:bg-red-50 transition-colors">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                Mode Hapus Massal
-            </button>
-            
             <div class="relative inline-block text-left overflow-visible z-[50]">
                 <button type="button" onclick="toggleDropdown('dropdownOpsiTerbit')" class="inline-flex justify-center items-center gap-1.5 rounded-xl border border-gray-300 shadow-sm px-3 py-1.5 bg-white text-xs font-medium text-gray-700 hover:bg-gray-50 focus:outline-none transition-colors">
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
@@ -58,11 +53,16 @@
                 </div>
             </div>
 
+            <button type="button" id="btnModeBulkTerbit" onclick="toggleBulkMode('terbit')" class="inline-flex justify-center items-center gap-1.5 rounded-xl border border-red-300 shadow-sm px-3 py-1.5 bg-white text-xs font-medium text-red-600 hover:bg-red-50 transition-colors">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                Hapus Semua
+            </button>
+
             <x-button variant="primary" onclick="openModalTambah('Terbit')" class="!py-1.5 !px-3 text-xs flex items-center gap-1"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg> Tambah Data Terbit</x-button>
         </div>
     </div>
 
-    <form id="bulkDeleteTerbitForm" action="{{ route('bar-sk-memo.destroyTerbit') }}" method="POST" onsubmit="return confirm('Hapus data terpilih?')">
+    <form id="bulkDeleteTerbitForm" action="{{ route('bar-sk-memo.destroyTerbit') }}" method="POST">
         @csrf @method('DELETE')
         
         <div id="btnGroupTerbit" class="hidden flex justify-between items-center px-4 py-2 bg-red-50 border-b border-red-100">

@@ -3,6 +3,8 @@
 namespace App\Exports;
 
 use App\Models\PaTekstualData;
+use App\Models\PaTekstualMaster;
+use App\Models\PaTekstualKolom;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
@@ -12,55 +14,101 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
 class PaTekstualExport implements FromCollection, WithHeadings, WithMapping, ShouldAutoSize, WithStyles
 {
-    public $isTemplate = false;
+    public $isTemplate;
+    protected $kelompokTabel;
+    protected $masterCols;
+    protected $dynamicCols;
 
-    protected $tahun;
-    protected $bulan;
-
-    public function __construct($tahun = 'semua', $bulan = 'semua')
+    public function __construct($kelompokTabel = 1, $isTemplate = false)
     {
-        $this->tahun = $tahun;
-        $this->bulan = $bulan;
+        $this->kelompokTabel = $kelompokTabel;
+        $this->isTemplate = $isTemplate;
+        $this->masterCols = PaTekstualMaster::where('kelompok_tabel', $this->kelompokTabel)->orderBy('id', 'asc')->get();
+        $this->dynamicCols = PaTekstualKolom::where('kelompok_tabel', $this->kelompokTabel)->orderBy('id', 'asc')->get();
     }
 
     public function collection()
     {
-        if ($this->isTemplate) return collect([]);
-
-        $query = PaTekstualData::with('masterTekstual');
-
-        if ($this->tahun !== 'semua') {
-            $query->where('tahun', $this->tahun);
-        }
-        if ($this->bulan !== 'semua') {
-            $query->where('bulan', $this->bulan);
+        if ($this->isTemplate) {
+            return collect([]);
         }
 
-        return $query->orderBy('tahun', 'desc')->get();
+        $masterIds = $this->masterCols->pluck('id')->toArray();
+        $query = PaTekstualData::with('masterTekstual')
+                    ->whereIn('master_id', $masterIds)
+                    ->orderBy('tahun', 'desc');
+
+        if (request('tahun') && request('tahun') != 'semua') {
+            $query->where('tahun', request('tahun'));
+        }
+        if (request('bulan') && request('bulan') != 'semua') {
+            $query->where('bulan', request('bulan'));
+        }
+
+        $rawData = $query->get();
+        $groupedData = $rawData->groupBy(function($item) {
+            return $item->tahun . '_' . $item->bulan;
+        });
+
+        $dataTable = collect();
+        foreach($groupedData as $key => $items) {
+            $parts = explode('_', $key);
+            $tahun = $parts[0];
+            $bulan = $parts[1];
+
+            $row = [
+                'tahun' => $tahun,
+                'bulan' => $bulan,
+                'items' => [],
+                'data_tambahan' => []
+            ];
+
+            foreach($items as $item) {
+                $row['items'][$item->master_id] = $item->jumlah;
+                if (!empty($item->data_tambahan)) {
+                    $row['data_tambahan'] = array_merge($row['data_tambahan'], $item->data_tambahan);
+                }
+            }
+            $dataTable->push($row);
+        }
+
+        return $dataTable;
     }
 
     public function headings(): array
     {
-        return [
-            'Kelompok Tabel',
+        $headers = [
             'Tahun',
             'Bulan',
-            'Nama Dokumen / Kegiatan',
-            'Jumlah',
-            'Data Tambahan (JSON / Keterangan)',
         ];
+
+        foreach ($this->masterCols as $m) {
+            $headers[] = $m->nama_dokumen;
+        }
+
+        foreach ($this->dynamicCols as $k) {
+            $headers[] = $k->nama_kolom;
+        }
+
+        return $headers;
     }
 
     public function map($row): array
     {
-        return [
-            'Tabel ' . ($row->masterTekstual->kelompok_tabel ?? '-'),
-            $row->tahun,
-            $row->bulan,
-            $row->masterTekstual->nama_kegiatan ?? '-',
-            $row->jumlah,
-            !empty($row->data_tambahan) ? json_encode($row->data_tambahan) : '-',
+        $mapped = [
+            $row['tahun'] ?? '',
+            $row['bulan'] ?? '',
         ];
+
+        foreach ($this->masterCols as $m) {
+            $mapped[] = $row['items'][$m->id] ?? 0;
+        }
+
+        foreach ($this->dynamicCols as $k) {
+            $mapped[] = $row['data_tambahan'][$k->nama_kolom] ?? '';
+        }
+
+        return $mapped;
     }
 
     public function styles(Worksheet $sheet)

@@ -24,7 +24,7 @@
             <tr>
                 <th>Tahun</th>
                 <th>Bulan</th>
-                @foreach($masterRutin as $master) <th>{{ $master->nama_kegiatan }}</th> @endforeach
+                @foreach($masterRutin as $master) <th>{{ $master->nama_pemeliharaan }}</th> @endforeach
                 @if(isset($kolomRutin)) @foreach($kolomRutin as $k) <th>{{ $k->nama_kolom }}</th> @endforeach @endif
             </tr>
         </thead>

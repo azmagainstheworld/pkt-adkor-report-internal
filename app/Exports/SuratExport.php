@@ -19,11 +19,19 @@ class SuratExport implements FromView, ShouldAutoSize, WithStyles
     protected $jenis;
     protected $masterMonths = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
 
-    public function __construct($tahunFilter, $bulanFilter, $jenis)
+    public function __construct($tahunFilterOrIsTemplate = false, $bulanFilter = 'semua', $jenis = 'tabel2')
     {
-        $this->tahunFilter = $tahunFilter;
-        $this->bulanFilter = $bulanFilter;
-        $this->jenis = $jenis; // 'tabel1', 'tabel2', atau 'keduanya'
+        if ($tahunFilterOrIsTemplate === true) {
+            $this->isTemplate = true;
+            $this->tahunFilter = 'semua';
+            $this->bulanFilter = 'semua';
+            $this->jenis = 'tabel2'; // For templates, default to Detail table
+        } else {
+            $this->isTemplate = false;
+            $this->tahunFilter = $tahunFilterOrIsTemplate;
+            $this->bulanFilter = $bulanFilter;
+            $this->jenis = $jenis;
+        }
     }
 
     public function view(): View
@@ -33,7 +41,7 @@ class SuratExport implements FromView, ShouldAutoSize, WithStyles
         $kolomDinamis = DB::table('dynamic_columns')->where('modul', 'surat')->get();
 
         // Ambil Data Tabel 1 (Rekap) jika diperlukan
-        if (in_array($this->jenis, ['tabel1', 'keduanya'])) {
+        if (!$this->isTemplate && in_array($this->jenis, ['tabel1', 'keduanya'])) {
             $rekapData = Surat::selectRaw("
                 tahun, bulan,
                 SUM(CASE WHEN jenis_surat = 'Surat Masuk' AND status = 'Terkirim' THEN 1 ELSE 0 END) as total_masuk,
@@ -53,7 +61,7 @@ class SuratExport implements FromView, ShouldAutoSize, WithStyles
         }
 
         // Ambil Data Tabel 2 (Detail Satuan) jika diperlukan
-        if (in_array($this->jenis, ['tabel2', 'keduanya'])) {
+        if (!$this->isTemplate && in_array($this->jenis, ['tabel2', 'keduanya'])) {
             $detailData = Surat::when($this->tahunFilter != 'semua', function($q) {
                     return $q->where('tahun', $this->tahunFilter);
                 })

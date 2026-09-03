@@ -34,8 +34,7 @@ class PengirimanDokumenController extends Controller
             $baseQuery->where(function($q) use ($search) {
                 $q->where('tahun', 'like', "%{$search}%")->orWhere('bulan', 'like', "%{$search}%")
                   ->orWhere('penerimaan_mailroom', 'like', "%{$search}%")->orWhere('pengiriman_dalam_negeri', 'like', "%{$search}%")
-                  ->orWhere('pengiriman_luar_negeri', 'like', "%{$search}%")->orWhere('registrasi_surat_masuk_dof', 'like', "%{$search}%")
-                  ->orWhere('ongkir_dalam_negeri', 'like', "%{$search}%")->orWhere('ongkir_luar_negeri', 'like', "%{$search}%");
+                  ->orWhere('pengiriman_luar_negeri', 'like', "%{$search}%")->orWhere('registrasi_surat_masuk_dof', 'like', "%{$search}%");
             });
         }
 
@@ -65,18 +64,34 @@ class PengirimanDokumenController extends Controller
             ]
         ];
 
-        $costQueryBuilder = clone $baseQuery;
-        $costQueryBuilder->orderBy('tahun', 'desc');
-        $costQueryBuilder->orderByRaw("FIELD(bulan, '" . implode("','", $this->masterMonths) . "')");
-        $costRecords = $costQueryBuilder->paginate(5)->withQueryString(); 
+        $volumeQueryBuilder = clone $baseQuery;
+        $volumeQueryBuilder->orderBy('tahun', 'desc');
+        $volumeQueryBuilder->orderByRaw("FIELD(bulan, '" . implode("','", $this->masterMonths) . "')");
+        $volumeRecords = $volumeQueryBuilder->paginate(5, ['*'], 'volume_page')->withQueryString(); 
 
-        $totalDomestikOverall = (clone $baseQuery)->sum('ongkir_dalam_negeri');
-        $totalInternasionalOverall = (clone $baseQuery)->sum('ongkir_luar_negeri');
+        $ongkirBaseQuery = \App\Models\PengirimanOngkir::query();
+        if ($selectedYear != 'semua') $ongkirBaseQuery->where('tahun', $selectedYear);
+        if ($selectedMonth != 'semua') $ongkirBaseQuery->where('bulan', $selectedMonth);
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $ongkirBaseQuery->where(function($q) use ($search) {
+                $q->where('tahun', 'like', "%{$search}%")->orWhere('bulan', 'like', "%{$search}%")
+                  ->orWhere('ongkir_dalam_negeri', 'like', "%{$search}%")->orWhere('ongkir_luar_negeri', 'like', "%{$search}%");
+            });
+        }
+        
+        $ongkirQueryBuilder = clone $ongkirBaseQuery;
+        $ongkirQueryBuilder->orderBy('tahun', 'desc');
+        $ongkirQueryBuilder->orderByRaw("FIELD(bulan, '" . implode("','", $this->masterMonths) . "')");
+        $ongkirRecords = $ongkirQueryBuilder->paginate(5, ['*'], 'ongkir_page')->withQueryString();
+
+        $totalDomestikOverall = (clone $ongkirBaseQuery)->sum('ongkir_dalam_negeri');
+        $totalInternasionalOverall = (clone $ongkirBaseQuery)->sum('ongkir_luar_negeri');
         $kolomDinamis = DB::table('dynamic_columns')->where('modul', 'pengiriman_dokumen')->get();
 
         return view('pengiriman-dokumen', compact(
             'selectedYear', 'selectedMonth', 'availableYears', 'chartVolumeConfig',
-            'costRecords', 'totalDomestikOverall', 'totalInternasionalOverall', 'kolomDinamis'
+            'volumeRecords', 'ongkirRecords', 'totalDomestikOverall', 'totalInternasionalOverall', 'kolomDinamis'
         ));
     }
 
@@ -165,11 +180,16 @@ class PengirimanDokumenController extends Controller
         return redirect()->back()->with('success', count($request->ids) . ' Data pengiriman dokumen berhasil dihapus.');
     }
 
-    public function destroy($id)
+    public function destroy($id, \Illuminate\Http\Request $request)
     {
         try {
-            PengirimanDokumen::findOrFail($id)->delete();
-            return redirect()->back()->with('success', 'Data pengiriman dokumen berhasil dihapus.');
+            $tipe = $request->query('tipe');
+            if ($tipe === 'ongkir') {
+                \App\Models\PengirimanOngkir::findOrFail($id)->delete();
+            } else {
+                PengirimanDokumen::findOrFail($id)->delete();
+            }
+            return redirect()->back()->with('success', 'Data berhasil dihapus.');
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Terjadi kesalahan saat menghapus data.');
         }
@@ -206,20 +226,21 @@ class PengirimanDokumenController extends Controller
     {
         $year = $request->input('year', 'semua');
         $month = $request->input('month', 'semua');
+        $jenis = $request->input('jenis', 'volume');
 
-        $query = PengirimanDokumen::query();
+        $query = $jenis === 'ongkir' ? \App\Models\PengirimanOngkir::query() : PengirimanDokumen::query();
         if ($year !== 'semua') $query->where('tahun', $year);
         if ($month !== 'semua') $query->where('bulan', $month);
 
         $query->orderBy('tahun', 'desc')->orderByRaw("FIELD(bulan, '" . implode("','", $this->masterMonths) . "')");
         $records = $query->get();
 
-        $totalDomestik = $records->sum('ongkir_dalam_negeri');
-        $totalInternasional = $records->sum('ongkir_luar_negeri');
+        $totalDomestik = $jenis === 'ongkir' ? $records->sum('ongkir_dalam_negeri') : 0;
+        $totalInternasional = $jenis === 'ongkir' ? $records->sum('ongkir_luar_negeri') : 0;
         $kolomDinamis = DB::table('dynamic_columns')->where('modul', 'pengiriman_dokumen')->get();
 
-        $pdf = Pdf::loadView('exports.pengiriman-pdf', compact('records', 'year', 'month', 'totalDomestik', 'totalInternasional', 'kolomDinamis'))->setPaper('a4', 'landscape');
-        return $pdf->stream("Laporan_Pengiriman_{$month}_{$year}.pdf");
+        $pdf = Pdf::loadView('exports.pengiriman-pdf', compact('records', 'year', 'month', 'totalDomestik', 'totalInternasional', 'kolomDinamis', 'jenis'))->setPaper('a4', 'landscape');
+        return $pdf->stream("Laporan_Pengiriman_{$jenis}_{$month}_{$year}.pdf");
     }
 
     public function downloadTemplate(Request $request)

@@ -2,7 +2,7 @@
 
 namespace App\Exports;
 
-use App\Models\PengirimanDokumen;
+use App\Models\PengirimanOngkir;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
@@ -30,7 +30,7 @@ class PengirimanOngkirSheetExport implements FromCollection, WithHeadings, WithM
 
         $masterMonths = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
 
-        $query = PengirimanDokumen::query();
+        $query = PengirimanOngkir::query();
         if ($this->year !== 'semua') $query->where('tahun', $this->year);
         if ($this->month !== 'semua') $query->where('bulan', $this->month);
 

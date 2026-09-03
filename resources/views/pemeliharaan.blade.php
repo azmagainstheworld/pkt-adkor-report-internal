@@ -1,6 +1,11 @@
 @extends('layouts.app')
 
 @section('content')
+<style>
+/* Kolom pertama (checkbox) disembunyikan jika class hide-bulk aktif */
+.hide-bulk th:first-child, .hide-bulk td:first-child { display: none !important; }
+</style>
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <main class="flex-1 overflow-y-auto p-8 relative bg-[#F8F9FA]">
@@ -65,15 +70,7 @@
     <div class="mb-8 h-96 relative z-10">
         <x-dynamic-chart title="Statistik Pemeliharaan & Investasi Rutin" subtitle="Distribusi jumlah kegiatan pemeliharaan per bulan" type="bar" id="pemeliharaanChart" />
         
-        <!-- Legend Overlay Khusus untuk Pemeliharaan -->
-        <div class="absolute top-6 left-1/2 transform -translate-x-1/4 flex flex-wrap items-center gap-3 text-[10px] bg-white/90 p-2 rounded-lg border border-gray-100 shadow-sm pointer-events-none">
-            @foreach($masterRutin as $index => $master)
-                <div class="flex items-center gap-1.5">
-                    <span class="w-3 h-3 rounded-md" style="background-color: {{ $chartColors[$index % count($chartColors)] }}"></span>
-                    <span class="text-gray-700 font-medium">{{ $master->nama_kegiatan }}</span>
-                </div>
-            @endforeach
-        </div>
+        
     </div>
 
     <!-- ================= TABEL 1: PEMELIHARAAN RUTIN ================= -->
@@ -93,18 +90,20 @@
                             <a href="{{ route('pemeliharaan-rutin.export.excel', ['tahun' => $filterTahun, 'bulan' => $filterBulan]) }}" class="w-full text-left text-gray-700 px-4 py-2 text-xs hover:bg-green-50 flex items-center gap-2 font-medium border-t border-gray-50"><svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg> Export Excel</a>
                             <a href="{{ route('pemeliharaan-rutin.export.pdf', ['tahun' => $filterTahun, 'bulan' => $filterBulan]) }}" target="_blank" class="w-full text-left text-gray-700 px-4 py-2 text-xs hover:bg-red-50 flex items-center gap-2 font-medium border-t border-gray-50"><svg class="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg> Export Laporan PDF</a>
                         </div>
-                        <div class="px-4 py-2 bg-gray-50 border-y border-gray-100 mt-1"><p class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Konfigurasi</p></div>
+                        @if(auth()->check() && auth()->user()->isAdmin())
+<div class="px-4 py-2 bg-gray-50 border-y border-gray-100 mt-1"><p class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Konfigurasi</p></div>
                         <div class="py-1">
                             <button type="button" onclick="openModal('modalMasterRutin'); toggleDropdown('dropdownOpsiRutin')" class="w-full text-left text-gray-700 px-4 py-2 text-xs hover:bg-gray-50 flex items-center gap-2 font-medium"><svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"></path></svg> Atur Dokumen Kegiatan</button>
                             @if(auth()->check() && auth()->user()->isAdmin())
 <button type="button" onclick="openModal('modalAturKolomRutin'); toggleDropdown('dropdownOpsiRutin')" class="w-full text-left text-gray-700 px-4 py-2 text-xs hover:bg-gray-50 flex items-center gap-2 font-medium border-t border-gray-50"><svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg> Atur Kolom Tambahan</button>
 @endif
                         </div>
+@endif
                     </div>
                 </div>
 
                                 <button type="button" id="btnModeBulkRutin" onclick="toggleBulkModeRutin()" class="inline-flex items-center justify-center gap-2 px-3 py-1.5 text-xs font-medium bg-red-50 text-red-600 border border-red-200 rounded-xl hover:bg-red-100 transition-colors shadow-sm outline-none focus:ring-2 focus:ring-red-300 mr-2">
-                    <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg> Mode Hapus Massal
+                    <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg> Hapus semua
                 </button>
                 <x-button variant="primary" onclick="openModalTambahRutin()" class="!py-2 text-xs bg-[#F7941E] hover:bg-orange-600 border-none">
                     <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg> Tambah Data
@@ -112,7 +111,10 @@
             </div>
         </div>
 
-                <form id="bulkDeleteFormRutin" action="{{ route('pemeliharaan-rutin.destroyBulk') }}" method="POST" onsubmit="return confirm('Hapus data pemeliharaan rutin terpilih?')">
+                <form id="bulkDeleteFormRutin" action="{{ route('pemeliharaan-rutin.destroyBulk') }}" method="POST">
+              <input type="hidden" name="filter_tahun" value="{{ request('tahun', 'semua') }}">
+              <input type="hidden" name="filter_bulan" value="{{ request('bulan', 'semua') }}">
+              <input type="hidden" name="delete_all" id="deleteAllRutin" value="0">
             @csrf
             @method('DELETE')
             
@@ -127,12 +129,12 @@
             <div id="tableContainerBulkRutin" class="hide-bulk overflow-x-auto">
             @php
                 $headersRutin = ['<input type="checkbox" id="selectAllBulkRutin" onclick="toggleSelectAllRutin()">', 'Tahun', 'Bulan'];
-                foreach($masterRutin as $master) { $headersRutin[] = $master->nama_kegiatan; }
+                foreach($masterRutin as $master) { $headersRutin[] = $master->nama_pemeliharaan; }
                 if(isset($kolomRutin)) { foreach($kolomRutin as $k) { $headersRutin[] = $k->nama_kolom; } }
                 $headersRutin[] = 'Aksi';
             @endphp
             <x-table :headers="$headersRutin">
-                @forelse($dataRutinTable as $row)
+                @forelse($dataRutinTablePaginated as $row)
                     <tr class="hover:bg-gray-50 transition-colors text-xs whitespace-nowrap">
                         <td class="px-3 py-2 text-center align-middle"><input type="checkbox" name="ids[]" class="cb-bulk-rutin" value="{{ $row['tahun'] }}|{{ $row['bulan'] }}" onclick="toggleCheckboxRutin()"></td>
                         <td class="px-4 py-3 text-gray-700 font-medium text-center">{{ $row['tahun'] }}</td>
@@ -163,97 +165,9 @@
                     <tr><td colspan="{{ count($headersRutin) }}" class="px-6 py-10 text-center text-gray-500 text-sm">Belum ada data pemeliharaan rutin.</td></tr>
                 @endforelse
             </x-table>
+            <div class="mt-4 px-4 pb-4">
+                {{ $dataRutinTablePaginated->links() }}
             </div>
-        </form>
-    </x-card>
-
-    <!-- ================= TABEL 2: PERALATAN ================= -->
-    <x-card class="!rounded-xl overflow-visible !p-0 shadow-sm border border-gray-100 bg-white mb-8 z-10 relative">
-        <div class="p-5 border-b border-gray-100 bg-white flex flex-col xl:flex-row xl:items-center justify-between gap-4 rounded-t-xl z-[100] relative">
-            <h3 class="font-bold text-gray-900 text-lg">Pemeliharaan Peralatan Kantor & Furnitur Kantor</h3>
-            <div class="flex items-center gap-3 self-end xl:self-auto">
-                
-                <div class="relative inline-block text-left overflow-visible z-[100]">
-                    <button type="button" onclick="toggleDropdown('dropdownOpsiPeralatan')" class="inline-flex justify-center items-center gap-2 rounded-xl border border-gray-300 shadow-sm px-4 py-2 bg-white text-xs font-medium text-gray-700 hover:bg-gray-50 focus:outline-none transition-colors">
-                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg> Opsi Lanjutan <svg class="w-3.5 h-3.5 ml-1 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-                    </button>
-                    <div id="dropdownOpsiPeralatan" class="hidden absolute right-0 mt-2 w-56 origin-top-right rounded-xl bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none overflow-visible transition-all z-[100]">
-                        <div class="px-4 py-2 bg-gray-50 border-b border-gray-100 rounded-t-xl"><p class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Ekspor & Impor</p></div>
-                        <div class="py-1">
-                            <button type="button" onclick="openModal('modalImportPeralatan'); toggleDropdown('dropdownOpsiPeralatan')" class="w-full text-left text-gray-700 px-4 py-2 text-xs hover:bg-green-50 flex items-center gap-2 font-medium"><svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg> Import dari Excel</button>
-                            <a href="{{ route('pemeliharaan-peralatan.export.excel', ['tahun' => $filterTahun, 'bulan' => $filterBulan]) }}" class="w-full text-left text-gray-700 px-4 py-2 text-xs hover:bg-green-50 flex items-center gap-2 font-medium border-t border-gray-50"><svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg> Export Excel</a>
-                            <a href="{{ route('pemeliharaan-peralatan.export.pdf', ['tahun' => $filterTahun, 'bulan' => $filterBulan]) }}" target="_blank" class="w-full text-left text-gray-700 px-4 py-2 text-xs hover:bg-red-50 flex items-center gap-2 font-medium border-t border-gray-50"><svg class="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg> Export Laporan PDF</a>
-                        </div>
-                        <div class="px-4 py-2 bg-gray-50 border-y border-gray-100 mt-1"><p class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Konfigurasi</p></div>
-                        <div class="py-1">
-                            <button type="button" onclick="openModal('modalMasterPeralatan'); toggleDropdown('dropdownOpsiPeralatan')" class="w-full text-left text-gray-700 px-4 py-2 text-xs hover:bg-gray-50 flex items-center gap-2 font-medium"><svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"></path></svg> Atur Dokumen Peralatan</button>
-                            @if(auth()->check() && auth()->user()->isAdmin())
-<button type="button" onclick="openModal('modalAturKolomPeralatan'); toggleDropdown('dropdownOpsiPeralatan')" class="w-full text-left text-gray-700 px-4 py-2 text-xs hover:bg-gray-50 flex items-center gap-2 font-medium border-t border-gray-50"><svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg> Atur Kolom Tambahan</button>
-@endif
-                        </div>
-                    </div>
-                </div>
-
-                                <button type="button" id="btnModeBulkPeralatan" onclick="toggleBulkModePeralatan()" class="inline-flex items-center justify-center gap-2 px-3 py-1.5 text-xs font-medium bg-red-50 text-red-600 border border-red-200 rounded-xl hover:bg-red-100 transition-colors shadow-sm outline-none focus:ring-2 focus:ring-red-300 mr-2">
-                    <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg> Mode Hapus Massal
-                </button>
-                <x-button variant="primary" onclick="openModalTambahPeralatan()" class="!py-2 text-xs bg-[#0056A3] hover:bg-blue-800 border-none">
-                    <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg> Tambah Data
-                </x-button>
-            </div>
-        </div>
-
-                <form id="bulkDeleteFormPeralatan" action="{{ route('pemeliharaan-peralatan.destroyBulk') }}" method="POST" onsubmit="return confirm('Hapus data perbaikan peralatan terpilih?')">
-            @csrf
-            @method('DELETE')
-            
-            <div id="btnGroupBulkPeralatan" class="hidden flex justify-between items-center px-4 py-2 bg-red-50 border-b border-red-100">
-                <span class="text-xs text-red-600 font-semibold">Data terpilih untuk dihapus</span>
-                <div class="flex gap-2">
-                    <button type="button" onclick="cancelAllPeralatan()" class="px-3 py-1.5 bg-white border border-gray-300 text-gray-700 rounded-lg text-xs font-medium hover:bg-gray-50">Batal</button>
-                    <button type="submit" class="px-3 py-1.5 bg-red-600 text-white rounded-lg text-xs font-medium hover:bg-red-700">Hapus Terpilih</button>
-                </div>
-            </div>
-
-            <div id="tableContainerBulkPeralatan" class="hide-bulk overflow-x-auto">
-            @php
-                $headersAlat = ['<input type="checkbox" id="selectAllBulkPeralatan" onclick="toggleSelectAllPeralatan()">', 'Tahun', 'Bulan'];
-                foreach($masterPeralatan as $master) { $headersAlat[] = $master->nama_peralatan; }
-                if(isset($kolomPeralatan)) { foreach($kolomPeralatan as $k) { $headersAlat[] = $k->nama_kolom; } }
-                $headersAlat[] = 'Aksi';
-            @endphp
-            <x-table :headers="$headersAlat">
-                @forelse($dataPeralatanTable as $row)
-                    <tr class="hover:bg-gray-50 transition-colors text-xs whitespace-nowrap">
-                        <td class="px-3 py-2 text-center align-middle"><input type="checkbox" name="ids[]" class="cb-bulk-peralatan" value="{{ $row['tahun'] }}|{{ $row['bulan'] }}" onclick="toggleCheckboxPeralatan()"></td>
-                        <td class="px-4 py-3 text-gray-700 font-medium text-center">{{ $row['tahun'] }}</td>
-                        <td class="px-4 py-3 text-gray-900 font-medium text-center">{{ $row['bulan'] }}</td>
-                        @foreach($masterPeralatan as $master)
-                            <td class="px-4 py-3 text-gray-600 text-center font-semibold bg-gray-50/50 border-x border-gray-100">{{ $row['items'][$master->id] ?? 0 }}</td>
-                        @endforeach
-                        @if(isset($kolomPeralatan))
-                            @foreach($kolomPeralatan as $kolom)
-                                <td class="px-4 py-3 text-gray-600 font-medium text-center align-middle">
-                                    @if($kolom->tipe_input === 'currency' && isset($row['data_tambahan'][$kolom->nama_kolom])) Rp {{ $row['data_tambahan'][$kolom->nama_kolom] }}
-                                    @else {{ $row['data_tambahan'][$kolom->nama_kolom] ?? '-' }} @endif
-                                </td>
-                            @endforeach
-                        @endif
-                        <td class="px-4 py-3 text-center border-l border-gray-100">
-                            <div class="flex gap-2 justify-center">
-                                <button type="button" onclick="editPeralatan('{{ $row['tahun'] }}', '{{ $row['bulan'] }}', '{{ json_encode($row['items']) }}', '{{ json_encode($row['data_tambahan'] ?? []) }}')" class="p-1.5 text-amber-500 hover:bg-amber-50 rounded-md border border-amber-200" title="Edit Data">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
-                                </button>
-                                <button type="button" onclick="openDeleteModal('modalHapusPeralatan', '{{ route('pemeliharaan-peralatan.destroyBulan', ['tahun' => $row['tahun'], 'bulan' => $row['bulan']]) }}')" class="p-1.5 text-red-500 hover:bg-red-50 rounded-md border border-red-200" title="Hapus Data">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
-                @empty
-                    <tr><td colspan="{{ count($headersAlat) }}" class="px-6 py-10 text-center text-gray-500 text-sm">Belum ada data rincian perbaikan.</td></tr>
-                @endforelse
-            </x-table>
             </div>
         </form>
     </x-card>
@@ -262,14 +176,14 @@
     <x-delete-modal id="modalHapusKolom" title="Hapus Kolom Tambahan" message="Kolom ini akan dihilangkan dari sistem. Lanjutkan?" />
     <x-delete-modal id="modalHapusMaster" title="Hapus Data Master" message="Data Master (Dropdown) ini akan dihapus. Lanjutkan?" />
     <x-delete-modal id="modalHapusRutin" title="Hapus Pemeliharaan Rutin" message="Data pemeliharaan rutin pada bulan ini akan dihapus secara permanen." />
-    <x-delete-modal id="modalHapusPeralatan" title="Hapus Rincian Perbaikan" message="Seluruh rincian perbaikan pada bulan ini akan dihapus secara permanen." />
+    
 
     <!-- ================= MODAL ATUR DOKUMEN (RUTIN) ================= -->
     <x-modal id="modalMasterRutin" title="Kelola Kegiatan Rutin" description="Daftar kegiatan untuk tabel Pemeliharaan Rutin.">
         <div class="space-y-3 max-h-[50vh] overflow-y-auto pr-2">
             @forelse($masterRutin as $m)
                 <div class="flex justify-between items-center bg-white p-3 rounded-lg border border-gray-200 shadow-sm">
-                    <span class="text-sm font-semibold text-gray-800">{{ $m->nama_kegiatan }}</span>
+                    <span class="text-sm font-semibold text-gray-800">{{ $m->nama_pemeliharaan }}</span>
                     <form action="{{ route('pemeliharaan-rutin.master.destroy', $m->id) }}" method="POST">
                         @csrf @method('DELETE')
                         <button type="submit" class="p-1 text-red-500 hover:bg-red-50 rounded"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
@@ -281,29 +195,7 @@
         </div>
         <form action="{{ route('pemeliharaan-rutin.master.store') }}" method="POST" class="mt-4 pt-4 border-t border-gray-100 flex gap-2">
             @csrf
-            <input type="text" name="nama_kegiatan" required placeholder="Nama Kegiatan Baru..." class="flex-1 px-3 py-2 border rounded-lg text-sm outline-none focus:border-blue-500">
-            <x-button variant="primary" type="submit" class="bg-blue-600 border-none text-xs">Tambah</x-button>
-        </form>
-    </x-modal>
-
-    <!-- ================= MODAL ATUR DOKUMEN (PERALATAN) ================= -->
-    <x-modal id="modalMasterPeralatan" title="Kelola Daftar Peralatan" description="Daftar peralatan untuk tabel Rincian Perbaikan.">
-        <div class="space-y-3 max-h-[50vh] overflow-y-auto pr-2">
-            @forelse($masterPeralatan as $m)
-                <div class="flex justify-between items-center bg-white p-3 rounded-lg border border-gray-200 shadow-sm">
-                    <span class="text-sm font-semibold text-gray-800">{{ $m->nama_peralatan }}</span>
-                    <form action="{{ route('pemeliharaan-peralatan.master.destroy', $m->id) }}" method="POST">
-                        @csrf @method('DELETE')
-                        <button type="submit" class="p-1 text-red-500 hover:bg-red-50 rounded"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
-                    </form>
-                </div>
-            @empty
-                <p class="text-xs text-gray-500 italic">Belum ada daftar peralatan. Tambahkan di bawah.</p>
-            @endforelse
-        </div>
-        <form action="{{ route('pemeliharaan-peralatan.master.store') }}" method="POST" class="mt-4 pt-4 border-t border-gray-100 flex gap-2">
-            @csrf
-            <input type="text" name="nama_peralatan" required placeholder="Nama Peralatan Baru..." class="flex-1 px-3 py-2 border rounded-lg text-sm outline-none focus:border-blue-500">
+            <input type="text" name="nama_pemeliharaan" required placeholder="Nama Kegiatan Baru..." class="flex-1 px-3 py-2 border rounded-lg text-sm outline-none focus:border-blue-500">
             <x-button variant="primary" type="submit" class="bg-blue-600 border-none text-xs">Tambah</x-button>
         </form>
     </x-modal>
@@ -340,41 +232,9 @@
     </x-modal>
 @endif
 
-    <!-- Modal Atur Kolom Peralatan -->
-    @if(auth()->user()->isAdmin())
-<x-modal id="modalAturKolomPeralatan" title="Pengaturan Kolom (Tabel Peralatan)">
-        <div class="mb-6 bg-gray-50 p-4 rounded-xl border border-gray-100 max-h-48 overflow-y-auto">
-            @if(isset($kolomPeralatan) && $kolomPeralatan->count() > 0)
-                @foreach($kolomPeralatan as $kolom)
-                    <div class="flex justify-between items-center bg-white p-3 rounded-lg border border-gray-200 mb-2 shadow-sm">
-                        <div><p class="text-sm font-semibold text-gray-800">{{ $kolom->nama_kolom }}</p><p class="text-[11px] text-gray-500">Tipe: <span class="uppercase font-bold text-gray-700">{{ $kolom->tipe_input }}</span></p></div>
-                        <button type="button" onclick="triggerDeleteKolom('{{ route('kolom-dinamis.destroy', $kolom->id) }}', 'modalAturKolomPeralatan')" class="text-red-500 p-1 hover:bg-red-50 rounded"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
-                    </div>
-                @endforeach
-            @else <p class="text-xs text-gray-500 italic">Belum ada kolom tambahan.</p> @endif
-        </div>
-        <form action="{{ route('kolom-dinamis.store') }}" method="POST" class="border-t pt-4">
-            @csrf <input type="hidden" name="modul" value="pemeliharaan_peralatan">
-            <div class="grid grid-cols-2 gap-4">
-                <div><label class="block text-xs font-medium mb-1">Nama Kolom</label><input type="text" name="nama_kolom" required class="w-full px-3 py-2 border rounded-lg text-sm outline-none"></div>
-                <div><label class="block text-xs font-medium mb-1">Tipe Input</label>
-                    <select name="tipe_input" id="tipeInputSelectorPeralatan" required class="w-full px-3 py-2 border rounded-lg text-sm outline-none" onchange="toggleDropdownConfig('Peralatan')">
-                        <option value="text">Teks Singkat</option><option value="number">Angka Kuantitas Biasa</option><option value="currency">Harga / Uang (Rp)</option><option value="date">Tanggal</option><option value="dropdown">Dropdown (Pilihan)</option>
-                    </select>
-                </div>
-                <div class="col-span-2 hidden" id="dropdownConfigAreaPeralatan">
-                    <label class="block text-xs font-medium mb-1">Pilihan Dropdown (Pisahkan dengan koma)</label>
-                    <input type="text" name="pilihan_dropdown" placeholder="Cth: Selesai, Pending" class="w-full px-3 py-2 border rounded-lg text-sm outline-none">
-                </div>
-            </div>
-            <div class="flex justify-end gap-3 mt-4"><x-button variant="outline" type="button" onclick="closeModal('modalAturKolomPeralatan')">Tutup</x-button><x-button variant="primary" type="submit">Simpan</x-button></div>
-        </form>
-    </x-modal>
-@endif
-
     <!-- ================= IMPORT EXCEL MODALS ================= -->
     <x-import-modal id="modalImportRutin" route="{{ route('pemeliharaan-rutin.import') }}" title="Import Data Pemeliharaan Rutin" templateRoute="{{ route('template.download', 'pemeliharaan-rutin') }}" />
-    <x-import-modal id="modalImportPeralatan" route="{{ route('pemeliharaan-peralatan.import') }}" title="Import Data Rincian Perbaikan Peralatan" templateRoute="{{ route('template.download', 'pemeliharaan-peralatan') }}" />
+    
 
     <!-- ================= MODAL TAMBAH & EDIT RUTIN ================= -->
     <x-modal id="modalTambahRutin" title="Tambah Pemeliharaan Rutin" description="Masukkan jumlah kegiatan pada bulan tertentu.">
@@ -389,7 +249,7 @@
                 <label class="block text-sm font-medium text-gray-700 mb-1.5">Jenis Kegiatan <span class="text-red-500">*</span></label>
                 <select name="rutin_id" required class="w-full px-4 py-2 border rounded-lg text-sm outline-none focus:border-orange-500">
                     <option value="" disabled selected>Pilih Jenis...</option>
-                    @foreach($masterRutin as $master)<option value="{{ $master->id }}">{{ $master->nama_kegiatan }}</option>@endforeach
+                    @foreach($masterRutin as $master)<option value="{{ $master->id }}">{{ $master->nama_pemeliharaan }}</option>@endforeach
                 </select>
             </div>
             <div class="col-span-1">
@@ -425,7 +285,7 @@
             <div class="col-span-2 border-b border-gray-100 my-1"></div>
             @foreach($masterRutin as $master)
                 <div class="col-span-1">
-                    <label class="block text-xs font-medium text-gray-700 mb-1 truncate" title="{{ $master->nama_kegiatan }}">{{ $master->nama_kegiatan }}</label>
+                    <label class="block text-xs font-medium text-gray-700 mb-1 truncate" title="{{ $master->nama_pemeliharaan }}">{{ $master->nama_pemeliharaan }}</label>
                     <input type="number" name="items[{{ $master->id }}]" id="edit_rutin_item_{{ $master->id }}" value="0" class="w-full px-3 py-1.5 border rounded-md text-xs outline-none focus:border-orange-500">
                 </div>
             @endforeach
@@ -486,41 +346,7 @@
         </form>
     </x-modal>
 
-    <x-modal id="modalEditPeralatan" title="Edit Perbaikan Alat" description="Perbarui seluruh data perbaikan beserta periodenya.">
-        <form action="{{ route('pemeliharaan-peralatan.updateBulan') }}" method="POST" class="grid grid-cols-2 gap-x-4 gap-y-4">
-            @csrf
-            <input type="hidden" name="old_tahun" id="old_alat_tahun"><input type="hidden" name="old_bulan" id="old_alat_bulan">
-            <div class="col-span-2">
-                <label class="block text-xs font-medium text-gray-700 mb-1">Periode (Bulan & Tahun) <span class="text-red-500">*</span></label>
-                <input type="month" id="picker_edit_alat" required class="w-full px-3 py-1.5 border border-gray-300 rounded-md text-xs outline-none focus:border-orange-500" onchange="syncPeriode(this.value, 'edit_alat_tahun', 'edit_alat_bulan')">
-                <input type="hidden" name="tahun" id="edit_alat_tahun"><input type="hidden" name="bulan" id="edit_alat_bulan">
-            </div>
-            <div class="col-span-2 border-b border-gray-100 my-1"></div>
-            @foreach($masterPeralatan as $master)
-                <div class="col-span-1">
-                    <label class="block text-xs font-medium text-gray-700 mb-1 truncate" title="{{ $master->nama_peralatan }}">{{ $master->nama_peralatan }}</label>
-                    <input type="number" name="items[{{ $master->id }}]" id="edit_alat_item_{{ $master->id }}" value="0" class="w-full px-3 py-1.5 border rounded-md text-xs outline-none focus:border-orange-500">
-                </div>
-            @endforeach
-            @if(isset($kolomPeralatan) && $kolomPeralatan->count() > 0)
-                <div class="col-span-2 border-b border-gray-100 my-1"></div>
-                @foreach($kolomPeralatan as $kolom)
-                    <div class="col-span-2">
-                        <label class="block text-xs font-medium text-gray-700 mb-1">{{ $kolom->nama_kolom }}</label>
-                        @if($kolom->tipe_input === 'dropdown')
-                            <select name="data_tambahan[{{ $kolom->nama_kolom }}]" data-key="{{ $kolom->nama_kolom }}" class="input-dinamis-edit-peralatan w-full px-3 py-1.5 border rounded-md text-xs outline-none focus:border-orange-500">
-                                <option value="">Pilih...</option>
-                                @if($kolom->pilihan_dropdown) @foreach(json_decode($kolom->pilihan_dropdown) as $pilihan)<option value="{{ trim($pilihan) }}">{{ trim($pilihan) }}</option>@endforeach @endif
-                            </select>
-                        @elseif($kolom->tipe_input === 'date')<input type="date" name="data_tambahan[{{ $kolom->nama_kolom }}]" data-key="{{ $kolom->nama_kolom }}" class="input-dinamis-edit-peralatan w-full px-3 py-1.5 border rounded-md text-xs outline-none focus:border-orange-500">
-                        @elseif(in_array($kolom->tipe_input, ['number', 'currency']))<input type="number" name="data_tambahan[{{ $kolom->nama_kolom }}]" data-key="{{ $kolom->nama_kolom }}" class="input-dinamis-edit-peralatan w-full px-3 py-1.5 border rounded-md text-xs outline-none focus:border-orange-500">
-                        @else<input type="text" name="data_tambahan[{{ $kolom->nama_kolom }}]" data-key="{{ $kolom->nama_kolom }}" class="input-dinamis-edit-peralatan w-full px-3 py-1.5 border rounded-md text-xs outline-none focus:border-orange-500">@endif
-                    </div>
-                @endforeach
-            @endif
-            <div class="col-span-2 flex justify-end gap-2 mt-4 border-t border-gray-100 pt-4"><x-button variant="outline" type="button" onclick="closeModal('modalEditPeralatan')">Batal</x-button><x-button variant="primary" type="submit">Update Data</x-button></div>
-        </form>
-    </x-modal>
+    
 
 </main>
 
@@ -542,12 +368,22 @@
             let selectAll = document.getElementById("selectAllBulkRutin");
             let checkboxes = document.querySelectorAll(".cb-bulk-rutin");
             checkboxes.forEach(cb => cb.checked = selectAll.checked);
+            
+            let deleteAllInput = document.getElementById("deleteAllRutin");
+            if (deleteAllInput) {
+                deleteAllInput.value = selectAll.checked ? '1' : '0';
+            }
             toggleDeleteBtnRutin();
         }
         function toggleCheckboxRutin() {
             let selectAll = document.getElementById("selectAllBulkRutin");
             let checkboxes = document.querySelectorAll(".cb-bulk-rutin");
             selectAll.checked = Array.from(checkboxes).every(cb => cb.checked);
+            
+            let deleteAllInput = document.getElementById("deleteAllRutin");
+            if (deleteAllInput) {
+                deleteAllInput.value = '0';
+            }
             toggleDeleteBtnRutin();
         }
         function toggleDeleteBtnRutin() {
@@ -607,7 +443,7 @@
             toggleDeleteBtnPeralatan();
         }
 
-<script>
+    
     function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
     function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
     function toggleDropdown(id) { document.getElementById(id).classList.toggle('hidden'); }
@@ -645,8 +481,7 @@
         document.getElementById('picker_tambah_rutin').value = currentMonth; syncPeriode(currentMonth, 'rutin_tahun', 'rutin_bulan');
         openModal('modalTambahRutin'); 
     }
-    
-    function openModalTambahPeralatan() { 
+        function openModalTambahPeralatan() { 
         const countData = {{ count($masterPeralatan) }}; if (countData === 0) { alert('Silakan atur Dokumen Peralatan terlebih dahulu melalui Opsi Lanjutan.'); return; }
         const now = new Date(); const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
         document.getElementById('picker_tambah_peralatan').value = currentMonth; syncPeriode(currentMonth, 'alat_tahun', 'alat_bulan');
@@ -677,6 +512,12 @@
         openModal('modalEditPeralatan');
     }
 
+    document.addEventListener('input', function(e) {
+        if (e.target.type === 'number') {
+            e.target.value = e.target.value.replace(/^0+(?=\d)/, '');
+        }
+    });
+
     document.addEventListener('DOMContentLoaded', function() {
         const canvas = document.getElementById('canvas_pemeliharaanChart');
         if (canvas) {
@@ -687,7 +528,7 @@
 
             @foreach($masterRutin as $index => $master)
                 datasets.push({
-                    label: '{!! addslashes($master->nama_kegiatan) !!}',
+                    label: '{!! addslashes($master->nama_pemeliharaan) !!}',
                     data: rawChartData.map(d => d.items[{{ $master->id }}] || 0),
                     backgroundColor: colors[{{ $index }} % colors.length],
                     borderRadius: 4, barPercentage: 0.6, categoryPercentage: 0.8

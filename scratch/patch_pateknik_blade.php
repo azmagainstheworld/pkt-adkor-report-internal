@@ -1,194 +1,119 @@
 <?php
-$f = 'resources/views/kearsipan-pa-teknik.blade.php';
-$c = file_get_contents($f);
 
-// 1. Pagination loops
-$c = str_replace('@forelse($dataTable1 as $row)', '@forelse($paginatedTable1 as $row)', $c);
-$c = str_replace('@forelse($dataTable2 as $row)', '@forelse($paginatedTable2 as $row)', $c);
+$file = 'resources/views/kearsipan-pa-teknik.blade.php';
+$content = file_get_contents($file);
 
-// 2. Add Links Table 1
-$c = str_replace(
-    "</x-table>\n        </div>\n    </x-card>",
-    "</x-table>\n            <div class=\"px-6 py-4 border-t border-gray-100 bg-gray-50\">\n                {{ \$paginatedTable1->links('pagination::tailwind') }}\n            </div>\n        </div>\n    </x-card>",
-    $c
-);
+// Replace "Hapus Massal" with "Hapus Semua" and remove confirm
+$target_btn1 = '<button type="button" id="btnModeBulk1" onclick="toggleBulkMode1()" class="inline-flex items-center justify-center gap-2 px-3 py-1.5 text-xs font-medium bg-red-50 text-red-600 border border-red-200 rounded-xl hover:bg-red-100 transition-colors shadow-sm outline-none focus:ring-2 focus:ring-red-300 mr-2"><svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg> Hapus Massal</button>';
+$target_btn2 = '<button type="button" id="btnModeBulk2" onclick="toggleBulkMode2()" class="inline-flex items-center justify-center gap-2 px-3 py-1.5 text-xs font-medium bg-red-50 text-red-600 border border-red-200 rounded-xl hover:bg-red-100 transition-colors shadow-sm outline-none focus:ring-2 focus:ring-red-300 mr-2"><svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg> Hapus Massal</button>';
 
-// 3. Add Links Table 2
-$c = str_replace(
-    "</x-table>\n        </div>\n    </x-card>\n\n    <!-- MODAL TAMBAH JENIS DOKUMEN -->",
-    "</x-table>\n            <div class=\"px-6 py-4 border-t border-gray-100 bg-gray-50\">\n                {{ \$paginatedTable2->links('pagination::tailwind') }}\n            </div>\n        </div>\n    </x-card>\n\n    <!-- MODAL TAMBAH JENIS DOKUMEN -->",
-    $c
-);
+$replacement_btn1 = '<button type="button" id="btnModeBulk1" onclick="toggleBulkMode1()" class="inline-flex items-center justify-center gap-2 px-3 py-1.5 text-xs font-medium bg-red-50 text-red-600 border border-red-200 rounded-xl hover:bg-red-100 transition-colors shadow-sm outline-none focus:ring-2 focus:ring-red-300 mr-2"><svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg> Hapus Semua</button>';
+$replacement_btn2 = '<button type="button" id="btnModeBulk2" onclick="toggleBulkMode2()" class="inline-flex items-center justify-center gap-2 px-3 py-1.5 text-xs font-medium bg-red-50 text-red-600 border border-red-200 rounded-xl hover:bg-red-100 transition-colors shadow-sm outline-none focus:ring-2 focus:ring-red-300 mr-2"><svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg> Hapus Semua</button>';
 
-// 4. Update import buttons to pass parameter 'tabel1' or 'tabel2'
-$c = str_replace(
-    "openModal('modalImportExcel'); toggleDropdown('dropdownOpsi1')",
-    "openImportModal('tabel1'); toggleDropdown('dropdownOpsi1')",
-    $c
-);
-$c = str_replace(
-    "openModal('modalImportExcel'); toggleDropdown('dropdownOpsi2')",
-    "openImportModal('tabel2'); toggleDropdown('dropdownOpsi2')",
-    $c
-);
+$content = str_replace($target_btn1, $replacement_btn1, $content);
+$content = str_replace($target_btn2, $replacement_btn2, $content);
 
-// 5. Replace x-import-modal with custom AJAX import modal
-$oldModal = "    <!-- ================= MODAL IMPORT EXCEL ================= -->
-    <x-import-modal 
-        id=\"modalImportExcel\" 
-        route=\"{{ route('pa-teknik.import') }}\" 
-        title=\"Import Data PA Teknik\" 
-        templateRoute=\"{{ route('template.download', 'pa-teknik') }}\" 
-    />";
-
-$newModal = "    <!-- ================= MODAL IMPORT EXCEL (AJAX) ================= -->
-    <div id=\"modalImportExcel\" class=\"fixed inset-0 z-50 hidden\">
-        <div class=\"absolute inset-0 bg-black/50 backdrop-blur-sm\" onclick=\"closeModal('modalImportExcel')\"></div>
-        <div class=\"flex items-center justify-center min-h-screen px-4\">
-            <div class=\"bg-white rounded-2xl shadow-xl w-full max-w-md p-6 relative transform transition-all\">
-                <div class=\"flex justify-between items-center mb-5\">
-                    <h3 class=\"text-lg font-bold text-gray-900\" id=\"importModalTitle\">Import dari Excel</h3>
-                    <button onclick=\"closeModal('modalImportExcel')\" class=\"text-gray-400 hover:text-gray-600\">
-                        <svg class=\"w-5 h-5\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M6 18L18 6M6 6l12 12\"></path></svg>
-                    </button>
-                </div>
+// Form 1
+$target_form1 = '<form id="bulkDeleteForm1" action="{{ route(\'pa-teknik.destroyBulk\') }}" method="POST" onsubmit="return confirm(\'Hapus data terpilih pada Tabel 1?\')">';
+$replacement_form1 = <<<'EOF'
+            <form id="bulkDeleteForm1" action="{{ route('pa-teknik.destroyBulk') }}" method="POST">
+                @csrf
+                @method('DELETE')
+                <input type="hidden" name="filter_tahun" value="{{ $filterTahun }}">
+                <input type="hidden" name="filter_bulan" value="{{ $filterBulan }}">
+                <input type="hidden" name="delete_all" id="deleteAllFlag1" value="0">
+                <input type="hidden" name="kelompok_tabel" value="1">
                 
-                <form id=\"formImportExcel\" onsubmit=\"submitImport(event)\">
-                    <input type=\"hidden\" id=\"importKelompok\" name=\"kelompok\" value=\"\">
-                    
-                    <div class=\"mb-6\">
-                        <div class=\"flex items-center justify-center w-full\">
-                            <label class=\"flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer bg-gray-50 hover:bg-gray-100 hover:border-blue-400 transition-all\">
-                                <div class=\"flex flex-col items-center justify-center pt-5 pb-6\">
-                                    <svg class=\"w-8 h-8 text-gray-400 mb-2\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12\"></path></svg>
-                                    <p class=\"text-sm text-gray-500\"><span class=\"font-semibold\">Klik untuk upload</span> atau drag & drop</p>
-                                    <p class=\"text-xs text-gray-400 mt-1\">.XLSX, .XLS atau .CSV</p>
-                                </div>
-                                <input type=\"file\" class=\"hidden\" id=\"fileExcel\" name=\"file\" accept=\".xlsx, .xls, .csv\" required onchange=\"updateFileName(this)\" />
-                            </label>
-                        </div>
-                        <p id=\"fileNameDisplay\" class=\"text-xs text-center text-blue-600 mt-2 font-medium hidden\"></p>
+                <div id="btnGroupBulk1" class="hidden mb-3 bg-red-50 border border-red-200 p-3 rounded-xl flex items-center justify-between">
+                    <span class="text-xs font-semibold text-red-700 flex items-center gap-2"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>Data terpilih akan dihapus permanen.</span>
+                    <div class="flex gap-2">
+                        <button type="button" onclick="cancelAll1()" class="px-3 py-1.5 text-xs font-medium bg-white text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50">Batal</button>
+                        <button type="button" onclick="submitBulkDelete1()" class="px-3 py-1.5 text-xs font-medium bg-red-600 text-white rounded-lg hover:bg-red-700 shadow-sm flex items-center gap-1.5"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>Hapus Terpilih</button>
                     </div>
+                </div>
+EOF;
 
-                    <!-- Progress Bar (Hidden by default) -->
-                    <div id=\"importProgressContainer\" class=\"hidden mb-6\">
-                        <div class=\"flex justify-between text-xs mb-1\">
-                            <span class=\"font-medium text-blue-700\">Mengimpor Data...</span>
-                            <span class=\"font-medium text-blue-700\" id=\"importProgressText\">0%</span>
-                        </div>
-                        <div class=\"w-full bg-gray-200 rounded-full h-2\">
-                            <div class=\"bg-blue-600 h-2 rounded-full transition-all duration-300\" id=\"importProgressBar\" style=\"width: 0%\"></div>
-                        </div>
+// Since the old form might have inner parts, let's just replace the old form's beginning
+$content = preg_replace('/<form id="bulkDeleteForm1" .*?>\s*@csrf\s*@method\(\'DELETE\'\)\s*<div id="btnGroupBulk1" .*?<\/div>\s*<\/div>/s', $replacement_form1, $content);
+// If it was already simple:
+if (strpos($content, 'id="deleteAllFlag1"') === false) {
+    $content = preg_replace('/<form id="bulkDeleteForm1".*?@method\(\'DELETE\'\)/s', $replacement_form1, $content);
+}
+
+// Form 2
+$target_form2 = '<form id="bulkDeleteForm2" action="{{ route(\'pa-teknik.destroyBulk\') }}" method="POST" onsubmit="return confirm(\'Hapus data terpilih pada Tabel 2?\')">';
+$replacement_form2 = <<<'EOF'
+            <form id="bulkDeleteForm2" action="{{ route('pa-teknik.destroyBulk') }}" method="POST">
+                @csrf
+                @method('DELETE')
+                <input type="hidden" name="filter_tahun" value="{{ $filterTahun }}">
+                <input type="hidden" name="filter_bulan" value="{{ $filterBulan }}">
+                <input type="hidden" name="delete_all" id="deleteAllFlag2" value="0">
+                <input type="hidden" name="kelompok_tabel" value="2">
+                
+                <div id="btnGroupBulk2" class="hidden mb-3 bg-red-50 border border-red-200 p-3 rounded-xl flex items-center justify-between">
+                    <span class="text-xs font-semibold text-red-700 flex items-center gap-2"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>Data terpilih akan dihapus permanen.</span>
+                    <div class="flex gap-2">
+                        <button type="button" onclick="cancelAll2()" class="px-3 py-1.5 text-xs font-medium bg-white text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50">Batal</button>
+                        <button type="button" onclick="submitBulkDelete2()" class="px-3 py-1.5 text-xs font-medium bg-red-600 text-white rounded-lg hover:bg-red-700 shadow-sm flex items-center gap-1.5"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>Hapus Terpilih</button>
                     </div>
+                </div>
+EOF;
 
-                    <div class=\"flex justify-end gap-3\">
-                        <button type=\"button\" onclick=\"closeModal('modalImportExcel')\" class=\"px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors\">Batal</button>
-                        <button type=\"submit\" id=\"btnSubmitImport\" class=\"px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-colors flex items-center gap-2\">
-                            <svg class=\"w-4 h-4\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12\"></path></svg>
-                            Import Data
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>";
+if (strpos($content, 'id="deleteAllFlag2"') === false) {
+    $content = preg_replace('/<form id="bulkDeleteForm2".*?@method\(\'DELETE\'\)/s', $replacement_form2, $content);
+}
 
-$c = str_replace($oldModal, $newModal, $c);
+// Remove old button groups inside the forms if any
+$content = preg_replace('/<div id="btnGroupBulk1" class="hidden mb-4.*?>.*?<\/div>.*?<\/div>/s', '', $content);
+$content = preg_replace('/<div id="btnGroupBulk2" class="hidden mb-4.*?>.*?<\/div>.*?<\/div>/s', '', $content);
 
-// 6. Add the scripts
-$scripts = "    <script src=\"https://cdn.jsdelivr.net/npm/sweetalert2@11\"></script>
-    <script>
-        function openImportModal(kelompok) {
-            document.getElementById('importKelompok').value = kelompok;
-            document.getElementById('importModalTitle').innerText = 'Import Data PA Teknik - ' + (kelompok == 'tabel1' ? 'Tabel 1' : 'Tabel 2');
-            document.getElementById('modalImportExcel').classList.remove('hidden');
-        }
+// Ensure CSS is there
+$css = <<<CSS
+<style>
+    .hide-bulk .cb-bulk, .hide-bulk .bulk-cb-header { display: none !important; }
+    .hide-bulk th:first-child, .hide-bulk td:first-child { width: 0; padding: 0; overflow: hidden; opacity: 0; }
+</style>
+CSS;
+if (strpos($content, '.hide-bulk .cb-bulk') === false) {
+    $content = str_replace("@section('content')", "@section('content')\n" . $css, $content);
+}
 
-        function updateFileName(input) {
-            const display = document.getElementById('fileNameDisplay');
-            if (input.files && input.files[0]) {
-                display.textContent = 'File terpilih: ' + input.files[0].name;
-                display.classList.remove('hidden');
+// Add hide-bulk class to containers
+$content = str_replace('<div class="overflow-x-auto" id="tableContainerBulk1">', '<div class="overflow-x-auto hide-bulk" id="tableContainerBulk1">', $content);
+$content = str_replace('<div class="overflow-x-auto" id="tableContainerBulk2">', '<div class="overflow-x-auto hide-bulk" id="tableContainerBulk2">', $content);
+
+// Remove 'hidden' class from cb-bulk and bulk-cb-header just in case it was there from earlier code
+$content = str_replace('class="bulk-cb-header-1 hidden"', 'class="bulk-cb-header-1"', $content);
+$content = str_replace('class="bulk-cb-header-2 hidden"', 'class="bulk-cb-header-2"', $content);
+$content = str_replace('class="cb-bulk-1 hidden', 'class="cb-bulk-1', $content);
+$content = str_replace('class="cb-bulk-2 hidden', 'class="cb-bulk-2', $content);
+
+// Ensure JavaScript handles delete_all flags
+$new_js = <<<JS
+        function submitBulkDelete1() {
+            let selectAll = document.getElementById("selectAllBulk1");
+            if (selectAll && selectAll.checked) {
+                document.getElementById('deleteAllFlag1').value = "1";
             } else {
-                display.classList.add('hidden');
+                document.getElementById('deleteAllFlag1').value = "0";
             }
+            document.getElementById('bulkDeleteForm1').submit();
         }
-
-        function submitImport(e) {
-            e.preventDefault();
-            const form = e.target;
-            const formData = new FormData(form);
-            const submitBtn = document.getElementById('btnSubmitImport');
-            const progressContainer = document.getElementById('importProgressContainer');
-            const progressBar = document.getElementById('importProgressBar');
-            const progressText = document.getElementById('importProgressText');
-
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<svg class=\"animate-spin h-4 w-4 text-white\" xmlns=\"http://www.w3.org/2000/svg\" fill=\"none\" viewBox=\"0 0 24 24\"><circle class=\"opacity-25\" cx=\"12\" cy=\"12\" r=\"10\" stroke=\"currentColor\" stroke-width=\"4\"></circle><path class=\"opacity-75\" fill=\"currentColor\" d=\"M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z\"></path></svg> Memproses...';
-            
-            progressContainer.classList.remove('hidden');
-            let progress = 0;
-            const interval = setInterval(() => {
-                progress += Math.random() * 15;
-                if (progress > 90) progress = 90;
-                progressBar.style.width = progress + '%';
-                progressText.innerText = Math.round(progress) + '%';
-            }, 500);
-
-            fetch('{{ route(\"pa-teknik.import\") }}?kelompok=' + formData.get('kelompok'), {
-                method: 'POST',
-                headers: {
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                },
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                clearInterval(interval);
-                progressBar.style.width = '100%';
-                progressText.innerText = '100%';
-
-                if (data.success) {
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Berhasil!',
-                        text: data.success,
-                        timer: 2000,
-                        showConfirmButton: false
-                    }).then(() => {
-                        window.location.reload();
-                    });
-                } else {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Oops...',
-                        text: data.error || 'Terjadi kesalahan saat mengimpor data.'
-                    });
-                    resetImportForm();
-                }
-            })
-            .catch(error => {
-                clearInterval(interval);
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Oops...',
-                    text: 'Terjadi kesalahan jaringan atau server.'
-                });
-                resetImportForm();
-            });
+        function submitBulkDelete2() {
+            let selectAll = document.getElementById("selectAllBulk2");
+            if (selectAll && selectAll.checked) {
+                document.getElementById('deleteAllFlag2').value = "1";
+            } else {
+                document.getElementById('deleteAllFlag2').value = "0";
+            }
+            document.getElementById('bulkDeleteForm2').submit();
         }
+JS;
 
-        function resetImportForm() {
-            const submitBtn = document.getElementById('btnSubmitImport');
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = '<svg class=\"w-4 h-4\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12\"></path></svg> Import Data';
-            document.getElementById('importProgressContainer').classList.add('hidden');
-        }
-    </script>
-</main>
-@endsection";
+if (strpos($content, 'function submitBulkDelete1') === false) {
+    $content = str_replace('function cancelAll2() {', $new_js . "\n        function cancelAll2() {", $content);
+}
 
-$c = str_replace("</main>\n@endsection", $scripts, $c);
-
-file_put_contents($f, $c);
-echo "Patched kearsipan-pa-teknik.blade.php\n";
+file_put_contents($file, $content);
+echo "PA Teknik patched.\n";

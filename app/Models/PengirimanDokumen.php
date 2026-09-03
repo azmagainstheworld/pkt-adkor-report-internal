@@ -19,8 +19,6 @@ class PengirimanDokumen extends Model
         'registrasi_surat_masuk_dof',
         'pengiriman_dalam_negeri',
         'pengiriman_luar_negeri',
-        'ongkir_dalam_negeri',
-        'ongkir_luar_negeri',
         'e_materai',
         'data_tambahan'
     ];

@@ -16,13 +16,23 @@ class PemeliharaanRutinExport implements FromArray, WithHeadings, ShouldAutoSize
 
     protected $tahun; protected $bulan; protected $masters; protected $kolomDinamis;
 
-    public function __construct($tahun = 'semua', $bulan = 'semua') {
-        $this->tahun = $tahun; $this->bulan = $bulan;
+    public function __construct($param1 = false, $param2 = 'semua') {
+        if ($param1 === true) {
+            $this->isTemplate = true;
+            $this->tahun = 'semua';
+            $this->bulan = 'semua';
+        } else {
+            $this->isTemplate = false;
+            $this->tahun = $param1 ?: 'semua';
+            $this->bulan = $param2 ?: 'semua';
+        }
         $this->masters = PemeliharaanRutinMaster::orderBy('id', 'asc')->get();
         $this->kolomDinamis = DB::table('dynamic_columns')->where('modul', 'pemeliharaan_rutin')->get();
     }
 
     public function array(): array {
+        if ($this->isTemplate) return [];
+
         $query = PemeliharaanRutinData::with('pemeliharaanRutinMaster');
         if ($this->tahun !== 'semua') $query->where('tahun', $this->tahun);
         if ($this->bulan !== 'semua') $query->where('bulan', $this->bulan);
@@ -40,7 +50,7 @@ class PemeliharaanRutinExport implements FromArray, WithHeadings, ShouldAutoSize
                 $mappedItems[$item->rutin_id] = $item->jumlah;
                 if (!empty($item->data_tambahan)) $dataTambahan = array_merge($dataTambahan, $item->data_tambahan);
             }
-            foreach($this->masters as $master) { $row[$master->nama_kegiatan] = $mappedItems[$master->id] ?? 0; }
+            foreach($this->masters as $master) { $row[$master->nama_pemeliharaan] = $mappedItems[$master->id] ?? 0; }
             foreach($this->kolomDinamis as $kolom) { $row[$kolom->nama_kolom] = $dataTambahan[$kolom->nama_kolom] ?? '-'; }
             $result[] = $row;
         }
@@ -55,7 +65,7 @@ class PemeliharaanRutinExport implements FromArray, WithHeadings, ShouldAutoSize
 
     public function headings(): array {
         $headers = ['Tahun', 'Bulan'];
-        foreach($this->masters as $master) $headers[] = $master->nama_kegiatan;
+        foreach($this->masters as $master) $headers[] = $master->nama_pemeliharaan;
         foreach($this->kolomDinamis as $kolom) $headers[] = $kolom->nama_kolom;
         return $headers;
     }

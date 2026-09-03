@@ -11,16 +11,16 @@
     <x-success-modal />
 
     <!-- ================= MODAL ERROR KUSTOM ================= -->
-    @if (session('error_modal'))
+    @if (session('error_modal') || session('error'))
     <div id="errorModalCustom" class="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 text-center relative transform transition-all">
             <div class="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
                 <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
             </div>
-            <h3 class="text-xl font-bold text-gray-900 mb-2">Penambahan Gagal</h3>
-            <p class="text-sm text-gray-600 mb-6">{{ session('error_modal') }}</p>
-            <button type="button" onclick="document.getElementById('errorModalCustom').style.display='none'; openModal('modalAturKolom');" class="w-full py-2.5 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-xl transition-colors shadow-lg shadow-red-600/20">
-                Kembali & Perbaiki
+            <h3 class="text-xl font-bold text-gray-900 mb-2">Aksi Gagal</h3>
+            <p class="text-sm text-gray-600 mb-6">{{ session('error_modal') ?? session('error') }}</p>
+            <button type="button" onclick="document.getElementById('errorModalCustom').style.display='none';" class="w-full py-2.5 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-xl transition-colors shadow-lg shadow-red-600/20">
+                Tutup
             </button>
         </div>
     </div>
@@ -118,6 +118,7 @@
         </div>
 
                 <form id="bulkDeleteFormVolume" action="{{ route('pengiriman-dokumen.destroyBulk') }}" method="POST">
+                <input type="hidden" name="tipe_tabel" value="volume">
             <input type="hidden" id="deleteAllPagesVolume" name="delete_all_pages" value="0">
             @csrf
             @method('DELETE')
@@ -137,7 +138,7 @@
                 $tableHeaders[] = 'Aksi';
             @endphp
             <x-table :headers="$tableHeaders">
-                @forelse($costRecords as $record)
+                @forelse($volumeRecords as $record)
                     @php $tambahan = is_string($record->data_tambahan) ? json_decode($record->data_tambahan, true) : ($record->data_tambahan ?? []); @endphp
                     <tr class="hover:bg-gray-50 transition-colors text-sm">
                         <td class="px-6 py-4 text-center align-middle"><input type="checkbox" name="ids[]" class="cb-bulk-volume" value="{{ $record->id }}" onclick="toggleCheckboxVolume()"></td>
@@ -165,7 +166,7 @@
                                 <button type="button" onclick='openEditModalVolume({!! json_encode($record) !!})' class="p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors" title="Edit Laporan Dokumen">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
                                 </button>
-                                <button type="button" onclick="openDeleteModal('modalHapusLaporan', '{{ route('pengiriman-dokumen.destroy', $record->id) }}')" class="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors" title="Hapus Laporan Keseluruhan">
+                                <button type="button" onclick="openDeleteModal('modalHapusLaporan', '{{ route('pengiriman-dokumen.destroy', ['id' => $record->id, 'tipe' => 'volume']) }}')" class="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors" title="Hapus Laporan Volume">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                                 </button>
                             </div>
@@ -179,7 +180,7 @@
         </form>
         <!-- PAGINATION TABEL 1 -->
         <div class="p-4 border-t border-gray-100 bg-gray-50 rounded-b-xl">
-            {{ $costRecords->links() }}
+            {{ $ongkirRecords->links() }}
         </div>
     </x-card>
 
@@ -243,6 +244,7 @@
             </div>
         </div>
                 <form id="bulkDeleteFormOngkir" action="{{ route('pengiriman-dokumen.destroyBulk') }}" method="POST">
+                <input type="hidden" name="tipe_tabel" value="ongkir">
             <input type="hidden" id="deleteAllPagesOngkir" name="delete_all_pages" value="0">
             @csrf
             @method('DELETE')
@@ -257,9 +259,9 @@
 
             <div id="tableContainerBulkOngkir" class="hide-bulk overflow-x-auto w-full">
                 <x-table :headers="['<input type=\'checkbox\' id=\'selectAllBulkOngkir\' onclick=\'toggleSelectAllOngkir()\'>', 'Tahun', 'Bulan', 'Total Ongkir Dalam Negeri', 'Total Ongkir Luar Negeri', 'Aksi']">
-            @forelse($costRecords as $cost)
+            @forelse($ongkirRecords as $cost)
                 <tr class="hover:bg-gray-50 transition-colors text-sm">
-                        <td class="px-6 py-4 text-center align-middle"><input type="checkbox" name="ids[]" class="cb-bulk-volume" value="{{ $record->id }}" onclick="toggleCheckboxVolume()"></td>
+                        <td class="px-6 py-4 text-center align-middle"><input type="checkbox" name="ids[]" class="cb-bulk-ongkir" value="{{ $cost->id }}" onclick="toggleCheckboxOngkir()"></td>
                     <td class="px-6 py-4 text-gray-700 font-medium text-center align-middle">{{ $cost->tahun }}</td>
                     <td class="px-6 py-4 text-gray-900 font-medium text-center align-middle">{{ $cost->bulan }}</td>
                     <td class="px-6 py-4 text-gray-700 font-mono font-semibold text-center align-middle">Rp {{ number_format($cost->ongkir_dalam_negeri, 0, ',', '.') }}</td>
@@ -269,7 +271,7 @@
                             <button type="button" onclick='openEditModalOngkir({!! json_encode($cost) !!})' class="p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors" title="Edit Laporan Ongkir">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
                             </button>
-                            <button type="button" onclick="openDeleteModal('modalHapusLaporan', '{{ route('pengiriman-dokumen.destroy', $cost->id) }}')" class="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors" title="Hapus Laporan Keseluruhan">
+                            <button type="button" onclick="openDeleteModal('modalHapusLaporan', '{{ route('pengiriman-dokumen.destroy', ['id' => $cost->id, 'tipe' => 'ongkir']) }}')" class="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors" title="Hapus Laporan Ongkir">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                             </button>
                         </div>
@@ -289,7 +291,7 @@
         </form>
         <!-- PAGINATION TABEL 2 -->
         <div class="p-4 border-t border-gray-100 bg-gray-50 rounded-b-xl">
-            {{ $costRecords->links() }}
+            {{ $ongkirRecords->links() }}
         </div>
     </x-card>
 

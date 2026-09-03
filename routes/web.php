@@ -209,8 +209,11 @@ Route::middleware('auth')->group(function () {
 
     // PA Tekstual
     Route::get('/kearsipan/pa-non-teknik/tekstual', [PaTekstualController::class, 'index'])->name('pa-tekstual.index');
-    Route::post('/kearsipan/pa-non-teknik/tekstual/master', [PaTekstualController::class, 'storeMaster'])->name('pa-tekstual.storeMaster');
+        Route::post('/kearsipan/pa-non-teknik/tekstual/master', [PaTekstualController::class, 'storeMaster'])->name('pa-tekstual.storeMaster');
     Route::delete('/kearsipan/pa-non-teknik/tekstual/master/{id}', [PaTekstualController::class, 'destroyMaster'])->name('pa-tekstual.destroyMaster');
+    Route::post('/kearsipan/pa-non-teknik/tekstual/kolom', [PaTekstualController::class, 'storeKolom'])->name('pa-tekstual.storeKolom');
+    Route::delete('/kearsipan/pa-non-teknik/tekstual/kolom/{id}', [PaTekstualController::class, 'destroyKolom'])->name('pa-tekstual.destroyKolom');
+    
     Route::post('/kearsipan/pa-non-teknik/tekstual/dokumen', [PaTekstualController::class, 'storeDokumen'])->name('pa-tekstual.storeDokumen');
     Route::post('/kearsipan/pa-non-teknik/tekstual/update-bulan', [PaTekstualController::class, 'updateBulan'])->name('pa-tekstual.updateBulan');
     Route::delete('/kearsipan/pa-non-teknik/tekstual/destroy-bulan', [PaTekstualController::class, 'destroyBulan'])->name('pa-tekstual.destroyBulan');
@@ -242,6 +245,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/kearsipan/pa-teknik/update-bulan', [PaTeknikController::class, 'updateBulan'])->name('pa-teknik.updateBulan');
     Route::delete('/kearsipan/pa-teknik/destroy-bulan', [PaTeknikController::class, 'destroyBulan'])->name('pa-teknik.destroyBulan');
     Route::delete('/kearsipan/pa-teknik/bulk-destroy', [PaTeknikController::class, 'destroyBulk'])->name('pa-teknik.destroyBulk');
+    Route::get('/kearsipan/pa-teknik/bulk-destroy', function() { return redirect()->route('pa-teknik.index'); });
 
     Route::post('/kearsipan/pa-teknik/import', [PaTeknikController::class, 'importExcel'])->name('pa-teknik.import');
     Route::get('/kearsipan/pa-teknik/export/excel', [PaTeknikController::class, 'exportExcel'])->name('pa-teknik.export.excel');
@@ -325,6 +329,7 @@ Route::middleware('auth')->group(function () {
         
         // 3. Impor Data
         Route::post('/import/excel', [SuratController::class, 'importExcel'])->name('import.excel');
+        Route::post('/import/rekap/excel', [SuratController::class, 'importRekapExcel'])->name('import.rekap.excel');
         
         // 4. Pengaturan Kolom Dinamis (Khusus Modul Surat)
         Route::post('/kolom-dinamis', [SuratController::class, 'storeKolomDinamis'])->name('kolom-dinamis.store')->middleware('role.admin');
@@ -430,3 +435,6 @@ Route::middleware('auth')->group(function () {
 // Letakkan route generik di LUAR group auth
 Route::get('/import-progress/{uuid}', [\App\Http\Controllers\ProgressController::class, 'importProgress'])->name('import.progress')->middleware('auth');
 Route::get('/download-template/{modul}', [TemplateController::class, 'download'])->name('template.download')->middleware('auth');
+Route::redirect('/surat', '/administrasi/surat-masuk-keluar');
+
+Route::redirect('/surat/{id}', '/administrasi/surat-masuk-keluar/{id}');

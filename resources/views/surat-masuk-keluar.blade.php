@@ -1,6 +1,9 @@
 @extends('layouts.app')
 
 @section('content')
+<style>
+    .hide-bulk th:first-child, .hide-bulk td:first-child { display: none; }
+</style>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <main class="flex-1 overflow-y-auto p-8 relative bg-[#F8F9FA]">
@@ -81,30 +84,45 @@
     <!-- TABEL 1 (REKAPITULASI - READ ONLY) -->
     <x-card class="!rounded-xl overflow-visible !p-0 shadow-sm border border-gray-100 bg-white mb-8">
         <div class="p-5 border-b border-gray-100 bg-white">
-            <h3 class="font-bold text-gray-900 text-lg">Akumulasi Laporan Surat Masuk dan Kekuar</h3>
-            <p class="text-xs text-gray-400">Total surat berstatus <span class="text-green-600 font-medium">"Terkirim"</span> terfilter Tahun: {{ $tahunFilter }}, Bulan: {{ $bulanFilter }}</p>
-        </div>
-
-                <form id="bulkDeleteForm" action="{{ route('surat.destroyBulk') }}" method="POST" onsubmit="return confirm('Hapus data terpilih?')">
-            @csrf
-            @method('DELETE')
-            
-            <div id="btnGroupBulk" class="hidden flex justify-between items-center px-4 py-2 bg-red-50 border-b border-red-100">
-                <span class="text-xs text-red-600 font-semibold">Data terpilih untuk dihapus</span>
-                <div class="flex gap-2">
-                    <button type="button" onclick="cancelAll()" class="px-3 py-1.5 bg-white border border-gray-300 text-gray-700 rounded-lg text-xs font-medium hover:bg-gray-50">Batal</button>
-                    <button type="submit" class="px-3 py-1.5 bg-red-600 text-white rounded-lg text-xs font-medium hover:bg-red-700">Hapus Terpilih</button>
+            <div class="flex justify-between items-start">
+                <div>
+                    <h3 class="font-bold text-gray-900 text-lg">Akumulasi Laporan Surat Masuk dan Kekuar</h3>
+                    <p class="text-xs text-gray-400">Total surat berstatus <span class="text-green-600 font-medium">"Terkirim"</span> terfilter Tahun: {{ $tahunFilter }}, Bulan: {{ $bulanFilter }}</p>
+                </div>
+                <!-- Opsi Lanjutan Table 1 -->
+                <div class="relative inline-block text-left">
+                    <button type="button" onclick="toggleDropdown('dropdownOpsiSurat1')" class="inline-flex justify-center items-center gap-2 rounded-xl border border-gray-300 shadow-sm px-4 py-2 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none transition-colors">
+                        <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
+                        Opsi Lanjutan
+                        <svg class="w-3.5 h-3.5 ml-1 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </button>
+                    <div id="dropdownOpsiSurat1" class="hidden absolute right-0 z-[50] mt-2 w-64 origin-top-right rounded-xl bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none overflow-visible transition-all">
+                        <div class="px-4 py-2 bg-gray-50 border-b border-gray-100">
+                            <p class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Impor & Ekspor Tabel Rekapitulasi</p>
+                        </div>
+                        <div class="py-1" role="none">
+                            <button type="button" onclick="openModal('modalImportRekap'); toggleDropdown('dropdownOpsiSurat1')" class="w-full text-left text-gray-700 px-4 py-2.5 text-sm hover:bg-green-50 flex items-center gap-2.5 font-medium transition-colors">
+                                <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg> Import Data Excel
+                            </button>
+                            <a href="{{ route('surat.export.excel', ['jenis' => 'tabel1', 'tahun' => $tahunFilter, 'bulan' => $bulanFilter]) }}" class="w-full text-left text-gray-700 px-4 py-2.5 text-sm hover:bg-green-50 flex items-center gap-2.5 font-medium transition-colors">
+                                <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg> Ekspor ke Excel
+                            </a>
+                            <a href="{{ route('surat.export.pdf', ['jenis' => 'tabel1', 'tahun' => $tahunFilter, 'bulan' => $bulanFilter]) }}" target="_blank" class="w-full text-left text-gray-700 px-4 py-2.5 text-xs hover:bg-red-50 flex items-center gap-2.5 font-medium transition-colors border-t border-gray-50">
+                                <svg class="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg> Ekspor ke PDF
+                            </a>
+                        </div>
+                    </div>
                 </div>
             </div>
-
-            <div id="tableContainerBulk" class="hide-bulk overflow-x-auto">
+        </div>
+        <div class="overflow-x-auto">
             <table class="w-full text-sm text-left text-gray-600">
                 <thead class="text-xs text-gray-700 uppercase bg-gray-50 border-b border-gray-100">
                     <tr>
                         <th class="px-6 py-3.5 font-semibold">Tahun</th>
                         <th class="px-6 py-3.5 font-semibold">Bulan</th>
-                        <th class="px-6 py-3.5 font-semibold bg-blue-50/50 text-[#0056A3]">Total Surat Masuk</th>
-                        <th class="px-6 py-3.5 font-semibold bg-orange-50/50 text-[#F7941E]">Total Surat Keluar</th>
+                        <th class="px-6 py-3.5 font-semibold bg-blue-50/50 text-[#0056A3]">Surat Masuk</th>
+                        <th class="px-6 py-3.5 font-semibold bg-orange-50/50 text-[#F7941E]">Surat Keluar</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100">
@@ -129,91 +147,79 @@
                     </tfoot>
                 @endif
             </table>
-            </div>
-        </form>
-    </x-card>
-
-    <!-- ================= Req 4: ACTION BAR DIPINDAH KE ATAS TABEL 2 ================= -->
-    <div class="flex justify-end items-center mb-5">
-        <div class="flex flex-row items-center gap-3">
-            
-            <!-- Opsi Lanjutan -->
-            <div class="relative inline-block text-left">
-                <button type="button" onclick="toggleDropdown('dropdownOpsiSurat')" class="inline-flex justify-center items-center gap-2 rounded-xl border border-gray-300 shadow-sm px-4 py-2.5 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none transition-colors">
-                    <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
-                    Opsi Lanjutan
-                    <svg class="w-3.5 h-3.5 ml-1 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-                </button>
-
-                <!-- Isi Dropdown (Req 7 & 8: Opsi Ekspor 3 Jenis) -->
-                <div id="dropdownOpsiSurat" class="hidden absolute right-0 z-[50] mt-2 w-64 origin-top-right rounded-xl bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none overflow-visible transition-all">
-                    
-                    <div class="px-4 py-2 bg-gray-50 border-b border-gray-100">
-                        <p class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Ekspor ke Excel</p>
-                    </div>
-                    <div class="py-1" role="none">
-                        <a href="{{ route('surat.export.excel', ['jenis' => 'tabel1', 'tahun' => $tahunFilter, 'bulan' => $bulanFilter]) }}" class="w-full text-left text-gray-700 px-4 py-2.5 text-xs hover:bg-green-50 flex items-center gap-2.5 font-medium transition-colors">
-                            <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg> Ekspor Tabel 1 Saja (Rekap)
-                        </a>
-                        <a href="{{ route('surat.export.excel', ['jenis' => 'tabel2', 'tahun' => $tahunFilter, 'bulan' => $bulanFilter]) }}" class="w-full text-left text-gray-700 px-4 py-2.5 text-xs hover:bg-green-50 flex items-center gap-2.5 font-medium transition-colors border-t border-gray-50">
-                            <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg> Ekspor Tabel 2 Saja (Detail)
-                        </a>
-                        <a href="{{ route('surat.export.excel', ['jenis' => 'keduanya', 'tahun' => $tahunFilter, 'bulan' => $bulanFilter]) }}" class="w-full text-left text-gray-700 px-4 py-2.5 text-xs hover:bg-green-50 flex items-center gap-2.5 font-medium transition-colors border-t border-gray-50">
-                            <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg> Ekspor Tabel 1 & 2 (Semua)
-                        </a>
-                    </div>
-
-                    <div class="px-4 py-2 bg-gray-50 border-y border-gray-100 mt-1">
-                        <p class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Ekspor ke PDF</p>
-                    </div>
-                    <div class="py-1" role="none">
-                        <a href="{{ route('surat.export.pdf', ['jenis' => 'tabel1', 'tahun' => $tahunFilter, 'bulan' => $bulanFilter]) }}" target="_blank" class="w-full text-left text-gray-700 px-4 py-2.5 text-xs hover:bg-red-50 flex items-center gap-2.5 font-medium transition-colors">
-                            <svg class="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg> Ekspor Tabel 1 Saja (Rekap)
-                        </a>
-                        <a href="{{ route('surat.export.pdf', ['jenis' => 'tabel2', 'tahun' => $tahunFilter, 'bulan' => $bulanFilter]) }}" target="_blank" class="w-full text-left text-gray-700 px-4 py-2.5 text-xs hover:bg-red-50 flex items-center gap-2.5 font-medium transition-colors border-t border-gray-50">
-                            <svg class="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg> Ekspor Tabel 2 Saja (Detail)
-                        </a>
-                        <a href="{{ route('surat.export.pdf', ['jenis' => 'keduanya', 'tahun' => $tahunFilter, 'bulan' => $bulanFilter]) }}" target="_blank" class="w-full text-left text-gray-700 px-4 py-2.5 text-xs hover:bg-red-50 flex items-center gap-2.5 font-medium transition-colors border-t border-gray-50">
-                            <svg class="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg> Ekspor Tabel 1 & 2 (Semua)
-                        </a>
-                    </div>
-                    
-                    <div class="px-4 py-2 bg-gray-50 border-y border-gray-100 mt-1">
-                        <p class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Impor & Konfigurasi</p>
-                    </div>
-                    <div class="py-1" role="none">
-                        <button type="button" onclick="openModal('modalImportExcel'); toggleDropdown('dropdownOpsiSurat')" class="w-full text-left text-gray-700 px-4 py-2.5 text-xs hover:bg-gray-50 flex items-center gap-2.5 font-medium transition-colors">
-                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg> Impor Data dari Excel
-                        </button>
-                        @if(auth()->check() && auth()->user()->isAdmin())
-<button type="button" onclick="openModal('modalAturKolom'); toggleDropdown('dropdownOpsiSurat')" class="text-gray-700 w-full text-left px-4 py-2.5 text-xs hover:bg-gray-50 flex items-center gap-2.5 font-medium transition-colors border-t border-gray-50">
-                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg> Atur Kolom Tambahan
-                        </button>
-@endif
-                    </div>
-                </div>
-            </div>
-
-            <!-- Tambah Data Utama -->
-            <div>
-                                <button type="button" id="btnModeBulk" onclick="toggleBulkMode()" class="inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium bg-red-50 text-red-600 border border-red-200 rounded-xl hover:bg-red-100 transition-colors shadow-sm outline-none focus:ring-2 focus:ring-red-300 mr-2">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                    Mode Hapus Massal
-                </button>
-                <button type="button" onclick="openModalTambah()" class="inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-pkt-jingga hover:bg-orange-600 rounded-xl shadow-sm transition-colors border-none outline-none focus:ring-2 focus:ring-orange-300">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-                    Catat Surat Satuan
-                </button>
-            </div>
-            
         </div>
-    </div>
+        <div class="p-4 border-t border-gray-100">
+            {{ $rekapData->links('pagination::tailwind') }}
+        </div>
+    </x-card>
 
     <!-- TABEL 2 (DETAIL DATA SATUAN) -->
     <x-card class="!rounded-xl overflow-visible !p-0 shadow-sm border border-gray-100 bg-white">
+        <form id="bulkDeleteForm" action="{{ route('surat.destroyBulk') }}" method="POST">
+            @csrf
+            @method('DELETE')
+            
+            <div id="btnGroupBulk" class="hidden flex justify-between items-center px-4 py-2 bg-red-50 border-b border-red-100">
+                <span class="text-xs text-red-600 font-semibold">Data terpilih untuk dihapus</span>
+                <div class="flex gap-2">
+                    <button type="button" onclick="cancelAll()" class="px-3 py-1.5 bg-white border border-gray-300 text-gray-700 rounded-lg text-xs font-medium hover:bg-gray-50">Batal</button>
+                    <button type="submit" class="px-3 py-1.5 bg-red-600 text-white rounded-lg text-xs font-medium hover:bg-red-700">Hapus Terpilih</button>
+                </div>
+            </div>
+
         <div class="p-5 border-b border-gray-100 bg-white">
-            <h3 class="font-bold text-gray-900 text-lg">Tabel 2: Arsip Detail Surat Satuan</h3>
-            <p class="text-xs text-gray-400">Pencatatan satuan setiap berkas surat masuk dan keluar</p>
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div>
+                    <h3 class="font-bold text-gray-900 text-lg">Arsip Detail Surat Satuan</h3>
+                    <p class="text-xs text-gray-400">Pencatatan satuan setiap berkas surat masuk dan keluar</p>
+                </div>
+                
+                <div class="flex flex-row items-center gap-2">
+                    <button type="button" id="btnModeBulk" onclick="toggleBulkMode()" class="inline-flex items-center justify-center gap-2 px-3 py-2 text-xs font-medium bg-red-50 text-red-600 border border-red-200 rounded-lg hover:bg-red-100 transition-colors shadow-sm outline-none focus:ring-2 focus:ring-red-300">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                        Hapus semua
+                    </button>
+                    
+                    <div class="relative inline-block text-left">
+                        <button type="button" onclick="toggleDropdown('dropdownOpsiSurat2')" class="inline-flex items-center justify-center gap-2 px-3 py-2 text-xs font-medium bg-white text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors shadow-sm outline-none focus:ring-2 focus:ring-gray-200">
+                            <svg class="w-3.5 h-3.5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
+                            Opsi Lanjutan
+                            <svg class="w-3 h-3 ml-1 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                        </button>
+                        <div id="dropdownOpsiSurat2" class="hidden absolute right-0 z-[50] mt-2 w-56 origin-top-right rounded-xl bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none overflow-visible transition-all">
+                            <div class="px-3 py-2 bg-gray-50 border-b border-gray-100">
+                                <p class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Ekspor Tabel Rincian</p>
+                            </div>
+                            <div class="py-1" role="none">
+                                <a href="{{ route('surat.export.excel', ['jenis' => 'tabel2', 'tahun' => $tahunFilter, 'bulan' => $bulanFilter]) }}" class="w-full text-left text-gray-700 px-3 py-2 text-xs hover:bg-green-50 flex items-center gap-2 font-medium transition-colors">
+                                    <svg class="w-3.5 h-3.5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg> Ekspor ke Excel
+                                </a>
+                                <a href="{{ route('surat.export.pdf', ['jenis' => 'tabel2', 'tahun' => $tahunFilter, 'bulan' => $bulanFilter]) }}" target="_blank" class="w-full text-left text-gray-700 px-3 py-2 text-xs hover:bg-red-50 flex items-center gap-2 font-medium transition-colors border-t border-gray-50">
+                                    <svg class="w-3.5 h-3.5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg> Ekspor ke PDF
+                                </a>
+                            </div>
+                            <div class="px-3 py-2 bg-gray-50 border-y border-gray-100 mt-1">
+                                <p class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Impor & Konfigurasi</p>
+                            </div>
+                            <div class="py-1" role="none">
+                                <button type="button" onclick="openModal('modalImportDetail'); toggleDropdown('dropdownOpsiSurat2')" class="w-full text-left text-gray-700 px-4 py-2.5 text-sm hover:bg-green-50 flex items-center gap-2.5 font-medium transition-colors">
+                                    <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg> Import Data Excel
+                                </button>
+                                @if(auth()->check() && auth()->user()->isAdmin())
+                                <button type="button" onclick="openModal('modalAturKolom'); toggleDropdown('dropdownOpsiSurat2')" class="text-gray-700 w-full text-left px-3 py-2 text-xs hover:bg-gray-50 flex items-center gap-2 font-medium transition-colors border-t border-gray-50">
+                                    <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg> Atur Kolom
+                                </button>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <button type="button" onclick="openModalTambah()" class="inline-flex items-center justify-center gap-2 px-3 py-2 text-xs font-medium text-white bg-pkt-jingga hover:bg-orange-600 rounded-lg shadow-sm transition-colors border-none outline-none focus:ring-2 focus:ring-orange-300">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                        Catat Surat Satuan
+                    </button>
+                </div>
+            </div>
         </div>
 
         @php
@@ -223,7 +229,7 @@
             $headers[] = 'Aksi';
         @endphp
 
-        <div class="overflow-x-auto">
+        <div id="tableContainerBulk" class="hide-bulk overflow-x-auto">
             <table class="w-full text-sm text-left text-gray-600">
                 <thead class="text-xs text-gray-700 uppercase bg-gray-50 border-b border-gray-100">
                     <tr>
@@ -292,6 +298,10 @@
                 </tbody>
             </table>
         </div>
+        <div class="p-4 border-t border-gray-100">
+            {{ $tableDetail->links('pagination::tailwind') }}
+        </div>
+    </form>
     </x-card>
 
     <x-delete-modal id="modalHapusSurat" title="Hapus Arsip Surat" message="Apakah Anda yakin ingin menghapus arsip surat satuan ini? Data rekap bulanan akan disesuaikan otomatis." />
@@ -317,14 +327,7 @@
         <form action="{{ route('kolom-dinamis.store') }}" method="POST" class="border-t pt-5 space-y-4 novalidate-form" novalidate>
             @csrf
         <!-- Download Template injected -->
-        <div class="bg-blue-50 border border-blue-200 text-blue-800 text-xs p-3 rounded-lg flex items-start gap-2 mb-4">
-            <svg class="w-5 h-5 flex-shrink-0 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-            <div>
-                <p class="font-medium mb-1">Tips Import Data:</p>
-                <p>Unduh template, isi, lalu unggah kembali.</p>
-                <a href="{{ route('template.download', 'surat') }}" class="inline-block mt-2 font-bold text-blue-700 hover:text-blue-900 underline">Unduh Template Excel</a>
-            </div>
-        </div>
+        
  <input type="hidden" name="modul" value="surat">
             <h4 class="text-sm font-bold text-gray-800 mb-2">Buat Kolom Baru:</h4>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -354,14 +357,7 @@
         <form action="{{ route('surat.store') }}" method="POST" id="formTambah" class="space-y-4 novalidate-form" novalidate>
             @csrf
         <!-- Download Template injected -->
-        <div class="bg-blue-50 border border-blue-200 text-blue-800 text-xs p-3 rounded-lg flex items-start gap-2 mb-4">
-            <svg class="w-5 h-5 flex-shrink-0 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-            <div>
-                <p class="font-medium mb-1">Tips Import Data:</p>
-                <p>Unduh template, isi, lalu unggah kembali.</p>
-                <a href="{{ route('template.download', 'surat') }}" class="inline-block mt-2 font-bold text-blue-700 hover:text-blue-900 underline">Unduh Template Excel</a>
-            </div>
-        </div>
+        
 
             
             <div>
@@ -450,14 +446,7 @@
         <form action="" method="POST" id="formEditDataSatuan" class="space-y-4 novalidate-form" novalidate>
             @csrf
         <!-- Download Template injected -->
-        <div class="bg-blue-50 border border-blue-200 text-blue-800 text-xs p-3 rounded-lg flex items-start gap-2 mb-4">
-            <svg class="w-5 h-5 flex-shrink-0 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-            <div>
-                <p class="font-medium mb-1">Tips Import Data:</p>
-                <p>Unduh template, isi, lalu unggah kembali.</p>
-                <a href="{{ route('template.download', 'surat') }}" class="inline-block mt-2 font-bold text-blue-700 hover:text-blue-900 underline">Unduh Template Excel</a>
-            </div>
-        </div>
+        
 
             @method('PUT')
             
@@ -541,42 +530,68 @@
     </x-modal>
 
     <!-- Modal Impor Excel -->
-    <x-modal id="modalImportExcel" title="Impor Data Surat via Excel" description="Unduh template Excel yang disediakan, isi data satuan, lalu unggah kembali di sini. Sistem akan melewati data duplikat secara otomatis.">
+    <x-modal id="modalImportDetail" title="Impor Data Surat via Excel" description="Unduh template Excel yang disediakan, isi data satuan, lalu unggah kembali di sini. Sistem akan melewati data duplikat secara otomatis.">
         <form action="{{ route('surat.import.excel') }}" method="POST" enctype="multipart/form-data" class="space-y-4">
             @csrf
-        <!-- Download Template injected -->
-        <div class="bg-blue-50 border border-blue-200 text-blue-800 text-xs p-3 rounded-lg flex items-start gap-2 mb-4">
-            <svg class="w-5 h-5 flex-shrink-0 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-            <div>
-                <p class="font-medium mb-1">Tips Import Data:</p>
-                <p>Unduh template, isi, lalu unggah kembali.</p>
-                <a href="{{ route('template.download', 'surat') }}" class="inline-block mt-2 font-bold text-blue-700 hover:text-blue-900 underline">Unduh Template Excel</a>
-            </div>
-        </div>
-
             
             <div class="bg-gray-50 p-4 rounded-xl border border-gray-100 text-xs text-gray-600 flex flex-col gap-3 shadow-inner mb-4">
                 <div class="flex items-center gap-2 text-green-700 font-bold">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                    Instruksi Impor
+                    Instruksi Impor Rincian
                 </div>
                 <ul class="list-disc list-inside pl-1 space-y-1">
                     <li>Gunakan format tanggal di Excel: <span class="font-mono bg-white px-1.5 py-0.5 rounded border border-gray-200">YYYY-MM-DD</span>.</li>
                     <li>Kolom 'Status': <span class="font-bold">Terkirim</span> / <span class="font-bold">Dibatalkan</span>.</li>
                     <li>Kolom 'Jenis Surat': <span class="font-bold">Surat Masuk</span> / <span class="font-bold">Surat Keluar</span>.</li>
                 </ul>
+                <div class="mt-2">
+                    <a href="{{ route('template.download', 'surat') }}" class="inline-block font-bold text-blue-700 hover:text-blue-900 underline">Unduh Template Excel Detail</a>
+                </div>
             </div>
 
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1.5">Pilih File Excel (.xlsx / .xls) <span class="text-red-500">*</span></label>
-                <input type="file" name="file_excel" accept=".xlsx, .xls" required class="w-full text-xs text-gray-500 file:mr-3 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100 cursor-pointer">
+                <input type="file" name="file_excel" accept=".xlsx, .xls" required class="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500">
             </div>
             
             <div class="flex justify-end gap-3 mt-5 pt-4 border-t border-gray-100">
-                <x-button variant="outline" type="button" onclick="closeModal('modalImportExcel')">Batal</x-button>
+                <x-button variant="outline" type="button" onclick="closeModal('modalImportDetail')">Batal</x-button>
                 <x-button variant="primary" type="submit" class="!bg-green-600 hover:!bg-green-700 border-none !px-6 flex items-center gap-2">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
                     Unggah & Proses
+                </x-button>
+            </div>
+        </form>
+    </x-modal>
+
+    <x-modal id="modalImportRekap" title="Impor Data Rekapitulasi via Excel" description="Impor data histori akumulasi bulanan langsung tanpa rincian surat satuan.">
+        <form action="{{ route('surat.import.rekap.excel') }}" method="POST" enctype="multipart/form-data" class="space-y-4">
+            @csrf
+            
+            <div class="bg-gray-50 p-4 rounded-xl border border-gray-100 text-xs text-gray-600 flex flex-col gap-3 shadow-inner mb-4">
+                <div class="flex items-center gap-2 text-green-700 font-bold">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    Instruksi Impor Rekapitulasi
+                </div>
+                <ul class="list-disc list-inside pl-1 space-y-1">
+                    <li>Kolom terdiri dari: Tahun, Bulan, Surat Masuk, Surat Keluar.</li>
+                    <li>Jika ada data lama di bulan/tahun yang sama, akan tertimpa otomatis.</li>
+                </ul>
+                <div class="mt-2">
+                    <a href="{{ route('surat.export.excel', ['jenis' => 'tabel1', 'tahun' => date('Y'), 'bulan' => 'semua']) }}" class="inline-block font-bold text-blue-700 hover:text-blue-900 underline">Unduh Contoh Template Rekap</a>
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1.5">Pilih File Excel (.xlsx / .xls) <span class="text-red-500">*</span></label>
+                <input type="file" name="file_excel" accept=".xlsx, .xls" required class="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500">
+            </div>
+            
+            <div class="flex justify-end gap-3 mt-5 pt-4 border-t border-gray-100">
+                <x-button variant="outline" type="button" onclick="closeModal('modalImportRekap')">Batal</x-button>
+                <x-button variant="primary" type="submit" class="!bg-green-600 hover:!bg-green-700 border-none !px-6 flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                    Unggah Rekap
                 </x-button>
             </div>
         </form>
@@ -625,7 +640,6 @@
             toggleDeleteBtn();
         }
 
-<script>
     function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
     function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
 

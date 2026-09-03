@@ -7,6 +7,8 @@ use Illuminate\Pagination\LengthAwarePaginator;
 use App\Models\PaTeknikMaster;
 use App\Models\PaTeknikData;
 use Carbon\Carbon;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\PaTeknikExport;
 
 class PaTeknikController extends Controller
 {
@@ -147,8 +149,23 @@ class PaTeknikController extends Controller
         return back()->with('success', "Data periode {$request->bulan} {$request->tahun} berhasil diperbarui.");
     }
 
-        public function destroyBulk(\Illuminate\Http\Request $request)
+    public function destroyBulk(\Illuminate\Http\Request $request)
     {
+        if ($request->input('delete_all') == '1') {
+            $tahun = $request->input('filter_tahun', 'semua');
+            $bulan = $request->input('filter_bulan', 'semua');
+            $kelompok = $request->input('kelompok_tabel', 1);
+            
+            $masterIds = \App\Models\PaTeknikMaster::where('kelompok_tabel', $kelompok)->pluck('id');
+            
+            $query = \App\Models\PaTeknikData::whereIn('master_id', $masterIds);
+            if ($tahun !== 'semua') $query->where('tahun', $tahun);
+            if ($bulan !== 'semua') $query->where('bulan', $bulan);
+            
+            $count = $query->delete();
+            return back()->with('success', "Seluruh data Tabel $kelompok berhasil dihapus secara massal.");
+        }
+
         $request->validate([
             'ids' => 'required|array',
         ]);
@@ -160,7 +177,9 @@ class PaTeknikController extends Controller
                 $kelompok = $parts[0];
                 $tahun = $parts[1];
                 $bulan = $parts[2];
-                \App\Models\PaTeknikData::where('kelompok_tabel', $kelompok)
+                
+                $masterIds = \App\Models\PaTeknikMaster::where('kelompok_tabel', $kelompok)->pluck('id');
+                \App\Models\PaTeknikData::whereIn('master_id', $masterIds)
                     ->where('tahun', $tahun)
                     ->where('bulan', $bulan)
                     ->delete();
@@ -168,7 +187,23 @@ class PaTeknikController extends Controller
             }
         }
 
-        return redirect()->back()->with('success', $count . ' Data berhasil dihapus secara massal.');
+        return redirect()->back()->with('success', $count . ' Data terpilih berhasil dihapus secara massal.');
+    }
+
+    public function importExcel(Request $request)
+    {
+        set_time_limit(0);
+        $request->validate([
+            'file' => 'required|mimes:xlsx,xls,csv',
+        ]);
+
+        try {
+            $kelompok = $request->input('kelompok', 'tabel1');
+            Excel::import(new \App\Imports\PaTeknikImport($kelompok), $request->file('file'));
+            return response()->json(['success' => true, 'message' => 'Data PA Teknik berhasil diimport.']);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Gagal import: ' . $e->getMessage()], 500);
+        }
     }
 
     public function destroyBulan(Request $request)
@@ -176,5 +211,50 @@ class PaTeknikController extends Controller
         $masterIds = PaTeknikMaster::where('kelompok_tabel', $request->kelompok_tabel)->pluck('id');
         PaTeknikData::where('tahun', $request->tahun)->where('bulan', $request->bulan)->whereIn('master_id', $masterIds)->delete();
         return back()->with('success', 'Seluruh data pada tabel terpilih di bulan tersebut dihapus.');
+    }
+
+    public function exportExcel(Request $request)
+    {
+        $tahun = $request->query('tahun', 'semua');
+        $bulan = $request->query('bulan', 'semua');
+        $export = new PaTeknikExport($tahun, $bulan);
+        $filename = 'Data_PA_Teknik_' . $tahun . '_' . $bulan . '.xlsx';
+        return Excel::download($export, $filename);
+    }
+
+    public function exportPdf(Request $request)
+    {
+        $filterTahun = $request->query('tahun', 'semua');
+        $filterBulan = $request->query('bulan', 'semua');
+
+        $masterTabel1 = PaTeknikMaster::where('kelompok_tabel', 1)->orderBy('id')->get();
+        $masterTabel2 = PaTeknikMaster::where('kelompok_tabel', 2)->orderBy('id')->get();
+
+        $buildRows = function ($masters, $filterTahun, $filterBulan) {
+            $masterIds = $masters->pluck('id');
+            $query = PaTeknikData::whereIn('master_id', $masterIds)->with('masterTeknik');
+            if ($filterTahun !== 'semua') $query->where('tahun', $filterTahun);
+            if ($filterBulan !== 'semua') $query->where('bulan', $filterBulan);
+            $rawData = $query->get();
+
+            $grouped = [];
+            foreach ($rawData as $item) {
+                $key = $item->tahun . '|' . $item->bulan;
+                if (!isset($grouped[$key])) {
+                    $grouped[$key] = ['tahun' => $item->tahun, 'bulan' => $item->bulan, 'items' => []];
+                }
+                $grouped[$key]['items'][$item->master_id] = $item->jumlah;
+            }
+            return array_values($grouped);
+        };
+
+        $rowsTabel1 = $buildRows($masterTabel1, $filterTahun, $filterBulan);
+        $rowsTabel2 = $buildRows($masterTabel2, $filterTahun, $filterBulan);
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('exports.pa-teknik-pdf', compact(
+            'filterTahun', 'filterBulan', 'masterTabel1', 'masterTabel2', 'rowsTabel1', 'rowsTabel2'
+        ))->setPaper('a4', 'landscape');
+
+        return $pdf->download('Laporan_PA_Teknik_' . $filterTahun . '_' . $filterBulan . '.pdf');
     }
 }

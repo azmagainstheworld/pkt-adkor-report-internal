@@ -15,7 +15,9 @@ use Maatwebsite\Excel\Concerns\WithHeadingRow;
 use Maatwebsite\Excel\Concerns\WithChunkReading;
 use Maatwebsite\Excel\Concerns\SkipsEmptyRows;
 use Maatwebsite\Excel\Concerns\WithBatchInserts;
-
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Log;
 
 class PemeliharaanRutinImport implements ToCollection, WithHeadingRow, WithChunkReading, WithEvents, WithBatchInserts, SkipsEmptyRows
 {
@@ -36,28 +38,51 @@ class PemeliharaanRutinImport implements ToCollection, WithHeadingRow, WithChunk
         }
     }
 
-
     public function collection(Collection $rows)
     {
+        Log::info("PemeliharaanRutinImport started parsing collection with " . count($rows) . " rows.");
         $masters = PemeliharaanRutinMaster::all();
+        $kolomDinamis = DB::table('dynamic_columns')->where('modul', 'pemeliharaan_rutin')->get();
+        $uuid = request('import_uuid');
         
-        foreach ($rows as $row) {
-            if (!isset($row['tahun']) || !isset($row['bulan'])) continue;
+        foreach ($rows as $index => $row) {
+            if ($index === 0) {
+                Log::info("PemeliharaanRutinImport first row keys: " . json_encode(array_keys($row->toArray())));
+            }
+            if (!isset($row['tahun']) || !isset($row['bulan'])) {
+                Log::info("Row skipped due to missing tahun or bulan", $row->toArray());
+                continue;
+            }
 
             $tahun = $row['tahun'];
             $bulan = ucfirst(trim($row['bulan']));
+            
+            if ($uuid) {
+                Cache::increment('import_current_' . $uuid, 1);
+            }
+
+            // Extract dynamic columns
+            $dataTambahan = [];
+            foreach($kolomDinamis as $kolom) {
+                // Laravel Excel default header row formatting is snake_case (slug with underscore)
+                $kolKey = Str::slug($kolom->nama_kolom, '_');
+                if (isset($row[$kolKey])) {
+                    $dataTambahan[$kolom->nama_kolom] = $row[$kolKey];
+                }
+            }
+            $dataTambahan = $this->mapDynamicDropdowns($kolomDinamis, $dataTambahan);
 
             foreach($masters as $master) {
-                // Membaca nama kegiatan dan menyamakannya dengan format header excel bawaan Laravel (snake_case)
-                $key = strtolower(str_replace([' ', '/', '-'], '_', $master->nama_kegiatan));
+                $key = Str::slug($master->nama_pemeliharaan, '_');
                 
                 if (isset($row[$key])) {
                     PemeliharaanRutinData::updateOrCreate(
                         ['tahun' => $tahun, 'bulan' => $bulan, 'rutin_id' => $master->id],
-                        ['jumlah' => (int) $row[$key]]
+                        ['jumlah' => (int) $row[$key], 'data_tambahan' => empty($dataTambahan) ? null : $dataTambahan]
                     );
-
-    }
+                } else {
+                    if ($index === 0) Log::info("Missing key for master: " . $key);
+                }
             }
         }
     }
@@ -65,10 +90,6 @@ class PemeliharaanRutinImport implements ToCollection, WithHeadingRow, WithChunk
     public function batchSize(): int
     {
         return 500;
-            $uuid = request('import_uuid');
-        if ($uuid) {
-            Cache::increment('import_current_' . $uuid, count($rows));
-        }
     }
 
     public function chunkSize(): int

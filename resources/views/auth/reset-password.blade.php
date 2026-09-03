@@ -4,20 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Atur Kata Sandi Baru</title>
-    <!-- Tailwind CDN dengan Konfigurasi Warna Kustom PKT -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        'pkt-biru': '#0056A3',
-                        'pkt-jingga': '#F7941E',
-                    }
-                }
-            }
-        }
-    </script>
+    <!-- Menggunakan Vite untuk Asset -->
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body class="min-h-screen flex items-center justify-center bg-gray-50 antialiased font-['Inter']">
