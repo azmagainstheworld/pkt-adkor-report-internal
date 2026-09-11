@@ -23,9 +23,22 @@ class SuratController extends Controller
     // ==========================================
         private function getMergedRekapData($tahunFilter, $bulanFilter)
     {
+        $mapBulanNumRekap = [
+            'Januari' => 1, 'Februari' => 2, 'Maret' => 3, 'April' => 4,
+            'Mei' => 5, 'Juni' => 6, 'Juli' => 7, 'Agustus' => 8,
+            'September' => 9, 'Oktober' => 10, 'November' => 11, 'Desember' => 12
+        ];
+        $bulanNumRekap = $mapBulanNumRekap[$bulanFilter] ?? null;
+        $matchBulanRekap = function($q) use ($bulanFilter, $bulanNumRekap) {
+            $q->whereRaw('LOWER(TRIM(bulan)) = ?', [strtolower(trim($bulanFilter))]);
+            if ($bulanNumRekap) {
+                $q->orWhereRaw('CAST(bulan AS UNSIGNED) = ?', [$bulanNumRekap]);
+            }
+        };
+
         $rekapManualQuery = \App\Models\SuratRekap::query();
         if ($tahunFilter != 'semua') $rekapManualQuery->where('tahun', $tahunFilter);
-        if ($bulanFilter != 'semua') $rekapManualQuery->where('bulan', $bulanFilter);
+        if ($bulanFilter != 'semua') $rekapManualQuery->where($matchBulanRekap);
         $rekapManualData = $rekapManualQuery->get();
 
         $rekapDetailQuery = \App\Models\Surat::selectRaw("
@@ -34,7 +47,7 @@ class SuratController extends Controller
                 SUM(CASE WHEN jenis_surat = 'Surat Keluar' AND status = 'Terkirim' THEN 1 ELSE 0 END) as total_keluar
             ");
         if ($tahunFilter != 'semua') $rekapDetailQuery->where('tahun', $tahunFilter);
-        if ($bulanFilter != 'semua') $rekapDetailQuery->where('bulan', $bulanFilter);
+        if ($bulanFilter != 'semua') $rekapDetailQuery->where($matchBulanRekap);
         $rekapDetailData = $rekapDetailQuery->groupBy('tahun', 'bulan')->get();
 
         // Merge logic
@@ -381,5 +394,43 @@ class SuratController extends Controller
         abort_if(!auth()->user()->isAdmin(), 403, 'Akses ditolak.');
         DB::table('dynamic_columns')->where('id', $id)->delete();
         return back()->with('success', 'Kolom dinamis berhasil dihapus.');
+    }
+
+    /**
+     * Mengambil data Surat untuk laporan PDF bulanan.
+     * Single source of truth: menggunakan logika getMergedRekapData dan detailQuery yang sama dengan dashboard.
+     */
+    public static function getReportData($tahun, $bulan)
+    {
+        $controller = new self();
+        $rekapData = $controller->getMergedRekapData($tahun, $bulan);
+
+        $mapBulanNum = [
+            'Januari' => 1, 'Februari' => 2, 'Maret' => 3, 'April' => 4,
+            'Mei' => 5, 'Juni' => 6, 'Juli' => 7, 'Agustus' => 8,
+            'September' => 9, 'Oktober' => 10, 'November' => 11, 'Desember' => 12
+        ];
+        $bulanNum = $mapBulanNum[$bulan] ?? null;
+
+        $detailData = Surat::where('tahun', $tahun)
+            ->where(function($q) use ($bulan, $bulanNum) {
+                $q->whereRaw('LOWER(TRIM(bulan)) = ?', [strtolower(trim($bulan))]);
+                if ($bulanNum) {
+                    $q->orWhereRaw('CAST(bulan AS UNSIGNED) = ?', [$bulanNum]);
+                }
+            })
+            ->orderBy('tanggal_surat', 'asc')
+            ->get();
+
+        \Log::info('[PDF Section] Surat', [
+            'bulan' => $bulan, 'tahun' => $tahun,
+            'count_rekap' => $rekapData->count(),
+            'count_detail' => $detailData->count()
+        ]);
+
+        return [
+            'rekapData'  => $rekapData,
+            'detailData' => $detailData,
+        ];
     }
 }

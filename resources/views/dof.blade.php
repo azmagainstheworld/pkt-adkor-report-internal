@@ -1,7 +1,8 @@
 @extends('layouts.app')
 
 @section('content')
-<style>th { white-space: nowrap !important; }</style>
+<style>th { white-space: nowrap !important; }
+.hide-bulk .bulk-checkbox-col { display: none !important; }</style>
 
 <main class="flex-1 min-w-0 min-h-0 overflow-y-auto p-8 relative bg-[#F8F9FA]">
     <x-success-modal />
@@ -100,21 +101,45 @@
                         @if(auth()->check() && auth()->user()->isAdmin())
 <button type="button" onclick="openModal('modalAturKolom1'); toggleDropdown('dropdownOpsi1')" class="w-full text-left text-gray-700 px-4 py-2 text-xs hover:bg-gray-50 flex items-center gap-2 font-medium border-t border-gray-50">
                             <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                        <button type="button" onclick="openModal('modalAturKolom1'); toggleDropdown('dropdownOpsi1')" class="w-full text-left text-gray-700 px-4 py-2 text-xs hover:bg-gray-50 flex items-center gap-2 font-medium border-t border-gray-50">
+                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
                             Atur Kolom Tambahan
                         </button>
-@endif
+                        @endif
                     </div>
                 </div>
             </div>
+
+            <button type="button" id="btnModeBulkTabel1" onclick="toggleBulkModeTabel1()" class="inline-flex items-center justify-center gap-2 px-3 py-1.5 text-xs font-medium bg-red-50 text-red-600 border border-red-200 rounded-xl hover:bg-red-100 transition-colors shadow-sm outline-none focus:ring-2 focus:ring-red-300 mr-2">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                Hapus Semua
+            </button>
 
             <x-button variant="primary" onclick="openModalTambah(1)" class="!py-1.5 !px-3 text-xs bg-orange-600 hover:bg-orange-700 border-none">
                 <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
                 Tambah Data
             </x-button>
         </div>
-        <div class="overflow-x-auto w-full max-w-full">
+        <form id="formBulkDeleteTabel1" action="{{ route('dof.destroyBulk') }}" method="POST">@csrf @method('DELETE')
+        <input type="hidden" id="deleteAllTabel1" name="delete_all_pages" value="0">
+        <input type="hidden" name="tipe_tabel" value="1">
+        <input type="hidden" name="tahun" value="{{ request('tahun') }}">
+        <input type="hidden" name="bulan" value="{{ request('bulan') }}">
+        
+        <div id="btnGroupBulkTabel1" class="hidden flex justify-between items-center px-4 py-2 bg-red-50 rounded-t-xl border-b border-red-100 relative z-10">
+            <span class="text-xs text-red-600 font-semibold flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                <span id="selectedCount1">0</span> data terpilih untuk dihapus
+            </span>
+            <div class="flex gap-2">
+                <button type="button" onclick="cancelAllTabel1()" class="px-3 py-1.5 text-xs font-medium text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors shadow-sm">Batal</button>
+                <button type="submit" class="px-3 py-1.5 text-xs font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors shadow-sm flex items-center gap-1.5">Hapus Terpilih</button>
+            </div>
+        </div>
+
+        <div id="tableContainerBulkTabel1" class="hide-bulk overflow-x-auto w-full max-w-full">
             @php
-                $headTabel1 = ['Tahun', 'Bulan'];
+                $headTabel1 = ['<input type="checkbox" id="selectAllBulkTabel1" onclick="toggleSelectAllTabel1()">', 'Tahun', 'Bulan'];
                 foreach($masterTabel1 as $master) { $headTabel1[] = $master->nama_kegiatan; }
                 if(isset($kolomTabel1)) { foreach($kolomTabel1 as $k) { $headTabel1[] = $k->nama_kolom; } }
                 $headTabel1[] = 'Aksi';
@@ -123,6 +148,7 @@
                 @forelse($paginatedTable1 as $row)
                     @php $tambahan = is_string($row['data_tambahan'] ?? '') ? json_decode($row['data_tambahan'], true) : ($row['data_tambahan'] ?? []); @endphp
                     <tr class="hover:bg-gray-50 transition-colors text-xs whitespace-nowrap">
+                        <td class="px-4 py-3 text-center align-middle bulk-checkbox-col"><input type="checkbox" name="ids[]" class="cb-bulk-tabel1" value="1|{{ $row['tahun'] }}|{{ $row['bulan'] }}" onclick="toggleCheckboxTabel1()"></td>
                         <td class="px-4 py-3 text-gray-700 font-medium text-center">{{ $row['tahun'] }}</td>
                         <td class="px-4 py-3 text-gray-900 font-medium text-center">{{ $row['bulan'] }}</td>
                         @foreach($masterTabel1 as $master)
@@ -174,7 +200,11 @@
             <div class="mt-4 px-4 pb-4">
                 {{ $paginatedTable1->links() }}
             </div>
+            <div id="bulkActionContainerTabel1" class="hidden px-4 pb-4">
+                <button type="submit" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-md">Hapus Data Terpilih</button>
+            </div>
         </div>
+        </form>
     </x-card>
 
     <!-- ================= TABEL 2: DIGITAL SIGNATURE ================= -->
@@ -214,23 +244,45 @@
                             Atur Dokumen Master
                         </button>
                         @if(auth()->check() && auth()->user()->isAdmin())
-<button type="button" onclick="openModal('modalAturKolom2'); toggleDropdown('dropdownOpsi2')" class="w-full text-left text-gray-700 px-4 py-2 text-xs hover:bg-gray-50 flex items-center gap-2 font-medium border-t border-gray-50">
+                        <button type="button" onclick="openModal('modalAturKolom2'); toggleDropdown('dropdownOpsi2')" class="w-full text-left text-gray-700 px-4 py-2 text-xs hover:bg-gray-50 flex items-center gap-2 font-medium border-t border-gray-50">
                             <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
                             Atur Kolom Tambahan
                         </button>
-@endif
+                        @endif
                     </div>
                 </div>
             </div>
+
+            <button type="button" id="btnModeBulkTabel2" onclick="toggleBulkModeTabel2()" class="inline-flex items-center justify-center gap-2 px-3 py-1.5 text-xs font-medium bg-red-50 text-red-600 border border-red-200 rounded-xl hover:bg-red-100 transition-colors shadow-sm outline-none focus:ring-2 focus:ring-red-300 mr-2">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                Hapus Semua
+            </button>
 
             <x-button variant="primary" onclick="openModalTambah(2)" class="!py-1.5 !px-3 text-xs bg-orange-600 hover:bg-orange-700 border-none">
                 <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
                 Tambah Data
             </x-button>
         </div>
-        <div class="overflow-x-auto w-full max-w-full">
+        <form id="formBulkDeleteTabel2" action="{{ route('dof.destroyBulk') }}" method="POST">@csrf @method('DELETE')
+        <input type="hidden" id="deleteAllTabel2" name="delete_all_pages" value="0">
+        <input type="hidden" name="tipe_tabel" value="2">
+        <input type="hidden" name="tahun" value="{{ request('tahun') }}">
+        <input type="hidden" name="bulan" value="{{ request('bulan') }}">
+        
+        <div id="btnGroupBulkTabel2" class="hidden flex justify-between items-center px-4 py-2 bg-red-50 rounded-t-xl border-b border-red-100 relative z-10">
+            <span class="text-xs text-red-600 font-semibold flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                <span id="selectedCount2">0</span> data terpilih untuk dihapus
+            </span>
+            <div class="flex gap-2">
+                <button type="button" onclick="cancelAllTabel2()" class="px-3 py-1.5 text-xs font-medium text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors shadow-sm">Batal</button>
+                <button type="submit" class="px-3 py-1.5 text-xs font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors shadow-sm flex items-center gap-1.5">Hapus Terpilih</button>
+            </div>
+        </div>
+
+        <div id="tableContainerBulkTabel2" class="hide-bulk overflow-x-auto w-full max-w-full">
             @php
-                $headTabel2 = ['Tahun', 'Bulan'];
+                $headTabel2 = ['<input type="checkbox" id="selectAllBulkTabel2" onclick="toggleSelectAllTabel2()">', 'Tahun', 'Bulan'];
                 foreach($masterTabel2 as $master) { $headTabel2[] = $master->nama_kegiatan; }
                 if(isset($kolomTabel2)) { foreach($kolomTabel2 as $k) { $headTabel2[] = $k->nama_kolom; } }
                 $headTabel2[] = 'Aksi';
@@ -239,6 +291,7 @@
                 @forelse($paginatedTable2 as $row)
                     @php $tambahan = is_string($row['data_tambahan'] ?? '') ? json_decode($row['data_tambahan'], true) : ($row['data_tambahan'] ?? []); @endphp
                     <tr class="hover:bg-gray-50 transition-colors text-xs whitespace-nowrap">
+                        <td class="px-4 py-3 text-center align-middle bulk-checkbox-col"><input type="checkbox" name="ids[]" class="cb-bulk-tabel2" value="2|{{ $row['tahun'] }}|{{ $row['bulan'] }}" onclick="toggleCheckboxTabel2()"></td>
                         <td class="px-4 py-3 text-gray-700 font-medium text-center">{{ $row['tahun'] }}</td>
                         <td class="px-4 py-3 text-gray-900 font-medium text-center">{{ $row['bulan'] }}</td>
                         @foreach($masterTabel2 as $master)
@@ -290,7 +343,11 @@
             <div class="mt-4 px-4 pb-4">
                 {{ $paginatedTable2->links() }}
             </div>
+            <div id="bulkActionContainerTabel2" class="hidden px-4 pb-4">
+                <button type="submit" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-md">Hapus Data Terpilih</button>
+            </div>
         </div>
+        </form>
     </x-card>
 
     <x-delete-modal id="modalHapus" title="Hapus Data" message="Data di bulan ini akan dihapus secara permanen. Lanjutkan?" />
@@ -832,6 +889,114 @@
             @else openModal('modalAturKolom1'); @endif
         });
     @endif
+</script>
+
+<script>
+    let isBulkModeTabel1 = false;
+    function toggleBulkModeTabel1() {
+        isBulkModeTabel1 = !isBulkModeTabel1;
+        let container = document.getElementById("tableContainerBulkTabel1");
+        let btn = document.getElementById("btnModeBulkTabel1");
+        let btnGroup = document.getElementById("btnGroupBulkTabel1");
+        
+        if (container) {
+            if (isBulkModeTabel1) {
+                container.classList.remove("hide-bulk");
+                if (btnGroup) btnGroup.classList.remove("hidden");
+                if(btn) { btn.classList.replace("bg-red-50", "bg-red-600"); btn.classList.replace("text-red-600", "text-white"); }
+            } else {
+                container.classList.add("hide-bulk");
+                if (btnGroup) btnGroup.classList.add("hidden");
+                cancelAllTabel1();
+                if(btn) { btn.classList.replace("bg-red-600", "bg-red-50"); btn.classList.replace("text-white", "text-red-600"); }
+            }
+        }
+    }
+    function updateSelectedCount1() {
+        const count = document.querySelectorAll('.cb-bulk-tabel1:checked').length;
+        const countEl = document.getElementById('selectedCount1');
+        if (countEl) countEl.textContent = count;
+    }
+    function toggleSelectAllTabel1() {
+        let selectAll = document.getElementById("selectAllBulkTabel1");
+        let checkboxes = document.querySelectorAll(".cb-bulk-tabel1");
+        checkboxes.forEach(cb => cb.checked = selectAll.checked);
+        let deleteAllInput = document.getElementById("deleteAllTabel1");
+        if (deleteAllInput) { deleteAllInput.value = selectAll.checked ? "1" : "0"; }
+        updateSelectedCount1();
+    }
+    function toggleCheckboxTabel1() {
+        let selectAll = document.getElementById("selectAllBulkTabel1");
+        let checkboxes = document.querySelectorAll(".cb-bulk-tabel1");
+        selectAll.checked = Array.from(checkboxes).every(cb => cb.checked);
+        updateSelectedCount1();
+    }
+    function cancelAllTabel1() {
+        let selectAll = document.getElementById("selectAllBulkTabel1");
+        if (selectAll) selectAll.checked = false;
+        document.querySelectorAll(".cb-bulk-tabel1").forEach(cb => cb.checked = false);
+        updateSelectedCount1();
+        isBulkModeTabel1 = false;
+        let container = document.getElementById("tableContainerBulkTabel1");
+        if (container) container.classList.add("hide-bulk");
+        let btnGroup = document.getElementById("btnGroupBulkTabel1");
+        if (btnGroup) btnGroup.classList.add("hidden");
+        let btn = document.getElementById("btnModeBulkTabel1");
+        if(btn) { btn.classList.replace("bg-red-600", "bg-red-50"); btn.classList.replace("text-white", "text-red-600"); }
+    }
+
+    let isBulkModeTabel2 = false;
+    function toggleBulkModeTabel2() {
+        isBulkModeTabel2 = !isBulkModeTabel2;
+        let container = document.getElementById("tableContainerBulkTabel2");
+        let btn = document.getElementById("btnModeBulkTabel2");
+        let btnGroup = document.getElementById("btnGroupBulkTabel2");
+        
+        if (container) {
+            if (isBulkModeTabel2) {
+                container.classList.remove("hide-bulk");
+                if (btnGroup) btnGroup.classList.remove("hidden");
+                if(btn) { btn.classList.replace("bg-red-50", "bg-red-600"); btn.classList.replace("text-red-600", "text-white"); }
+            } else {
+                container.classList.add("hide-bulk");
+                if (btnGroup) btnGroup.classList.add("hidden");
+                cancelAllTabel2();
+                if(btn) { btn.classList.replace("bg-red-600", "bg-red-50"); btn.classList.replace("text-white", "text-red-600"); }
+            }
+        }
+    }
+    function updateSelectedCount2() {
+        const count = document.querySelectorAll('.cb-bulk-tabel2:checked').length;
+        const countEl = document.getElementById('selectedCount2');
+        if (countEl) countEl.textContent = count;
+    }
+    function toggleSelectAllTabel2() {
+        let selectAll = document.getElementById("selectAllBulkTabel2");
+        let checkboxes = document.querySelectorAll(".cb-bulk-tabel2");
+        checkboxes.forEach(cb => cb.checked = selectAll.checked);
+        let deleteAllInput = document.getElementById("deleteAllTabel2");
+        if (deleteAllInput) { deleteAllInput.value = selectAll.checked ? "1" : "0"; }
+        updateSelectedCount2();
+    }
+    function toggleCheckboxTabel2() {
+        let selectAll = document.getElementById("selectAllBulkTabel2");
+        let checkboxes = document.querySelectorAll(".cb-bulk-tabel2");
+        selectAll.checked = Array.from(checkboxes).every(cb => cb.checked);
+        updateSelectedCount2();
+    }
+    function cancelAllTabel2() {
+        let selectAll = document.getElementById("selectAllBulkTabel2");
+        if (selectAll) selectAll.checked = false;
+        document.querySelectorAll(".cb-bulk-tabel2").forEach(cb => cb.checked = false);
+        updateSelectedCount2();
+        isBulkModeTabel2 = false;
+        let container = document.getElementById("tableContainerBulkTabel2");
+        if (container) container.classList.add("hide-bulk");
+        let btnGroup = document.getElementById("btnGroupBulkTabel2");
+        if (btnGroup) btnGroup.classList.add("hidden");
+        let btn = document.getElementById("btnModeBulkTabel2");
+        if(btn) { btn.classList.replace("bg-red-600", "bg-red-50"); btn.classList.replace("text-white", "text-red-600"); }
+    }
 </script>
 @endsection
 

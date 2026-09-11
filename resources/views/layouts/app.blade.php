@@ -5,9 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AdkorReport - PKT</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Import Font Poppins (Bawaan) dan Merriweather (Khusus Judul SIPAKAR) -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Merriweather:wght@700;900&display=swap" rel="stylesheet">
     <!-- SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <style>
+        /* Menambahkan class untuk font Merriweather */
+        .font-merriweather { font-family: 'Merriweather', serif; }
+    </style>
 </head>
 <body class="bg-[#F8F9FA] font-sans antialiased text-gray-800">
 
@@ -18,12 +24,17 @@
             <div>
                 <!-- Logo Area -->
                 <div class="flex items-center gap-3 p-6">
-                    <div class="w-10 h-10 bg-pkt-jingga rounded-xl flex items-center justify-center shadow-lg">
-                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                    <!-- Wrapper Logo (Kotak putih dihapus, background dibuat transparan) -->
+                    <div class="w-12 h-12 flex items-center justify-center flex-shrink-0 drop-shadow-md">
+                        <!-- Mengarah ke logo transparan yang benar -->
+                        <img src="{{ asset('images/logo-sipakar.png') }}" alt="Logo SIPAKAR" class="w-full h-full object-contain">
                     </div>
                     <div>
-                        <h1 class="text-xl font-bold tracking-wide">AdkorReport</h1>
-                        <p class="text-[11px] text-blue-200 tracking-wider">ADKOR - PKT</p>
+                        <!-- Tulisan SIPAKAR dengan Merriweather dan 2 Warna -->
+                        <h1 class="text-2xl font-bold tracking-wide font-merriweather drop-shadow-sm">
+                            <span class="text-[#F7941E]">SI</span><span class="text-white">PAKAR</span>
+                        </h1>
+                        <!-- Tulisan "Adkor - PKT" Dihapus di sini -->
                     </div>
                 </div>
 
@@ -36,8 +47,17 @@
                         Dashboard
                     </a>
                     <a href="{{ route('summary.index') }}" class="flex items-center gap-3 px-3 py-2.5 {{ request()->routeIs('summary.index') ? 'bg-pkt-jingga text-white shadow-md' : 'text-blue-100 hover:bg-white/10' }} rounded-lg font-medium transition-colors text-sm">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+                        <!-- Ikon Pie Chart untuk Summary -->
+                        <svg class="w-5 h-5 {{ request()->routeIs('summary.index') ? 'opacity-100' : 'opacity-70' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"></path>
+                        </svg>
                         Summary
+                    </a>
+
+                    <a href="{{ route('struktur-organisasi.index') }}" class="flex items-center gap-3 px-3 py-2.5 {{ request()->is('struktur-organisasi') ? 'bg-pkt-jingga text-white shadow-md' : 'text-blue-100 hover:bg-white/10' }} rounded-lg font-medium transition-colors text-sm">
+                        <svg class="w-5 h-5 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                        Struktur Organisasi
                     </a>
 
                     <a href="{{ route('program-strategis.index') }}" class="flex items-center gap-3 px-3 py-2.5 {{ request()->is('program-strategis') ? 'bg-pkt-jingga text-white shadow-md' : 'text-blue-100 hover:bg-white/10' }} rounded-lg font-medium transition-colors text-sm">
@@ -188,10 +208,6 @@
                             Log Audit
                         </a>
 
-                        <a href="{{ route('struktur-organisasi.index') }}" class="flex items-center gap-3 px-3 py-2.5 {{ request()->is('struktur-organisasi') ? 'bg-pkt-jingga text-white shadow-md' : 'text-blue-100 hover:bg-white/10' }} rounded-lg font-medium transition-colors text-sm">
-                            <svg class="w-5 h-5 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
-                            Struktur Organisasi
-                        </a>
                     </div>
                 </nav>
             </div>

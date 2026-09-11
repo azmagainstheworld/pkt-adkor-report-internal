@@ -320,4 +320,62 @@ class JasaKurirController extends Controller
     public function downloadTemplate(Request $request) {
         return \Maatwebsite\Excel\Facades\Excel::download(new \App\Exports\JasaKurirExport(true), 'Template_Import_JasaKurir.xlsx');
     }
+
+    /**
+     * Mengambil data Jasa Kurir untuk laporan PDF bulanan.
+     * Single source of truth: identik dengan dashboard (pivot per ekspedisi).
+     */
+    public static function getReportData($tahun, $bulan)
+    {
+        $kurirMaster = \App\Models\JasaKurirMaster::where('aktif', true)->orderBy('id')->get();
+
+        $mapBulanNum = [
+            'Januari' => 1, 'Februari' => 2, 'Maret' => 3, 'April' => 4,
+            'Mei' => 5, 'Juni' => 6, 'Juli' => 7, 'Agustus' => 8,
+            'September' => 9, 'Oktober' => 10, 'November' => 11, 'Desember' => 12
+        ];
+        $bulanNum = $mapBulanNum[$bulan] ?? null;
+
+        $rawData = \App\Models\JasaKurirData::with('jasaKurirMaster')
+            ->where('tahun', $tahun)
+            ->where(function($q) use ($bulan, $bulanNum) {
+                $q->whereRaw('LOWER(TRIM(bulan)) = ?', [strtolower(trim($bulan))]);
+                if ($bulanNum) {
+                    $q->orWhereRaw('CAST(bulan AS UNSIGNED) = ?', [$bulanNum]);
+                }
+            })
+            ->get();
+
+        // Pivot per ekspedisi
+        $tableData = [];
+        foreach ($rawData as $data) {
+            $key = $data->tahun . '-' . $data->bulan;
+            if (!isset($tableData[$key])) {
+                $tableData[$key] = [
+                    'tahun' => $data->tahun,
+                    'bulan' => $data->bulan,
+                    'total_semua' => 0,
+                    'kurir_data'  => [],
+                ];
+                foreach ($kurirMaster as $kurir) {
+                    $tableData[$key]['kurir_' . $kurir->id] = 0;
+                }
+            }
+            $tableData[$key]['kurir_' . $data->jasa_kurir_id] = $data->jumlah;
+            $tableData[$key]['kurir_data'][$data->jasa_kurir_id] = $data->jumlah;
+            $tableData[$key]['total_semua'] += $data->jumlah;
+        }
+
+        \Log::info('[PDF Section] Jasa Kurir', [
+            'bulan' => $bulan, 'tahun' => $tahun,
+            'count_raw' => $rawData->count(),
+            'count_master' => $kurirMaster->count(),
+        ]);
+
+        return [
+            'kurirMaster' => $kurirMaster,
+            'jasaKurirData' => $rawData,
+            'tableData' => $tableData,
+        ];
+    }
 }

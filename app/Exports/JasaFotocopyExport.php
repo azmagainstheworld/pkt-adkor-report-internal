@@ -12,6 +12,7 @@ class JasaFotocopyExport implements FromArray, WithHeadings, ShouldAutoSize, Wit
 {
     public $isTemplate = false;
 
+
     protected $tahun; protected $bulan;
 
     public function __construct($tahun = 'semua', $bulan = 'semua') {
@@ -19,39 +20,41 @@ class JasaFotocopyExport implements FromArray, WithHeadings, ShouldAutoSize, Wit
     }
 
     public function array(): array {
-        $query = JasaFotocopy::query();
-        if ($this->tahun !== 'semua') $query->where('tahun', $this->tahun);
-        if ($this->bulan !== 'semua') $query->where('bulan', $this->bulan);
-        $data = $query->get();
+        $table2Result = \App\Http\Controllers\JasaFotocopyController::getTable2Data($this->tahun, $this->bulan);
+        $dataTable2 = $table2Result['dataTable2'];
 
-        $dataTable1 = [];
-        $groupedByYear = $data->groupBy('tahun');
-        $monthsOrder = ['Januari'=>1,'Februari'=>2,'Maret'=>3,'April'=>4,'Mei'=>5,'Juni'=>6,'Juli'=>7,'Agustus'=>8,'September'=>9,'Oktober'=>10,'November'=>11,'Desember'=>12];
-
-        foreach($groupedByYear as $thn => $yearItems) {
-            $groupedByMonth = $yearItems->groupBy('bulan');
-            foreach($groupedByMonth as $bln => $items) {
-                $dataTable1[] = [
-                    'Tahun' => $thn, 'Bulan' => $bln,
-                    'Mesin FC' => $items->count(),
-                    'Jumlah Pemakaian Jasa Penyediaan Fotocopy' => $items->sum('pemakaian_lembar'),
-                    'Nilai Jasa Penyediaan Fotocopy' => $items->sum(function($item) {
-                        return ($item->pemakaian_lembar * $item->biaya_fee_per_lembar) + $item->biaya_sewa_mesin;
-                    }),
-                ];
-            }
+        $exportData = [];
+        $no = 1;
+        foreach($dataTable2 as $row) {
+            $exportData[] = [
+                'NO' => $no++,
+                'Tahun' => $row['tahun'],
+                'Bulan' => $row['bulan'],
+                'UNIT KERJA' => $row['unit_kerja'],
+                'Cost Centre' => $row['cost_centre'],
+                'Ket.' => $row['keterangan'],
+                'Type Mesin' => $row['tipe_mesin'],
+                'Jlh pemakaian Bln' => $row['pemakaian_bln_ini'],
+                'Jlh pemakaian s.d. Bln' => $row['pemakaian_sd'],
+                'Biaya fee bulan' => $row['fee_bln_ini'],
+                'Biaya fee s.d. bulan' => $row['fee_sd'],
+                'Biaya fee/Lbr' => $row['fee_per_lbr'],
+                'Biaya sewa/bulan' => $row['sewa_bln_ini'],
+                'Biaya Jasa Sewa bln & Fee' => $row['total_bln_ini'],
+                'Total biaya Sewa & Fee s.d. bln' => $row['total_sd'],
+            ];
         }
 
-        usort($dataTable1, function($a, $b) use ($monthsOrder) { 
-            if ($a['Tahun'] == $b['Tahun']) { return $monthsOrder[$a['Bulan']] <=> $monthsOrder[$b['Bulan']]; }
-            return $b['Tahun'] <=> $a['Tahun']; 
-        });
-
-        return $dataTable1;
+        return $exportData;
     }
 
     public function headings(): array { 
-        return ['Tahun', 'Bulan', 'Mesin FC', 'Jumlah Pemakaian Jasa Penyediaan Fotocopy', 'Nilai Jasa Penyediaan Fotocopy']; 
+        return [
+            'NO', 'Tahun', 'Bulan', 'UNIT KERJA', 'Cost Centre', 'Ket.', 'Type Mesin', 
+            'Jlh pemakaian Bln', 'Jlh pemakaian s.d. Bln', 'Biaya fee bulan', 
+            'Biaya fee s.d. bulan', 'Biaya fee/Lbr', 'Biaya sewa/bulan', 
+            'Biaya Jasa Sewa bln & Fee', 'Total biaya Sewa & Fee s.d. bln'
+        ]; 
     }
 
     public function styles(Worksheet $sheet) { 

@@ -248,6 +248,12 @@
                     </tr>
                 @endif
             </x-table>
+
+            @if(method_exists($dataTable2, 'links'))
+                <div class="px-6 py-4 border-t border-gray-100">
+                    {{ $dataTable2->links() }}
+                </div>
+            @endif
         </div>
     </x-card>
 
@@ -399,6 +405,13 @@
             let selectAll = document.getElementById("selectAllBulk");
             let checkboxes = document.querySelectorAll(".cb-bulk");
             checkboxes.forEach(cb => cb.checked = selectAll.checked);
+            
+            if (selectAll.checked) {
+                document.getElementById('deleteAllPages').value = '1';
+            } else {
+                document.getElementById('deleteAllPages').value = '0';
+            }
+            
             toggleDeleteBtn();
         }
         function toggleCheckbox() {

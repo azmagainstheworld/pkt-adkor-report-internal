@@ -232,6 +232,55 @@ class DofController extends Controller
         return back()->with('success', "Data periode {$request->bulan} {$request->tahun} berhasil diperbarui.");
     }
 
+
+    /**
+     * Mengambil data DOF untuk laporan PDF bulanan.
+     */
+    public static function getReportData($tahun, $bulan)
+    {
+        $mapBulanNum = [
+            'Januari' => 1, 'Februari' => 2, 'Maret' => 3, 'April' => 4,
+            'Mei' => 5, 'Juni' => 6, 'Juli' => 7, 'Agustus' => 8,
+            'September' => 9, 'Oktober' => 10, 'November' => 11, 'Desember' => 12
+        ];
+        $bulanNum = $mapBulanNum[$bulan] ?? null;
+        $matchBulan = function($q) use ($bulan, $bulanNum) {
+            $q->whereRaw('LOWER(TRIM(bulan)) = ?', [strtolower(trim($bulan))]);
+            if ($bulanNum) {
+                $q->orWhereRaw('CAST(bulan AS UNSIGNED) = ?', [$bulanNum]);
+            }
+        };
+
+        // Master kolom PERSIS seperti di menu: Tabel 1 & Tabel 2 terpisah
+        $masterTabel1 = \App\Models\DofMaster::where('kelompok_tabel', 1)->orderBy('id', 'asc')->get();
+        $masterTabel2 = \App\Models\DofMaster::where('kelompok_tabel', 2)->orderBy('id', 'asc')->get();
+
+        $rawData = \App\Models\DofData::where('tahun', $tahun)
+            ->where($matchBulan)
+            ->get()
+            ->keyBy('master_id');
+
+        $buildKolom = function ($masters) use ($rawData) {
+            return $masters->map(function ($m) use ($rawData) {
+                return (object) [
+                    'nama_kegiatan' => $m->nama_kegiatan ?? '-',
+                    'jumlah' => optional($rawData->get($m->id))->jumlah ?? 0,
+                ];
+            });
+        };
+
+        $dof = [
+            'tabel1' => $buildKolom($masterTabel1),
+            'tabel2' => $buildKolom($masterTabel2),
+        ];
+
+        \Log::info('[PDF Section] DOF', [
+            'bulan' => $bulan, 'tahun' => $tahun,
+            'tabel1' => $dof['tabel1']->count(), 'tabel2' => $dof['tabel2']->count()
+        ]);
+
+        return ['dof' => $dof];
+    }
         public function destroyBulk(\Illuminate\Http\Request $request)
     {
         $request->validate([
@@ -358,6 +407,3 @@ class DofController extends Controller
         }
     }
 }
-
-
-

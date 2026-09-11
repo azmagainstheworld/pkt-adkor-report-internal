@@ -68,11 +68,11 @@
                         <div class="py-1" role="menu">
                             
                             @if(auth()->check() && auth()->user()->isAdmin())
-<button type="button" onclick="openModal('modalAturKolom')" class="w-full text-left px-4 py-2.5 text-xs text-gray-700 hover:bg-orange-50 hover:text-orange-700 flex items-center gap-2">
+                            <button type="button" onclick="openModal('modalAturKolom')" class="w-full text-left px-4 py-2.5 text-xs text-gray-700 hover:bg-orange-50 hover:text-orange-700 flex items-center gap-2">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"></path></svg>
                                 Atur Kolom Tambahan
                             </button>
-@endif
+                            @endif
                             
                             <div class="border-t border-gray-100 my-1"></div>
                             
@@ -104,11 +104,11 @@
                     Tambah Sasaran & Program Strategis
                 </x-button>
 
-                                <x-button variant="primary" onclick="openModalTambah()" class="!py-1.5 !px-3 text-xs flex items-center gap-1 shadow-sm rounded-xl border-none font-medium text-white">+ Tambah Rincian Data</x-button>
+                <x-button variant="primary" onclick="openModalTambah()" class="!py-1.5 !px-3 text-xs flex items-center gap-1 shadow-sm rounded-xl border-none font-medium text-white">+ Tambah Rincian Data</x-button>
             </div>
         </div>
 
-                <form id="bulkDeleteForm" action="{{ route('program-strategis.destroyBulk') }}" method="POST" onsubmit="return confirm('Hapus data terpilih?')">
+        <form id="bulkDeleteForm" action="{{ route('program-strategis.destroyBulk') }}" method="POST" onsubmit="return confirm('Hapus data terpilih?')">
             @csrf
             @method('DELETE')
             
@@ -150,6 +150,8 @@
                         
                         <tr class="hover:bg-gray-50 transition-colors text-[13px] border-b border-gray-100">
                             <td class="px-3 py-2 text-center align-middle"><input type="checkbox" name="ids[]" class="cb-bulk" value="{{ $row->id }}" onclick="toggleCheckbox()"></td>
+                            
+                            <!-- INDUK DI-ROWSPAN HANYA PADA INDEX 0 -->
                             @if($index === 0)
                                 <td rowspan="{{ $rowspan }}" class="p-4 text-gray-700 font-bold text-center border-r border-gray-100 align-top">{{ $row->tahun }}</td>
                                 <td rowspan="{{ $rowspan }}" class="p-4 text-gray-700 font-bold text-center border-r border-gray-100 align-top">{{ ($row->bulan && is_numeric($row->bulan)) ? $bulanIndo[(int)$row->bulan] : '-' }}</td>
@@ -157,24 +159,21 @@
                                 <td rowspan="{{ $rowspan }}" class="p-4 text-gray-900 font-medium border-r border-gray-100 w-48 align-top">{{ $row->program_strategis }}</td>
                             @endif
                             
+                            <!-- ANAK / RINCIAN (TIDAK ADA IF, TIDAK ADA ROWSPAN, SEMUANYA MANDIRI) -->
                             <td class="p-4 text-gray-700 border-r border-gray-100 w-56 whitespace-pre-line">{{ $row->deskripsi_kegiatan }}</td>
                             
-                            @if($index === 0)
-                                <td rowspan="{{ $rowspan }}" class="p-4 text-gray-700 text-center border-r border-gray-100 align-top">
-                                                                        @if($row->target_waktu_start)
-                                        {{ \Carbon\Carbon::parse($row->target_waktu_start)->format('d/m/Y') }}
-                                    @else
-                                        -
-                                    @endif
-                                </td>
-                            @endif
+                            <td class="p-4 text-gray-700 text-center border-r border-gray-100 align-top">
+                                @if($row->target_waktu_start)
+                                    {{ \Carbon\Carbon::parse($row->target_waktu_start)->format('d/m/Y') }}
+                                @else
+                                    -
+                                @endif
+                            </td>
                             
                             <td class="p-4 text-gray-700 text-center font-medium border-r border-gray-100">{{ (!empty($row->realisasi) && $row->realisasi !== '-' && !str_ends_with(trim($row->realisasi), '%')) ? trim($row->realisasi) . '%' : ($row->realisasi ?? '-') }}</td>
                             <td class="p-4 text-gray-700 border-r border-gray-100 min-w-[300px] whitespace-pre-line">{!! e($row->progress_saat_ini) !!}</td>
                             
-                            @if($index === 0)
-                                <td rowspan="{{ $rowspan }}" class="p-4 text-gray-700 border-r border-gray-100 align-top">{{ $row->kendala ?? '-' }}</td>
-                            @endif
+                            <td class="p-4 text-gray-700 border-r border-gray-100 align-top">{{ $row->kendala ?? '-' }}</td>
                             
                             @if(isset($kolomDinamis))
                                 @foreach($kolomDinamis as $kolom)
@@ -182,14 +181,13 @@
                                 @endforeach
                             @endif
                             
-                            @if($index === 0)
-                                <td rowspan="{{ $rowspan }}" class="p-4 text-gray-500 italic border-r border-gray-100 align-top">{{ $row->keterangan_tambahan ?? '-' }}</td>
-                                <td rowspan="{{ $rowspan }}" class="p-4 text-center align-top">
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium {{ $statusColor }} whitespace-nowrap">
-                                        {{ $row->status }}
-                                    </span>
-                                </td>
-                            @endif
+                            <td class="p-4 text-gray-500 italic border-r border-gray-100 align-top">{{ $row->keterangan_tambahan ?? '-' }}</td>
+                            
+                            <td class="p-4 text-center align-top">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium {{ $statusColor }} whitespace-nowrap">
+                                    {{ $row->status }}
+                                </span>
+                            </td>
                             
                             <td class="p-4 text-center w-28 whitespace-nowrap min-w-[100px]">
                                 <div class="flex flex-row gap-2 justify-center items-center">
@@ -221,7 +219,7 @@
     <x-delete-modal id="modalHapus" title="Hapus Data" message="Data program strategis ini akan dihapus secara permanen. Lanjutkan?" />
 
     @if(auth()->user()->isAdmin())
-<!-- MODAL ATUR KOLOM -->
+    <!-- MODAL ATUR KOLOM -->
     <x-modal id="modalAturKolom" title="Pengaturan Kolom Tambahan" description="Tambah atau hapus kolom khusus pada tabel Program Strategis.">
         <div class="mb-6 bg-gray-50 p-4 rounded-xl border border-gray-100">
             <h4 class="text-sm font-bold text-gray-800 mb-3">Kolom Terdaftar:</h4>
@@ -271,7 +269,7 @@
             </div>
         </form>
     </x-modal>
-@endif
+    @endif
 
     <x-delete-modal id="modalHapusKolom" title="Hapus Kolom Tambahan" message="Kolom ini akan dihilangkan dari tabel dan formulir secara permanen. Lanjutkan?" />
 
@@ -309,7 +307,7 @@
     </x-modal>
 
     <!-- MODAL TAMBAH RINCIAN -->
-    <x-modal id="modalTambah" title="Tambah Rincian Kegiatan" description="Pilih program yang sudah ada di sistem dan masukkan rincian kegiatannya. Status, Kendala, dan Target Waktu akan otomatis mengikuti Program Strategis Induk.">
+    <x-modal id="modalTambah" title="Tambah Rincian Kegiatan" description="Pilih program induk yang sudah ada di sistem dan masukkan rincian kegiatan baru. Setiap kegiatan memiliki Target Waktu, Kendala, dan Status masing-masing.">
         <form action="{{ route('program-strategis.store') }}" method="POST" id="formTambah" class="grid grid-cols-1 gap-y-4 novalidate-form" novalidate>
             @csrf
             
@@ -344,9 +342,10 @@
                         <option value="Selesai">Selesai</option>
                         <option value="Hold">Hold</option>
                     </select>
-                    <span class="error-msg hidden text-red-500 text-xs mt-1">Wajib diisi</span></div>
+                    <span class="error-msg hidden text-red-500 text-xs mt-1">Wajib diisi</span>
+                </div>
                 
-                                <div class="col-span-2">
+                <div class="col-span-2">
                     <label class="block text-sm font-medium text-gray-700 mb-1.5">Target Waktu</label>
                     <input type="date" name="target_waktu_start" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:border-orange-500 outline-none">
                 </div>
@@ -378,9 +377,9 @@
                             @foreach($kolomDinamis as $kol)
                                 <div>
                                     <label class="block text-xs font-medium text-gray-600 mb-1">{{ $kol->nama_kolom }}</label>
-                                    @if($kol->tipe_data == 'date')
+                                    @if($kol->tipe_input == 'date')
                                         <input type="date" name="data_tambahan[{{ $kol->nama_kolom }}]" class="w-full px-3 py-1.5 border border-gray-300 rounded text-sm outline-none focus:border-orange-500">
-                                    @elseif($kol->tipe_data == 'number')
+                                    @elseif($kol->tipe_input == 'number')
                                         <input type="number" step="any" name="data_tambahan[{{ $kol->nama_kolom }}]" class="w-full px-3 py-1.5 border border-gray-300 rounded text-sm outline-none focus:border-orange-500">
                                     @else
                                         <input type="text" name="data_tambahan[{{ $kol->nama_kolom }}]" class="w-full px-3 py-1.5 border border-gray-300 rounded text-sm outline-none focus:border-orange-500">
@@ -426,9 +425,10 @@
                     <option value="Selesai">Selesai</option>
                     <option value="Hold">Hold</option>
                 </select>
-                    <span class="error-msg hidden text-red-500 text-xs mt-1">Wajib diisi</span></div>
+                    <span class="error-msg hidden text-red-500 text-xs mt-1">Wajib diisi</span>
+            </div>
 
-                        <div class="col-span-2">
+            <div class="col-span-2">
                 <label class="block text-sm font-medium text-gray-700 mb-1.5">Target Waktu</label>
                 <input type="date" name="target_waktu_start" id="edit_target_start" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:border-orange-500 outline-none">
             </div>
@@ -461,9 +461,9 @@
                             @foreach($kolomDinamis as $kol)
                                 <div>
                                     <label class="block text-xs font-medium text-gray-600 mb-1">{{ $kol->nama_kolom }}</label>
-                                    @if($kol->tipe_data == 'date')
+                                    @if($kol->tipe_input == 'date')
                                         <input type="date" id="dt_{{ $kol->id }}" name="data_tambahan[{{ $kol->nama_kolom }}]" class="w-full px-3 py-1.5 border border-gray-300 rounded text-sm outline-none focus:border-orange-500">
-                                    @elseif($kol->tipe_data == 'number')
+                                    @elseif($kol->tipe_input == 'number')
                                         <input type="number" step="any" id="dt_{{ $kol->id }}" name="data_tambahan[{{ $kol->nama_kolom }}]" class="w-full px-3 py-1.5 border border-gray-300 rounded text-sm outline-none focus:border-orange-500">
                                     @else
                                         <input type="text" id="dt_{{ $kol->id }}" name="data_tambahan[{{ $kol->nama_kolom }}]" class="w-full px-3 py-1.5 border border-gray-300 rounded text-sm outline-none focus:border-orange-500">
@@ -483,8 +483,7 @@
     </x-modal>
 </main>
 
-    <script>
-        
+<script>
     function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
     
     function toggleDropdown(id) {
@@ -496,7 +495,6 @@
         }
     }
     
-    // Close dropdown when clicking outside
     document.addEventListener('click', function(event) {
         const dropdown = document.getElementById('dropdownOpsiSuper');
         const button = dropdown ? dropdown.previousElementSibling : null;
@@ -576,7 +574,6 @@
         openModal('modalEdit');
     }
 
-    // Script Validasi Merah
     const forms = document.querySelectorAll('.novalidate-form');
     forms.forEach(form => {
         form.addEventListener('submit', function(e) {
@@ -608,69 +605,70 @@
             });
         });
     });
-let isBulkMode = false;
 
-function toggleBulkMode() {
-    isBulkMode = !isBulkMode;
-    const container = document.getElementById('tableContainerBulk');
-    const btnGroup = document.getElementById('btnGroupBulk');
-    if (container) {
-        if (isBulkMode) {
-            container.classList.remove('hide-bulk');
-            if(btnGroup) {
-                btnGroup.classList.remove('hidden');
-                btnGroup.classList.add('flex');
+    let isBulkMode = false;
+
+    function toggleBulkMode() {
+        isBulkMode = !isBulkMode;
+        const container = document.getElementById('tableContainerBulk');
+        const btnGroup = document.getElementById('btnGroupBulk');
+        if (container) {
+            if (isBulkMode) {
+                container.classList.remove('hide-bulk');
+                if(btnGroup) {
+                    btnGroup.classList.remove('hidden');
+                    btnGroup.classList.add('flex');
+                }
+            } else {
+                container.classList.add('hide-bulk');
+                if(btnGroup) {
+                    btnGroup.classList.add('hidden');
+                    btnGroup.classList.remove('flex');
+                }
+                cancelAllBtnOnly();
             }
-        } else {
-            container.classList.add('hide-bulk');
-            if(btnGroup) {
-                btnGroup.classList.add('hidden');
-                btnGroup.classList.remove('flex');
-            }
-            cancelAllBtnOnly();
         }
     }
-}
 
-function toggleSelectAll() {
-    const selectAll = document.getElementById('selectAllBulk');
-    const checkboxes = document.querySelectorAll('.cb-bulk');
-    checkboxes.forEach(cb => cb.checked = selectAll.checked);
-    updateSelectedCount();
-}
-
-function toggleCheckbox() {
-    const selectAll = document.getElementById('selectAllBulk');
-    const checkboxes = document.querySelectorAll('.cb-bulk');
-    const allChecked = Array.from(checkboxes).every(cb => cb.checked);
-    if(selectAll) selectAll.checked = allChecked;
-    updateSelectedCount();
-}
-
-function updateSelectedCount() {
-    const count = document.querySelectorAll('.cb-bulk:checked').length;
-    const countEl = document.getElementById('selectedCount');
-    if (countEl) countEl.textContent = count;
-}
-
-function cancelAllBtnOnly() {
-    const selectAll = document.getElementById('selectAllBulk');
-    if (selectAll) selectAll.checked = false;
-    const checkboxes = document.querySelectorAll('.cb-bulk');
-    checkboxes.forEach(cb => cb.checked = false);
-    updateSelectedCount();
-}
-
-function cancelAll() {
-    cancelAllBtnOnly();
-    isBulkMode = false;
-    const container = document.getElementById('tableContainerBulk');
-    if (container) container.classList.add('hide-bulk');
-    const btnGroup = document.getElementById('btnGroupBulk');
-    if (btnGroup) {
-        btnGroup.classList.add('hidden');
-        btnGroup.classList.remove('flex');
+    function toggleSelectAll() {
+        const selectAll = document.getElementById('selectAllBulk');
+        const checkboxes = document.querySelectorAll('.cb-bulk');
+        checkboxes.forEach(cb => cb.checked = selectAll.checked);
+        updateSelectedCount();
     }
-}
+
+    function toggleCheckbox() {
+        const selectAll = document.getElementById('selectAllBulk');
+        const checkboxes = document.querySelectorAll('.cb-bulk');
+        const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+        if(selectAll) selectAll.checked = allChecked;
+        updateSelectedCount();
+    }
+
+    function updateSelectedCount() {
+        const count = document.querySelectorAll('.cb-bulk:checked').length;
+        const countEl = document.getElementById('selectedCount');
+        if (countEl) countEl.textContent = count;
+    }
+
+    function cancelAllBtnOnly() {
+        const selectAll = document.getElementById('selectAllBulk');
+        if (selectAll) selectAll.checked = false;
+        const checkboxes = document.querySelectorAll('.cb-bulk');
+        checkboxes.forEach(cb => cb.checked = false);
+        updateSelectedCount();
+    }
+
+    function cancelAll() {
+        cancelAllBtnOnly();
+        isBulkMode = false;
+        const container = document.getElementById('tableContainerBulk');
+        if (container) container.classList.add('hide-bulk');
+        const btnGroup = document.getElementById('btnGroupBulk');
+        if (btnGroup) {
+            btnGroup.classList.add('hidden');
+            btnGroup.classList.remove('flex');
+        }
+    }
 </script>
 @endsection

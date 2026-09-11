@@ -870,7 +870,22 @@
         });
     @endif
         // ================= IMPORT MODAL =================
+        document.addEventListener('DOMContentLoaded', function() {
+            // Inject hidden kelompok input ke dalam form import
+            let importForm = document.getElementById('form_modalImportExcel');
+            if (importForm && !document.getElementById('importKelompokField')) {
+                let hiddenInput = document.createElement('input');
+                hiddenInput.type = 'hidden';
+                hiddenInput.name = 'kelompok';
+                hiddenInput.id = 'importKelompokField';
+                hiddenInput.value = 'tabel1';
+                importForm.appendChild(hiddenInput);
+            }
+        });
         function openImportModal(tabel) {
+            // Set kelompok hidden input agar controller tahu Tabel 1 atau Tabel 2
+            let kelompokInput = document.getElementById('importKelompokField');
+            if (kelompokInput) kelompokInput.value = tabel || 'tabel1';
             openModal('modalImportExcel');
         }
 

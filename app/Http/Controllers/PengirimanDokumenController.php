@@ -67,7 +67,7 @@ class PengirimanDokumenController extends Controller
         $volumeQueryBuilder = clone $baseQuery;
         $volumeQueryBuilder->orderBy('tahun', 'desc');
         $volumeQueryBuilder->orderByRaw("FIELD(bulan, '" . implode("','", $this->masterMonths) . "')");
-        $volumeRecords = $volumeQueryBuilder->paginate(5, ['*'], 'volume_page')->withQueryString(); 
+        $volumeRecords = $volumeQueryBuilder->paginate(10, ['*'], 'volume_page')->withQueryString(); 
 
         $ongkirBaseQuery = \App\Models\PengirimanOngkir::query();
         if ($selectedYear != 'semua') $ongkirBaseQuery->where('tahun', $selectedYear);
@@ -83,7 +83,7 @@ class PengirimanDokumenController extends Controller
         $ongkirQueryBuilder = clone $ongkirBaseQuery;
         $ongkirQueryBuilder->orderBy('tahun', 'desc');
         $ongkirQueryBuilder->orderByRaw("FIELD(bulan, '" . implode("','", $this->masterMonths) . "')");
-        $ongkirRecords = $ongkirQueryBuilder->paginate(5, ['*'], 'ongkir_page')->withQueryString();
+        $ongkirRecords = $ongkirQueryBuilder->paginate(10, ['*'], 'ongkir_page')->withQueryString();
 
         $totalDomestikOverall = (clone $ongkirBaseQuery)->sum('ongkir_dalam_negeri');
         $totalInternasionalOverall = (clone $ongkirBaseQuery)->sum('ongkir_luar_negeri');
@@ -150,11 +150,15 @@ class PengirimanDokumenController extends Controller
         }
     }
 
-        public function destroyBulk(\Illuminate\Http\Request $request)
+    public function destroyBulk(\Illuminate\Http\Request $request)
     {
+        $tipeTabel = $request->input('tipe_tabel', 'volume');
+        $modelClass = $tipeTabel === 'ongkir' ? \App\Models\PengirimanOngkir::class : \App\Models\PengirimanDokumen::class;
+        $tableStr = $tipeTabel === 'ongkir' ? 'biaya ongkir' : 'volume dokumen';
+
         // Fitur Hapus Semua (Delete All Pages)
         if ($request->input('delete_all_pages') == '1') {
-            $query = \App\Models\PengirimanDokumen::query();
+            $query = $modelClass::query();
             
             if ($request->filled('tahun') && $request->tahun !== 'semua') {
                 $query->where('tahun', $request->tahun);
@@ -166,18 +170,19 @@ class PengirimanDokumenController extends Controller
             $count = $query->count();
             $query->delete();
             
-            return redirect()->back()->with('success', $count . ' Data pengiriman dokumen (seluruh halaman) berhasil dihapus.');
+            return redirect()->back()->with('success', $count . ' Data ' . $tableStr . ' (seluruh halaman) berhasil dihapus.');
         }
 
         // Hapus Massal Biasa
+        $tableName = $tipeTabel === 'ongkir' ? 'pengiriman_ongkir' : 'pengiriman_dokumen';
         $request->validate([
             'ids' => 'required|array',
-            'ids.*' => 'exists:pengiriman_dokumen,id',
+            'ids.*' => 'exists:' . $tableName . ',id',
         ]);
 
-        \App\Models\PengirimanDokumen::whereIn('id', $request->ids)->delete();
+        $modelClass::whereIn('id', $request->ids)->delete();
 
-        return redirect()->back()->with('success', count($request->ids) . ' Data pengiriman dokumen berhasil dihapus.');
+        return redirect()->back()->with('success', count($request->ids) . ' Data ' . $tableStr . ' berhasil dihapus.');
     }
 
     public function destroy($id, \Illuminate\Http\Request $request)
@@ -272,5 +277,46 @@ class PengirimanDokumenController extends Controller
         abort_if(!auth()->user()->isAdmin(), 403, 'Akses ditolak.');
         DB::table('dynamic_columns')->where('id', $id)->delete();
         return back()->with('success', 'Kolom dinamis berhasil dihapus.');
+    }
+
+    /**
+     * Mengambil data Pengiriman Dokumen untuk laporan PDF bulanan.
+     * Single source of truth: identik dengan dashboard.
+     */
+    public static function getReportData($tahun, $bulan)
+    {
+        $mapBulanNum = [
+            'Januari' => 1, 'Februari' => 2, 'Maret' => 3, 'April' => 4,
+            'Mei' => 5, 'Juni' => 6, 'Juli' => 7, 'Agustus' => 8,
+            'September' => 9, 'Oktober' => 10, 'November' => 11, 'Desember' => 12
+        ];
+        $bulanNum = $mapBulanNum[$bulan] ?? null;
+        $matchBulan = function($q) use ($bulan, $bulanNum) {
+            $q->whereRaw('LOWER(TRIM(bulan)) = ?', [strtolower(trim($bulan))]);
+            if ($bulanNum) {
+                $q->orWhereRaw('CAST(bulan AS UNSIGNED) = ?', [$bulanNum]);
+            }
+        };
+
+        // Volume
+        $volume = \App\Models\PengirimanDokumen::where('tahun', $tahun)
+            ->where($matchBulan)
+            ->first();
+
+        // Ongkir
+        $ongkir = \App\Models\PengirimanOngkir::where('tahun', $tahun)
+            ->where($matchBulan)
+            ->first();
+
+        \Log::info('[PDF Section] Pengiriman Dokumen', [
+            'bulan' => $bulan, 'tahun' => $tahun,
+            'has_volume' => $volume ? 'yes' : 'no',
+            'has_ongkir' => $ongkir ? 'yes' : 'no',
+        ]);
+
+        return [
+            'pengirimanVolume' => $volume,
+            'pengirimanOngkir' => $ongkir,
+        ];
     }
 }

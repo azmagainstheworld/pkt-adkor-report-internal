@@ -370,4 +370,58 @@ class KetidakhadiranController extends Controller
         }
         return redirect()->back()->with('error_modal', 'Tidak ada data yang dipilih.');
     }
+
+    /**
+     * Mengambil data Ketidakhadiran untuk laporan PDF bulanan.
+     * Single source of truth: identik dengan dashboard untuk filter Tahun + Bulan.
+     * Prioritas: Data Bulanan (ketidakhadiran). Jika kosong, tidak fallback ke harian 
+     * (karena ketidakhadiran bulanan sudah terakumulasi dari harian).
+     */
+    public static function getReportData($tahun, $bulan)
+    {
+        $mapBulanNum = [
+            'Januari' => 1, 'Februari' => 2, 'Maret' => 3, 'April' => 4,
+            'Mei' => 5, 'Juni' => 6, 'Juli' => 7, 'Agustus' => 8,
+            'September' => 9, 'Oktober' => 10, 'November' => 11, 'Desember' => 12
+        ];
+        $bulanNum = $mapBulanNum[$bulan] ?? null;
+
+        $ketidakhadiran = \App\Models\Ketidakhadiran::join('karyawan', 'ketidakhadiran.karyawan_id', '=', 'karyawan.id')
+            ->where('ketidakhadiran.tahun', $tahun)
+            ->where(function($q) use ($bulan, $bulanNum) {
+                $q->whereRaw('LOWER(TRIM(ketidakhadiran.bulan)) = ?', [strtolower(trim($bulan))]);
+                if ($bulanNum) {
+                    $q->orWhereRaw('CAST(ketidakhadiran.bulan AS UNSIGNED) = ?', [$bulanNum]);
+                }
+            })
+            ->select(
+                'karyawan.nama', 'karyawan.npk',
+                'ketidakhadiran.*'
+            )
+            ->orderBy('karyawan.nama', 'asc')
+            ->get();
+
+        $getVal = function($val) {
+            return (int) preg_replace('/[^0-9]/', '', $val ?? '0');
+        };
+
+        $totalPerKategori = [
+            'Dinas'      => $ketidakhadiran->sum(fn($i) => $getVal($i->dinas)),
+            'Cuti'       => $ketidakhadiran->sum(fn($i) => $getVal($i->cuti)),
+            'Izin'       => $ketidakhadiran->sum(fn($i) => $getVal($i->izin)),
+            'Training'   => $ketidakhadiran->sum(fn($i) => $getVal($i->training)),
+            'Dispensasi' => $ketidakhadiran->sum(fn($i) => $getVal($i->dispensasi)),
+            'Detasering' => $ketidakhadiran->sum(fn($i) => $getVal($i->detasering)),
+        ];
+
+        \Log::info('[PDF Section] Ketidakhadiran', [
+            'bulan' => $bulan, 'tahun' => $tahun,
+            'count' => $ketidakhadiran->count()
+        ]);
+
+        return [
+            'ketidakhadiran'   => $ketidakhadiran,
+            'totalPerKategori' => $totalPerKategori,
+        ];
+    }
 }

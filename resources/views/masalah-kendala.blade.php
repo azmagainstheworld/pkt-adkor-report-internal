@@ -1,6 +1,11 @@
 @extends('layouts.app')
 
 @section('content')
+<style>
+/* Kolom pertama (checkbox) disembunyikan jika class hide-bulk aktif */
+.hide-bulk th:first-child, .hide-bulk td:first-child { display: none !important; }
+</style>
+
 <main class="flex-1 overflow-y-auto p-8 relative bg-[#F8F9FA]">
     <x-success-modal />
 
@@ -106,9 +111,9 @@
                     </div>
                 </div>
 
-                                <button type="button" id="btnModeBulk" onclick="toggleBulkMode()" class="px-4 py-2 bg-red-50 text-red-600 border border-red-200 rounded-xl hover:bg-red-100 transition-colors text-xs font-semibold flex items-center shadow-sm">
-                    <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                    Mode Hapus Massal
+                                <button type="button" id="btnModeBulk" onclick="toggleBulkMode()" class="inline-flex items-center justify-center gap-2 px-3 py-1.5 text-xs font-medium bg-red-50 text-red-600 border border-red-200 rounded-xl hover:bg-red-100 transition-colors shadow-sm outline-none focus:ring-2 focus:ring-red-300">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                    Hapus semua
                 </button>
                 <x-button variant="primary" onclick="openModalTambah()" class="!py-2 text-xs border-none !rounded-xl shadow-sm">
                     <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
@@ -117,21 +122,27 @@
             </div>
         </div>
 
-                <form id="bulkDeleteForm" action="{{ route('masalah-kendala.destroyBulk') }}" method="POST" onsubmit="return confirm('Hapus data terpilih?')">
+                <form id="bulkDeleteForm" action="{{ route('masalah-kendala.destroyBulk') }}" method="POST">
             @csrf
             @method('DELETE')
+            <input type="hidden" id="deleteAllBulk" name="delete_all_pages" value="0">
+            <input type="hidden" name="tahun" value="{{ request('tahun') }}">
+            <input type="hidden" name="bulan" value="{{ request('bulan') }}">
             
-            <div id="btnGroupBulk" class="hidden flex justify-between items-center px-4 py-2 bg-red-50 border-b border-red-100">
-                <span class="text-xs text-red-600 font-semibold">Data terpilih untuk dihapus</span>
+            <div id="btnGroupBulk" class="hidden flex justify-between items-center px-4 py-2 bg-red-50 border border-red-200 mb-4 rounded-xl shadow-sm">
+                <span class="text-xs text-red-600 font-semibold flex items-center">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                    <span id="selectedCountBulk">0</span>&nbsp;data terpilih
+                </span>
                 <div class="flex gap-2">
-                    <button type="button" onclick="cancelAll()" class="px-3 py-1.5 bg-white border border-gray-300 text-gray-700 rounded-lg text-xs font-medium hover:bg-gray-50">Batal</button>
-                    <button type="submit" class="px-3 py-1.5 bg-red-600 text-white rounded-lg text-xs font-medium hover:bg-red-700">Hapus Terpilih</button>
+                    <button type="button" onclick="cancelAll()" class="px-3 py-1.5 bg-white border border-red-200 text-red-600 rounded-lg text-xs font-bold hover:bg-red-50 transition-colors">Batal</button>
+                    <button type="submit" class="px-3 py-1.5 bg-red-600 text-white rounded-lg text-xs font-bold hover:bg-red-700 transition-colors shadow-sm shadow-red-200">Hapus Terpilih</button>
                 </div>
             </div>
 
             <div id="tableContainerBulk" class="hide-bulk overflow-x-auto">
             @php
-                $tableHeaders = ['<input type=\"checkbox\" id=\"selectAllBulk\" onclick=\"toggleSelectAll()\">', 'No', 'Tahun', 'Bulan', 'Masalah/Kendala', 'Solusi'];
+                $tableHeaders = ['<input type="checkbox" id="selectAllBulk" onclick="toggleSelectAll()">', 'No', 'Tahun', 'Bulan', 'Masalah/Kendala', 'Solusi'];
                 if(isset($kolomDinamis)) {
                     foreach($kolomDinamis as $k) {
                         $tableHeaders[] = $k->nama_kolom;
@@ -185,6 +196,7 @@
                 {{ $dataMasalah->links() }}
             </div>
         </div>
+    </form>{{-- close bulkDeleteForm --}}
     </x-card>
 
     <x-delete-modal id="modalHapus" title="Hapus Data" message="Data yang dihapus tidak dapat dikembalikan. Lanjutkan?" />
@@ -383,14 +395,19 @@
 </main>
 
     <script>
+        let isBulkMode = false;
         function toggleBulkMode() {
             let container = document.getElementById("tableContainerBulk");
+            let btnGroup = document.getElementById("btnGroupBulk");
             let btn = document.getElementById("btnModeBulk");
-            if (container.classList.contains("hide-bulk")) {
+            isBulkMode = !isBulkMode;
+            if (isBulkMode) {
                 container.classList.remove("hide-bulk");
+                if (btnGroup) btnGroup.classList.remove("hidden");
                 if(btn) { btn.classList.replace("bg-red-50", "bg-red-600"); btn.classList.replace("text-red-600", "text-white"); }
             } else {
                 container.classList.add("hide-bulk");
+                if (btnGroup) btnGroup.classList.add("hidden");
                 cancelAll();
                 if(btn) { btn.classList.replace("bg-red-600", "bg-red-50"); btn.classList.replace("text-white", "text-red-600"); }
             }
@@ -399,20 +416,28 @@
             let selectAll = document.getElementById("selectAllBulk");
             let checkboxes = document.querySelectorAll(".cb-bulk");
             checkboxes.forEach(cb => cb.checked = selectAll.checked);
-            toggleDeleteBtn();
+            let delAll = document.getElementById("deleteAllBulk");
+            if (delAll) delAll.value = selectAll.checked ? "1" : "0";
+            updateSelectedCount();
         }
         function toggleCheckbox() {
             let selectAll = document.getElementById("selectAllBulk");
             let checkboxes = document.querySelectorAll(".cb-bulk");
             selectAll.checked = Array.from(checkboxes).every(cb => cb.checked);
-            toggleDeleteBtn();
+            let delAll = document.getElementById("deleteAllBulk");
+            if (delAll) delAll.value = "0";
+            updateSelectedCount();
         }
-        function toggleDeleteBtn() {
-            let group = document.getElementById("btnGroupBulk");
-            if (group) {
-                let checked = document.querySelectorAll(".cb-bulk:checked").length > 0;
-                if (checked) { group.classList.remove("hidden"); } 
-                else { group.classList.add("hidden"); }
+        function updateSelectedCount() {
+            let checkboxes = document.querySelectorAll(".cb-bulk:checked");
+            let countSpan = document.getElementById("selectedCountBulk");
+            let delAll = document.getElementById("deleteAllBulk");
+            if (countSpan) {
+                if (delAll && delAll.value == "1") {
+                    countSpan.innerText = "Semua (Seluruh Halaman)";
+                } else {
+                    countSpan.innerText = checkboxes.length;
+                }
             }
         }
         function cancelAll() {
@@ -420,9 +445,12 @@
             if (selectAll) selectAll.checked = false;
             let checkboxes = document.querySelectorAll(".cb-bulk");
             checkboxes.forEach(cb => cb.checked = false);
-            toggleDeleteBtn();
+            let delAll = document.getElementById("deleteAllBulk");
+            if (delAll) delAll.value = "0";
+            updateSelectedCount();
         }
 
+</script>
 <script>
     function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
     function closeModal(id) { document.getElementById(id).classList.add('hidden'); }

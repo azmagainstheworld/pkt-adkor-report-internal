@@ -57,8 +57,11 @@ class PengirimanDokumenImport implements ToCollection, WithHeadingRow
                     'tahun' => $tahun,
                     'bulan' => $bulanFormatted
                 ]);
-                $record->ongkir_dalam_negeri = $row['total_ongkir_dalam_negeri'] ?? $row['total_ongkir_pengiriman_dalam_negeri'] ?? $record->ongkir_dalam_negeri ?? 0;
-                $record->ongkir_luar_negeri = $row['total_ongkir_luar_negeri'] ?? $row['total_ongkir_pengiriman_luar_negeri'] ?? $record->ongkir_luar_negeri ?? 0;
+                $valDalam = $row['total_ongkir_dalam_negeri'] ?? $row['total_ongkir_pengiriman_dalam_negeri'] ?? $record->ongkir_dalam_negeri ?? 0;
+                $valLuar = $row['total_ongkir_luar_negeri'] ?? $row['total_ongkir_pengiriman_luar_negeri'] ?? $record->ongkir_luar_negeri ?? 0;
+                
+                $record->ongkir_dalam_negeri = is_string($valDalam) ? (int) preg_replace('/[^0-9]/', '', $valDalam) : (int) $valDalam;
+                $record->ongkir_luar_negeri = is_string($valLuar) ? (int) preg_replace('/[^0-9]/', '', $valLuar) : (int) $valLuar;
                 
                 // Currently ongkir does not have dynamic columns implemented via excel in original script, leaving as is
                 $record->save();

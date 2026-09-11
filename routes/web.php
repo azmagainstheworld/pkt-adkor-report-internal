@@ -409,6 +409,7 @@ Route::middleware('auth')->group(function () {
     Route::delete('/administrasi/undangan/detail/{id}', [UndanganController::class, 'destroyDetail'])->name('undangan.detail.destroy');
     Route::delete('/administrasi/undangan/detail-bulk', [UndanganController::class, 'destroyBulkDetail'])->name('undangan.detail.destroyBulk');
     Route::post('/administrasi/undangan/import', [UndanganController::class, 'import'])->name('undangan.import');
+    Route::post('/administrasi/undangan/import-detail', [UndanganController::class, 'importDetail'])->name('undangan.importDetail');
     Route::get('/administrasi/undangan/export/excel', [UndanganController::class, 'exportExcel'])->name('undangan.export.excel');
     Route::get('/administrasi/undangan/export/pdf', [UndanganController::class, 'exportPdf'])->name('undangan.export.pdf');
     Route::get('/administrasi/undangan/template', [UndanganController::class, 'downloadTemplate'])->name('undangan.download.template');

@@ -320,4 +320,41 @@ class PelaporanController extends Controller
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.pelaporan', compact('dataRincian', 'tahun', 'bulan', 'kolomDinamis'))->setPaper('a4', 'landscape');
         return $pdf->download('Data_Pelaporan.pdf');
     }
+
+    /**
+     * Mengambil data Pelaporan untuk laporan PDF bulanan.
+     * Single source of truth: identik dengan dashboard.
+     */
+    public static function getReportData($tahun, $bulan)
+    {
+        $mapBulan = [
+            'Januari' => 1, 'February' => 2, 'Februari' => 2,
+            'Maret' => 3, 'April' => 4, 'Mei' => 5,
+            'Juni' => 6, 'Juli' => 7, 'Agustus' => 8,
+            'September' => 9, 'Oktober' => 10, 'November' => 11, 'Desember' => 12
+        ];
+        $bulanNum = $mapBulan[$bulan] ?? null;
+
+        $query = \App\Models\Pelaporan::query()
+            ->whereYear('tanggal', $tahun);
+        if ($bulanNum) {
+            $query->whereMonth('tanggal', $bulanNum);
+        }
+        $pelaporan = $query->orderBy('tanggal', 'desc')->get();
+
+        $totalEksternal = $pelaporan->where('tujuan', 'Eksternal')->count();
+        $totalInternal  = $pelaporan->where('tujuan', 'Internal')->count();
+
+        \Log::info('[PDF Section] Pelaporan', [
+            'bulan' => $bulan, 'tahun' => $tahun,
+            'count' => $pelaporan->count(),
+            'eksternal' => $totalEksternal, 'internal' => $totalInternal
+        ]);
+
+        return [
+            'pelaporan'      => $pelaporan,
+            'totalEksternal' => $totalEksternal,
+            'totalInternal'  => $totalInternal,
+        ];
+    }
 }

@@ -434,4 +434,74 @@ class PerizinanPerkantoranController extends Controller
     {
         return Excel::download(new PerizinanProsesExport(true), 'Template_Perizinan_Proses.xlsx');
     }
+
+    /**
+     * Mengambil data Perizinan Perkantoran untuk laporan PDF bulanan.
+     * Single source of truth: identik dengan dashboard.
+     */
+    public static function getReportData($tahun, $bulan)
+    {
+        $mapBulan = [
+            'Januari' => 1, 'Februari' => 2, 'Maret' => 3, 'April' => 4,
+            'Mei' => 5, 'Juni' => 6, 'Juli' => 7, 'Agustus' => 8,
+            'September' => 9, 'Oktober' => 10, 'November' => 11, 'Desember' => 12
+        ];
+        $bulanNum = $mapBulan[$bulan] ?? null;
+
+        // Perizinan Terbit: filter by tahun dan bulan (menggunakan tanggal_sejak)
+        $queryTerbit = \App\Models\PerizinanTerbit::leftJoin('jenis_perizinan_master', 'perizinan_terbit.jenis_perizinan_id', '=', 'jenis_perizinan_master.id')
+            ->whereYear('perizinan_terbit.tanggal_sejak', $tahun)
+            ->select('perizinan_terbit.*', 'jenis_perizinan_master.nama_jenis as nama_perizinan');
+        if ($bulanNum) {
+            $queryTerbit->whereMonth('perizinan_terbit.tanggal_sejak', $bulanNum);
+        }
+        $perizinanTerbit = $queryTerbit->orderBy('tanggal_sejak', 'desc')->get();
+
+        // Perizinan Proses: hanya filter by tahun (tidak ada kolom bulan)
+        $perizinanProses = \App\Models\PerizinanProsesList::where('tahun', $tahun)
+            ->orderBy('nama_proses', 'asc')
+            ->orderBy('id', 'asc')
+            ->get();
+
+        // Ringkasan Kegiatan Perizinan Terbit untuk periode terpilih (Tabel 1 di menu)
+        $ringkasanTerbit = (object) [
+            'tahun' => $tahun,
+            'bulan' => $bulan,
+            'produk' => $perizinanTerbit->where('kegiatan', 'Produk')->count(),
+            'aset' => $perizinanTerbit->where('kegiatan', 'Aset')->count(),
+            'proyek' => $perizinanTerbit->where('kegiatan', 'Proyek')->count(),
+            'peralatan_pabrik' => $perizinanTerbit->where('kegiatan', 'Peralatan Pabrik')->count(),
+            'adm' => $perizinanTerbit->where('kegiatan', 'Adm & Lainnya')->count(),
+        ];
+        $ringkasanTerbit->total_terbit = $ringkasanTerbit->produk + $ringkasanTerbit->aset
+            + $ringkasanTerbit->proyek + $ringkasanTerbit->peralatan_pabrik + $ringkasanTerbit->adm;
+
+        // Statistik Perizinan Terbit (Semua Tahun) - untuk chart, TIDAK terikat filter tahun/bulan laporan
+        $tahunSemua = \App\Models\PerizinanTerbit::selectRaw('YEAR(tanggal_sejak) as tahun')
+            ->distinct()->orderBy('tahun', 'asc')->pluck('tahun');
+
+        $statistikTerbitSemuaTahun = $tahunSemua->map(function ($thn) {
+            $rows = \App\Models\PerizinanTerbit::whereYear('tanggal_sejak', $thn)->get();
+            return (object) [
+                'tahun' => $thn,
+                'produk' => $rows->where('kegiatan', 'Produk')->count(),
+                'aset' => $rows->where('kegiatan', 'Aset')->count(),
+                'proyek' => $rows->where('kegiatan', 'Proyek')->count(),
+                'peralatan_pabrik' => $rows->where('kegiatan', 'Peralatan Pabrik')->count(),
+                'adm' => $rows->where('kegiatan', 'Adm & Lainnya')->count(),
+            ];
+        })->values();
+
+        \Log::info('[PDF Section] Perizinan', [
+            'bulan' => $bulan, 'tahun' => $tahun,
+            'terbit' => $perizinanTerbit->count(), 'proses' => $perizinanProses->count()
+        ]);
+
+        return [
+            'perizinanTerbit' => $perizinanTerbit,
+            'perizinanProses' => $perizinanProses,
+            'ringkasanTerbit' => $ringkasanTerbit,
+            'statistikTerbitSemuaTahun' => $statistikTerbitSemuaTahun,
+        ];
+    }
 }

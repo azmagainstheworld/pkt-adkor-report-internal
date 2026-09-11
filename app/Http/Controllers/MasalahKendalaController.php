@@ -80,6 +80,22 @@ class MasalahKendalaController extends Controller
 
         public function destroyBulk(\Illuminate\Http\Request $request)
     {
+        if ($request->input('delete_all_pages') == '1') {
+            $query = \App\Models\MasalahKendala::query();
+            
+            if ($request->filled('tahun') && $request->tahun !== 'semua') {
+                $query->where('tahun', $request->tahun);
+            }
+            if ($request->filled('bulan') && $request->bulan !== 'semua') {
+                $query->where('bulan', $request->bulan);
+            }
+            
+            $count = $query->count();
+            $query->delete();
+            
+            return redirect()->back()->with('success', 'Semua data (' . $count . ' baris) berhasil dihapus secara massal.');
+        }
+
         $request->validate([
             'ids' => 'required|array',
             'ids.*' => 'exists:masalah_kendala,id',
@@ -90,6 +106,38 @@ class MasalahKendalaController extends Controller
         return redirect()->back()->with('success', count($request->ids) . ' Data masalah & kendala berhasil dihapus.');
     }
 
+
+    /**
+     * Mengambil data Masalah Kendala untuk laporan PDF bulanan.
+     */
+    public static function getReportData($tahun, $bulan)
+    {
+        $monthsOrder = ['Januari'=>1,'Februari'=>2,'Maret'=>3,'April'=>4,'Mei'=>5,'Juni'=>6,'Juli'=>7,'Agustus'=>8,'September'=>9,'Oktober'=>10,'November'=>11,'Desember'=>12];
+
+        $mapBulanNum2 = [
+            'Januari' => 1, 'Februari' => 2, 'Maret' => 3, 'April' => 4,
+            'Mei' => 5, 'Juni' => 6, 'Juli' => 7, 'Agustus' => 8,
+            'September' => 9, 'Oktober' => 10, 'November' => 11, 'Desember' => 12
+        ];
+        $bulanNum2 = $mapBulanNum2[$bulan] ?? null;
+
+        $kendala = \App\Models\MasalahKendala::where('tahun', $tahun)
+            ->where(function($q) use ($bulan, $bulanNum2) {
+                $q->whereRaw('LOWER(TRIM(bulan)) = ?', [strtolower(trim($bulan))]);
+                if ($bulanNum2) {
+                    $q->orWhereRaw('CAST(bulan AS UNSIGNED) = ?', [$bulanNum2]);
+                }
+            })
+            ->get()
+            ->sortBy(function($item) use ($monthsOrder) {
+                return sprintf('%04d%02d', $item->tahun, $monthsOrder[$item->bulan] ?? 0);
+            })
+            ->values();
+
+        \Log::info('[PDF Section] Masalah Kendala', ['bulan' => $bulan, 'tahun' => $tahun, 'count' => $kendala->count()]);
+
+        return ['kendala' => $kendala];
+    }
     public function destroy($id)
     {
         MasalahKendala::findOrFail($id)->delete();
@@ -189,4 +237,3 @@ class MasalahKendalaController extends Controller
         return $pdf->download('Data_Masalah_Kendala.pdf');
     }
 }
-

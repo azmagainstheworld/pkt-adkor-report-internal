@@ -386,4 +386,99 @@ class AnggaranController extends Controller
         }
         return redirect()->back()->with('error_modal', 'Tidak ada data yang dipilih.');
     }
+
+    /**
+     * Mengambil data Anggaran untuk laporan PDF bulanan.
+     * Single source of truth: identik dengan dashboard (filter Tahun + Bulan spesifik).
+     */
+    public static function getReportData($tahun, $bulan)
+    {
+        $mapBulanNum = [
+            'Januari' => 1, 'Februari' => 2, 'Maret' => 3, 'April' => 4,
+            'Mei' => 5, 'Juni' => 6, 'Juli' => 7, 'Agustus' => 8,
+            'September' => 9, 'Oktober' => 10, 'November' => 11, 'Desember' => 12
+        ];
+        $bulanNum = $mapBulanNum[$bulan] ?? null;
+
+        $anggaran = \App\Models\AnggaranAdministrasi::where('tahun', $tahun)
+            ->where(function($q) use ($bulan, $bulanNum) {
+                $q->whereRaw('LOWER(TRIM(bulan)) = ?', [strtolower(trim($bulan))]);
+                if ($bulanNum) {
+                    $q->orWhereRaw('CAST(bulan AS UNSIGNED) = ?', [$bulanNum]);
+                }
+            })
+            ->get();
+
+        $kategoriList = [
+            'Dikelola'  => 'Anggaran Dikelola',
+            'Rutin'     => 'Anggaran Rutin',
+            'Investasi' => 'Anggaran Investasi',
+        ];
+
+        $detailOrder = [
+            'Pemeliharaan - Peralatan Kantor' => 1,
+            'Cetak dan Fotocopy' => 2,
+            'Pos Materai dan Pengiriman Dok.' => 3,
+            'Iuran Keanggotaan' => 4,
+            'Inspeksi dan Perijinan' => 5,
+            'Sewa - Peralatan Pabrik & Kantor' => 6,
+            'Jasa - Konsultan' => 7,
+            'Rekreasi dan Olahraga' => 8,
+            'Peralatan Kantor' => 9,
+            'Biaya Makan Minum' => 10,
+            'Perjalanan Dinas Dalam Negeri' => 11,
+            'Perlengkapan & Peralatan (Alat-alat Kantor)' => 12,
+            'Perlengkapan & Peralatan (Furniture Kantor)' => 13,
+            'Aset Ttp dlm Proses Konstruksi-Bangunan&Prasarana (HGB)' => 14,
+        ];
+
+        // Grouping per kategori untuk tampilan tabel
+        $perKategori = [];
+        foreach (array_keys($kategoriList) as $kat) {
+            $items = $anggaran->where('kategori', $kat)->sortBy(function($item) use ($detailOrder) {
+                return $detailOrder[$item->detail_anggaran] ?? 999;
+            })->values();
+            if ($items->isNotEmpty()) {
+                $perKategori[$kat] = $items;
+            }
+        }
+
+        $totalRkap         = $anggaran->sum('rkap');
+        $totalRealisasi    = $anggaran->sum('realisasi');
+        $totalKomitmen     = $anggaran->sum('komitmen');
+        $totalRealPlusKomit = $totalRealisasi + $totalKomitmen;
+        $totalSisa         = $totalRkap - $totalRealPlusKomit;
+
+        // Persentase gabungan (untuk Tabel 2: Ringkasan Realisasi & Komitmen per Bulan)
+        $percRealisasiKomitmen = $totalRkap > 0 ? round($totalRealPlusKomit / $totalRkap * 100, 1) : 0;
+        $percSisaAnggaran = $totalRkap > 0 ? round($totalSisa / $totalRkap * 100, 1) : 0;
+
+        // Sisa anggaran per kategori (untuk Tabel 3: Perbandingan Sisa Anggaran Antar Kategori)
+        $sisaPerKategori = [];
+        foreach (array_keys($kategoriList) as $kat) {
+            $rowsKat = $anggaran->where('kategori', $kat);
+            $rkapKat = $rowsKat->sum('rkap');
+            $realPlusKomitKat = $rowsKat->sum('komitmen') + $rowsKat->sum('realisasi');
+            $sisaPerKategori[$kat] = $rkapKat - $realPlusKomitKat;
+        }
+
+        \Log::info('[PDF Section] Anggaran', [
+            'bulan' => $bulan, 'tahun' => $tahun,
+            'count' => $anggaran->count()
+        ]);
+
+        return [
+            'anggaran'              => $anggaran,
+            'perKategori'           => $perKategori,
+            'kategoriList'          => $kategoriList,
+            'totalRkap'             => $totalRkap,
+            'totalRealisasi'        => $totalRealisasi,
+            'totalKomitmen'         => $totalKomitmen,
+            'totalRealPlusKomit'    => $totalRealPlusKomit,
+            'totalSisa'             => $totalSisa,
+            'percRealisasiKomitmen' => $percRealisasiKomitmen,
+            'percSisaAnggaran'      => $percSisaAnggaran,
+            'sisaPerKategori'       => $sisaPerKategori,
+        ];
+    }
 }

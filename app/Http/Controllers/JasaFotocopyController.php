@@ -30,9 +30,7 @@ class JasaFotocopyController extends Controller
         $allData = JasaFotocopy::whereIn('tahun', $tahunScope)->get();
         $dataByTahun = $allData->groupBy('tahun');
 
-        // =====================================
-        // TABEL 1: REKAPITULASI (Semua Tahun & Bulan Sesuai Filter)
-        // =====================================
+        // TABEL 1: REKAPITULASI
         $dataTable1 = [];
         foreach ($tahunScope as $thn) {
             $yearDataThn = $dataByTahun->get($thn, collect());
@@ -59,9 +57,58 @@ class JasaFotocopyController extends Controller
         }
         $chartJsonData = ['labels' => $chartLabels, 'datasets' => [['label' => 'Total Pemakaian Lembar', 'data' => $chartData, 'backgroundColor' => '#3b82f6']]];
 
-        // =====================================
-        // TABEL 2: DETAIL SPREADSHEET (Semua Data Sesuai Filter)
-        // =====================================
+        // TABEL 2: DETAIL
+        $table2Result = self::getTable2Data($filterTahun, $filterBulan);
+        $dataTable2 = $table2Result['dataTable2'];
+        $subtotalGroups = $table2Result['subtotalGroups'];
+        $grandTotals = $table2Result['grandTotals'];
+
+        $tampilkanSubtotalGrup = count($subtotalGroups) > 1;
+        $kolomDinamis = DB::table('dynamic_columns')->where('modul', 'jasa_fotocopy')->get();
+
+        // Paginate dataTable2 (10 per page)
+        $perPage = 10;
+        $page = $request->get('page', 1);
+        $offset = ($page - 1) * $perPage;
+        
+        $paginatedData = array_slice($dataTable2, $offset, $perPage);
+        $dataTable2Paginated = new \Illuminate\Pagination\LengthAwarePaginator(
+            $paginatedData,
+            count($dataTable2),
+            $perPage,
+            $page,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
+
+        return view('jasa-fotocopy', [
+            'tanggalToday' => $tanggalToday,
+            'filterTahun' => $filterTahun,
+            'filterBulan' => $filterBulan,
+            'tahunTersedia' => $tahunTersedia,
+            'dataTable1' => $dataTable1,
+            'dataTable2' => $dataTable2Paginated,
+            'grandTotals' => $grandTotals,
+            'subtotalGroups' => $subtotalGroups,
+            'tampilkanSubtotalGrup' => $tampilkanSubtotalGrup,
+            'kolomDinamis' => $kolomDinamis,
+            'chartJsonData' => $chartJsonData
+        ]);
+    }
+
+    public static function getTable2Data($filterTahun, $filterBulan)
+    {
+        $tahunTersedia = JasaFotocopy::select('tahun')->distinct()->orderBy('tahun', 'desc')->pluck('tahun')->toArray();
+        if (empty($tahunTersedia)) $tahunTersedia = [Carbon::now()->year];
+
+        $monthsOrder = ['Januari'=>1,'Februari'=>2,'Maret'=>3,'April'=>4,'Mei'=>5,'Juni'=>6,'Juli'=>7,'Agustus'=>8,'September'=>9,'Oktober'=>10,'November'=>11,'Desember'=>12];
+        $namaBulanUrut = array_keys($monthsOrder);
+
+        $tahunScope = ($filterTahun === 'semua') ? $tahunTersedia : [$filterTahun];
+        $bulanScope = ($filterBulan === 'semua') ? $namaBulanUrut : [$filterBulan];
+
+        $allData = JasaFotocopy::whereIn('tahun', $tahunScope)->get();
+        $dataByTahun = $allData->groupBy('tahun');
+
         $dataTable2 = [];
         $subtotalGroups = [];
         $grandTotals = ['pemakaian_bln' => 0, 'pemakaian_sd' => 0, 'fee_bln' => 0, 'fee_sd' => 0, 'sewa_bln' => 0, 'total_bln' => 0, 'total_sd' => 0];
@@ -78,23 +125,17 @@ class JasaFotocopyController extends Controller
                 });
 
                 $groupTotals = ['pemakaian_bln' => 0, 'pemakaian_sd' => 0, 'fee_bln' => 0, 'fee_sd' => 0, 'sewa_bln' => 0, 'total_bln' => 0, 'total_sd' => 0];
-
                 $dataBulanIniFull = $filteredYearData->where('bulan', $bulanNama);
-                
-                // Ambil daftar unit kerja unik yang pernah diinput sampai bulan ini
                 $unitKerjas = $filteredYearData->unique('unit_kerja')->pluck('unit_kerja');
 
                 foreach ($unitKerjas as $uk) {
                     $ytdData = $filteredYearData->where('unit_kerja', $uk);
                     $dataBulanIni = $dataBulanIniFull->where('unit_kerja', $uk)->first();
-                    
-                    // Kalau di bulan ini tidak ada pemakaian, tidak perlu ditampilkan barisnya
-                    if(!$dataBulanIni) continue;
+                    if (!$dataBulanIni) continue;
 
                     $pemakaianBlnIni = $dataBulanIni->pemakaian_lembar;
                     $feePerLbr = $dataBulanIni->biaya_fee_per_lembar;
                     $sewaBlnIni = $dataBulanIni->biaya_sewa_mesin;
-
                     $pemakaianSd = $ytdData->sum('pemakaian_lembar');
                     $feeBlnIni = $pemakaianBlnIni * $feePerLbr;
 
@@ -117,31 +158,21 @@ class JasaFotocopyController extends Controller
                         'data_tambahan' => $dataBulanIni->data_tambahan,
                     ];
 
-                    $delta = [
-                        'pemakaian_bln' => $pemakaianBlnIni, 'pemakaian_sd' => $pemakaianSd,
-                        'fee_bln' => $feeBlnIni, 'fee_sd' => $feeSd, 'sewa_bln' => $sewaBlnIni,
-                        'total_bln' => $totalJasaSewaBlnIni, 'total_sd' => $totalJasaSewaSd,
-                    ];
-                    foreach ($delta as $key => $val) {
-                        $groupTotals[$key] += $val;
-                        $grandTotals[$key] += $val;
-                    }
+                    $delta = ['pemakaian_bln' => $pemakaianBlnIni, 'pemakaian_sd' => $pemakaianSd, 'fee_bln' => $feeBlnIni, 'fee_sd' => $feeSd, 'sewa_bln' => $sewaBlnIni, 'total_bln' => $totalJasaSewaBlnIni, 'total_sd' => $totalJasaSewaSd];
+                    foreach ($delta as $key => $val) { $groupTotals[$key] += $val; $grandTotals[$key] += $val; }
                 }
 
-                if($dataBulanIniFull->count() > 0) {
+                if ($dataBulanIniFull->count() > 0) {
                     $subtotalGroups[$thn . '|' . $bulanNama] = ['tahun' => $thn, 'bulan' => $bulanNama, 'totals' => $groupTotals];
                 }
             }
         }
-
-        $tampilkanSubtotalGrup = count($subtotalGroups) > 1;
-        $kolomDinamis = DB::table('dynamic_columns')->where('modul', 'jasa_fotocopy')->get();
-
-        return view('jasa-fotocopy', compact(
-            'tanggalToday', 'filterTahun', 'filterBulan', 'tahunTersedia', 
-            'dataTable1', 'dataTable2', 'grandTotals', 'subtotalGroups', 'tampilkanSubtotalGrup',
-            'kolomDinamis', 'chartJsonData'
-        ));
+        
+        return [
+            'dataTable2' => $dataTable2,
+            'subtotalGroups' => $subtotalGroups,
+            'grandTotals' => $grandTotals
+        ];
     }
 
     public function store(Request $request)
@@ -171,22 +202,17 @@ class JasaFotocopyController extends Controller
         return back()->with('success', 'Data berhasil diperbarui!');
     }
 
-        public function destroyBulk(\Illuminate\Http\Request $request)
+    public function destroyBulk(\Illuminate\Http\Request $request)
     {
         if ($request->delete_all_pages == '1') {
             $query = \App\Models\JasaFotocopy::query();
             if ($request->tahun && $request->tahun != 'semua') $query->where('tahun', $request->tahun);
             if ($request->bulan && $request->bulan != 'semua') $query->where('bulan', $request->bulan);
-            
             $count = $query->count();
             $query->delete();
             return redirect()->back()->with('success', $count . ' Data jasa fotocopy (dari semua halaman) berhasil dihapus.');
         } else {
-            $request->validate([
-                'ids' => 'required|array',
-                'ids.*' => 'exists:jasa_fotocopy,id',
-            ]);
-
+            $request->validate(['ids' => 'required|array', 'ids.*' => 'exists:jasa_fotocopy,id']);
             \App\Models\JasaFotocopy::whereIn('id', $request->ids)->delete();
             return redirect()->back()->with('success', count($request->ids) . ' Data jasa fotocopy berhasil dihapus.');
         }
@@ -227,12 +253,12 @@ class JasaFotocopyController extends Controller
     public function importExcel(Request $request)
     {
         set_time_limit(0);
-        $request->validate(['file_excel' => 'required|mimes:xlsx,xls,csv|max:51200']);
+        $request->validate(['file' => 'required|mimes:xlsx,xls,csv|max:51200']);
         try {
-            Excel::import(new \App\Imports\JasaFotocopyImport, $request->file('file_excel'));
-            return redirect()->back()->with('success', 'Data berhasil di-import!');
+            Excel::import(new \App\Imports\JasaFotocopyImport, $request->file('file'));
+            return response()->json(['success' => true, 'message' => 'Data Jasa Fotocopy berhasil diimport.']);
         } catch (\Exception $e) {
-            return redirect()->back()->with('error_modal', 'Terjadi kesalahan saat import. Detail: ' . $e->getMessage());
+            return response()->json(['error' => 'Gagal import: ' . $e->getMessage()], 500);
         }
     }
 
@@ -252,32 +278,74 @@ class JasaFotocopyController extends Controller
         $filterTahun = $request->input('tahun', 'semua');
         $filterBulan = $request->input('bulan', 'semua');
 
-        $query = JasaFotocopy::query();
-        if ($filterTahun !== 'semua') $query->where('tahun', $filterTahun);
-        if ($filterBulan !== 'semua') $query->where('bulan', $filterBulan);
-        $dataRaw = $query->get();
+        $table2Result = self::getTable2Data($filterTahun, $filterBulan);
+        $dataTable2 = $table2Result['dataTable2'];
+        $subtotalGroups = $table2Result['subtotalGroups'];
+        $grandTotals = $table2Result['grandTotals'];
 
-        $dataTable1 = [];
-        $groupedByYear = $dataRaw->groupBy('tahun');
+        $pdf = Pdf::loadView('pdf.jasa-fotocopy', compact('filterTahun', 'filterBulan', 'dataTable2', 'subtotalGroups', 'grandTotals'))
+                  ->setPaper('a4', 'landscape');
+        return $pdf->download('Laporan_Jasa_Fotocopy_Detail.pdf');
+    }
+
+    /**
+     * Mengambil data Jasa Fotocopy untuk laporan PDF bulanan.
+     * Single source of truth: menggunakan logika yang sama dengan halaman dashboard.
+     */
+    public static function getReportData($tahun, $bulan)
+    {
         $monthsOrder = ['Januari'=>1,'Februari'=>2,'Maret'=>3,'April'=>4,'Mei'=>5,'Juni'=>6,'Juli'=>7,'Agustus'=>8,'September'=>9,'Oktober'=>10,'November'=>11,'Desember'=>12];
 
-        foreach($groupedByYear as $thn => $yearItems) {
-            $groupedByMonth = $yearItems->groupBy('bulan');
-            foreach($groupedByMonth as $bulan => $items) {
-                $dataTable1[] = [
-                    'tahun' => $thn, 'bulan' => $bulan,
-                    'mesin_fc' => $items->unique('unit_kerja')->count(),
-                    'jumlah_pemakaian' => $items->sum('pemakaian_lembar'),
-                    'nilai_jasa' => $items->sum(function($i) { return ($i->pemakaian_lembar * $i->biaya_fee_per_lembar) + $i->biaya_sewa_mesin; })
-                ];
-            }
-        }
-        usort($dataTable1, function($a, $b) use ($monthsOrder) { 
-            if ($a['tahun'] == $b['tahun']) { return $monthsOrder[$a['bulan']] <=> $monthsOrder[$b['bulan']]; }
-            return $b['tahun'] <=> $a['tahun']; 
+        $mapBulanNum = [
+            'Januari' => 1, 'Februari' => 2, 'Maret' => 3, 'April' => 4,
+            'Mei' => 5, 'Juni' => 6, 'Juli' => 7, 'Agustus' => 8,
+            'September' => 9, 'Oktober' => 10, 'November' => 11, 'Desember' => 12
+        ];
+        $bulanNum = $mapBulanNum[$bulan] ?? null;
+
+        $allData = \App\Models\JasaFotocopy::where('tahun', $tahun)
+            ->where(function($q) use ($bulan, $bulanNum) {
+                $q->whereRaw('LOWER(TRIM(bulan)) = ?', [strtolower(trim($bulan))]);
+                if ($bulanNum) {
+                    $q->orWhereRaw('CAST(bulan AS UNSIGNED) = ?', [$bulanNum]);
+                }
+            })
+            ->get();
+
+        // Rekapitulasi Tabel 1 (sesuai dashboard)
+        $mesinAktif    = $allData->unique('unit_kerja')->count();
+        $totalPemakaian= $allData->sum('pemakaian_lembar');
+        $totalNilai    = $allData->sum(function($item) {
+            return ($item->pemakaian_lembar * $item->biaya_fee_per_lembar) + $item->biaya_sewa_mesin;
         });
 
-        $pdf = Pdf::loadView('pdf.jasa-fotocopy', compact('filterTahun', 'filterBulan', 'dataTable1'))->setPaper('a4', 'portrait');
-        return $pdf->download('Laporan_Jasa_Fotocopy_Rekap.pdf');
+        $dataTable1 = [];
+        if ($allData->isNotEmpty()) {
+            $dataTable1[] = [
+                'tahun'           => $tahun,
+                'bulan'           => $bulan,
+                'mesin_fc'        => $mesinAktif,
+                'jumlah_pemakaian'=> $totalPemakaian,
+                'nilai_jasa'      => $totalNilai,
+            ];
+        }
+
+        // Detail Tabel 2 (reuse getTable2Data yang sudah ada)
+        $table2Result  = self::getTable2Data($tahun, $bulan);
+
+        \Log::info('[PDF Section] Jasa Fotocopy', [
+            'bulan' => $bulan, 'tahun' => $tahun,
+            'count' => $allData->count(), 'totalPemakaian' => $totalPemakaian
+        ]);
+
+        return [
+            'dataTable1'    => $dataTable1,
+            'dataTable2'    => $table2Result['dataTable2'],
+            'subtotalGroups'=> $table2Result['subtotalGroups'],
+            'grandTotals'   => $table2Result['grandTotals'],
+            'mesinAktif'    => $mesinAktif,
+            'totalPemakaian'=> $totalPemakaian,
+            'totalNilai'    => $totalNilai,
+        ];
     }
 }

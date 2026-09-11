@@ -37,55 +37,128 @@ class CetakLaporanController extends Controller
         ];
 
         // ==========================================
-        // 1. TARIK DATA DARI DATABASE
+        // 1. AMBIL DATA DARI SETIAP CONTROLLER (SINGLE SOURCE OF TRUTH)
         // ==========================================
-        $dataLaporan['programStrategis'] = Schema::hasTable('program_strategis') ? DB::table('program_strategis')->where('tahun', $tahun)->where('bulan', $bulan)->orWhereNull('bulan')->get() : collect([]);
-        $karyawan = Schema::hasTable('karyawan') ? DB::table('karyawan')->where('status', 'aktif')->whereNull('deleted_at')->get() : collect([]);
+
+        // 1. Program Strategis
+        $psData = ProgramStrategisController::getReportData($tahun, $bulan);
+        $dataLaporan['programStrategis'] = $psData['rawData'];
+
+        // 2. Karyawan (SDM)
+        $karyawanData = KaryawanController::getReportData($tahun, $bulan);
+        $karyawan = $karyawanData['karyawan'];
         $dataLaporan['karyawan'] = $karyawan;
-        
-        $ketidakhadiran = Schema::hasTable('ketidakhadiran') ? DB::table('ketidakhadiran')->join('karyawan', 'ketidakhadiran.karyawan_id', '=', 'karyawan.id')->where('ketidakhadiran.tahun', $tahun)->where('ketidakhadiran.bulan', $bulan)->select('ketidakhadiran.*', 'karyawan.nama', 'karyawan.npk')->get() : collect([]);
+        $dataLaporan['countOrganik'] = $karyawanData['countOrganik'];
+        $dataLaporan['countNonOrganik'] = $karyawanData['countNonOrganik'];
+
+        // 3. Ketidakhadiran
+        $absenData = KetidakhadiranController::getReportData($tahun, $bulan);
+        $ketidakhadiran = $absenData['ketidakhadiran'];
         $dataLaporan['ketidakhadiran'] = $ketidakhadiran;
+        $dataLaporan['totalPerKategoriAbsen'] = $absenData['totalPerKategori'];
 
-        $anggaran = Schema::hasTable('anggaran_administrasi') ? DB::table('anggaran_administrasi')->where('tahun', $tahun)->where('bulan', $bulan)->get() : collect([]);
+        // 4. Anggaran
+        $anggaranData = AnggaranController::getReportData($tahun, $bulan);
+        $anggaran = $anggaranData['anggaran'];
         $dataLaporan['anggaran'] = $anggaran;
+        $dataLaporan['anggaranPerKategori'] = $anggaranData['perKategori'];
+        $dataLaporan['anggaranKategoriList'] = $anggaranData['kategoriList'];
+        $dataLaporan['totalRkap'] = $anggaranData['totalRkap'];
+        $dataLaporan['totalRealisasi'] = $anggaranData['totalRealisasi'];
+        $dataLaporan['totalKomitmen'] = $anggaranData['totalKomitmen'];
+        $dataLaporan['totalSisa'] = $anggaranData['totalSisa'];
+        $dataLaporan['percRealisasiKomitmen'] = $anggaranData['percRealisasiKomitmen'];
+        $dataLaporan['percSisaAnggaran'] = $anggaranData['percSisaAnggaran'];
+        $dataLaporan['sisaPerKategoriAnggaran'] = $anggaranData['sisaPerKategori'];
 
-        $perizinan = Schema::hasTable('perizinan_terbit') ? DB::table('perizinan_terbit')->whereYear('tanggal_sejak', $tahun)->get() : collect([]);
-        $dataLaporan['perizinan'] = $perizinan;
-
-        $pelaporan = Schema::hasTable('pelaporan') ? DB::table('pelaporan')->whereYear('tanggal', $tahun)->whereMonth('tanggal', $bulanNum)->get() : collect([]);
-        $dataLaporan['pelaporan'] = $pelaporan;
-
-        $dataLaporan['paTekstual'] = Schema::hasTable('pa_tekstual_data') ? DB::table('pa_tekstual_data')->join('pa_tekstual_master', 'pa_tekstual_data.master_id', '=', 'pa_tekstual_master.id')->where('pa_tekstual_data.tahun', $tahun)->where('pa_tekstual_data.bulan', $bulan)->get() : collect([]);
-        $dataLaporan['paNonTekstual'] = Schema::hasTable('pa_non_tekstual_values') ? DB::table('pa_non_tekstual_values')->join('pa_non_tekstual_types', 'pa_non_tekstual_values.type_id', '=', 'pa_non_tekstual_types.id')->where('pa_non_tekstual_values.tahun', $tahun)->where('pa_non_tekstual_values.bulan', $bulan)->select('pa_non_tekstual_values.*', 'pa_non_tekstual_types.name as jenis')->get() : collect([]);
-        $dataLaporan['paTeknik'] = Schema::hasTable('pa_teknik_data') ? DB::table('pa_teknik_data')->join('pa_teknik_masters', 'pa_teknik_data.master_id', '=', 'pa_teknik_masters.id')->where('pa_teknik_data.tahun', $tahun)->where('pa_teknik_data.bulan', $bulan)->get() : collect([]);
-        $dataLaporan['dof'] = Schema::hasTable('dof_data') ? DB::table('dof_data')->join('dof_masters', 'dof_data.master_id', '=', 'dof_masters.id')->where('dof_data.tahun', $tahun)->where('dof_data.bulan', $bulan)->get() : collect([]);
-
-        $surat = Schema::hasTable('surat') ? DB::table('surat')->where('tahun', $tahun)->where('bulan', $bulan)->get() : collect([]);
-        $dataLaporan['surat'] = $surat;
-
-        $jasaKurir = Schema::hasTable('jasa_kurir_data') ? DB::table('jasa_kurir_data')->join('jasa_kurir_master', 'jasa_kurir_data.jasa_kurir_id', '=', 'jasa_kurir_master.id')->where('jasa_kurir_data.tahun', $tahun)->where('jasa_kurir_data.bulan', $bulan)->get() : collect([]);
-        $dataLaporan['jasaKurir'] = $jasaKurir;
-
-        $fotocopy = Schema::hasTable('jasa_fotocopy') ? DB::table('jasa_fotocopy')->where('tahun', $tahun)->where('bulan', $bulan)->get() : collect([]);
-        $dataLaporan['fotocopy'] = $fotocopy;
-
-        $pemeliharaanRutin = (Schema::hasTable('pemeliharaan_rutin_data') && Schema::hasTable('pemeliharaan_rutin_master')) ? DB::table('pemeliharaan_rutin_data')->join('pemeliharaan_rutin_master', 'pemeliharaan_rutin_data.rutin_id', '=', 'pemeliharaan_rutin_master.id')->where('pemeliharaan_rutin_data.tahun', $tahun)->where('pemeliharaan_rutin_data.bulan', $bulan)->select('pemeliharaan_rutin_data.*', 'pemeliharaan_rutin_master.nama_pemeliharaan')->get() : collect([]);
-        $dataLaporan['pemeliharaanRutin'] = $pemeliharaanRutin;
-                
-        $pemeliharaanPeralatan = (Schema::hasTable('pemeliharaan_peralatan_data') && Schema::hasTable('pemeliharaan_peralatan_master')) ? DB::table('pemeliharaan_peralatan_data')->join('pemeliharaan_peralatan_master', 'pemeliharaan_peralatan_data.peralatan_id', '=', 'pemeliharaan_peralatan_master.id')->where('pemeliharaan_peralatan_data.tahun', $tahun)->where('pemeliharaan_peralatan_data.bulan', $bulan)->select('pemeliharaan_peralatan_data.*', 'pemeliharaan_peralatan_master.nama_peralatan')->get() : collect([]);
-        $dataLaporan['pemeliharaanPeralatan'] = $pemeliharaanPeralatan;
-
-        $undangan = Schema::hasTable('undangan') ? DB::table('undangan')->where('tahun', $tahun)->where('bulan', $bulan)->get() : collect([]);
-        $dataLaporan['undangan'] = $undangan;
-
-        $barSkMemo = Schema::hasTable('bar_sk_memo') ? DB::table('bar_sk_memo')->where('tahun', $tahun)->where('bulan', $bulan)->first() : null;
+        // 5. BAR SK Memo
+        $barData = BarSkMemoController::getReportData($tahun, $bulan);
+        $barSkMemo = $barData['barSkMemo'];
         $dataLaporan['barSkMemo'] = $barSkMemo;
 
-        $dataLaporan['kendala'] = Schema::hasTable('masalah_kendala') ? DB::table('masalah_kendala')->where('tahun', $tahun)->where('bulan', $bulan)->get() : collect([]);
+        // 6. Surat Masuk & Keluar
+        $suratData = SuratController::getReportData($tahun, $bulan);
+        $dataLaporan['suratRekapData'] = $suratData['rekapData'];
+        $dataLaporan['surat'] = $suratData['detailData'];
+
+        // 7. Undangan
+        $undanganData = UndanganController::getReportData($tahun, $bulan);
+        $dataLaporan['undangan'] = $undanganData['undangan'];
+        $dataLaporan['totalIntern'] = $undanganData['totalIntern'];
+        $dataLaporan['totalEkstern'] = $undanganData['totalEkstern'];
+        $dataLaporan['detailUndangan'] = $undanganData['detailUndangan'];
+
+        // 8. Pengiriman Dokumen
+        $pengirimanData = PengirimanDokumenController::getReportData($tahun, $bulan);
+        $pengirimanDokumen = $pengirimanData['pengirimanVolume'];
+        $dataLaporan['pengirimanDokumen'] = $pengirimanDokumen;
+        $dataLaporan['pengirimanOngkir'] = $pengirimanData['pengirimanOngkir'];
+
+        // 9. Jasa Kurir
+        $kurirData = JasaKurirController::getReportData($tahun, $bulan);
+        $jasaKurirMaster = $kurirData['kurirMaster'];
+        $jasaKurirRaw = $kurirData['jasaKurirData'];
+        $dataLaporan['jasaKurirMaster'] = $jasaKurirMaster;
+        $dataLaporan['jasaKurirData'] = $jasaKurirRaw;
+        $dataLaporan['jasaKurirTableData'] = collect($kurirData['tableData'])->first();
+
+        // 10. Jasa Fotocopy
+        $fotocopyData = JasaFotocopyController::getReportData($tahun, $bulan);
+        $dataLaporan['jasaFotocopy'] = $fotocopyData;
+        $mapBulanNumFc = [
+            'Januari' => 1, 'Februari' => 2, 'Maret' => 3, 'April' => 4,
+            'Mei' => 5, 'Juni' => 6, 'Juli' => 7, 'Agustus' => 8,
+            'September' => 9, 'Oktober' => 10, 'November' => 11, 'Desember' => 12
+        ];
+        $bulanNumFc = $mapBulanNumFc[$bulan] ?? null;
+        $jasaFotocopySemua = \App\Models\JasaFotocopy::where('tahun', $tahun)
+            ->where(function($q) use ($bulan, $bulanNumFc) {
+                $q->whereRaw('LOWER(TRIM(bulan)) = ?', [strtolower(trim($bulan))]);
+                if ($bulanNumFc) {
+                    $q->orWhereRaw('CAST(bulan AS UNSIGNED) = ?', [$bulanNumFc]);
+                }
+            })
+            ->get();
+        $dataLaporan['jasaFotocopySemua'] = $jasaFotocopySemua;
+
+        // 11. Perizinan Perkantoran
+        $perizinanData = PerizinanPerkantoranController::getReportData($tahun, $bulan);
+        $perizinanTerbit = $perizinanData['perizinanTerbit'];
+        $dataLaporan['perizinanTerbit'] = $perizinanTerbit;
+        $dataLaporan['perizinanProses'] = $perizinanData['perizinanProses'];
+        $dataLaporan['ringkasanTerbit'] = $perizinanData['ringkasanTerbit'];
+        $dataLaporan['statistikTerbitSemuaTahun'] = $perizinanData['statistikTerbitSemuaTahun'];
+
+        // 12. Pelaporan
+        $pelaporanData = PelaporanController::getReportData($tahun, $bulan);
+        $pelaporan = $pelaporanData['pelaporan'];
+        $dataLaporan['pelaporan'] = $pelaporan;
+
+        // 13. Pemeliharaan
+        $pemeliharaanData = PemeliharaanController::getReportData($tahun, $bulan);
+        $dataLaporan['pemeliharaanRutin'] = $pemeliharaanData['pemeliharaanRutin'];
+        $dataLaporan['pemeliharaanPeralatan'] = $pemeliharaanData['pemeliharaanPeralatan'];
+
+        // 14. Kearsipan (PA Tekstual, Non Tekstual, Teknik, DOF)
+        $paTekstualData = PaTekstualController::getReportData($tahun, $bulan);
+        $dataLaporan['paTekstual'] = $paTekstualData['paTekstual'];
+
+        $paNonTekstualData = PaNonTekstualController::getReportData($tahun, $bulan);
+        $dataLaporan['paNonTekstual'] = $paNonTekstualData['paNonTekstual'];
+
+        $paTeknikData = PaTeknikController::getReportData($tahun, $bulan);
+        $dataLaporan['paTeknik'] = $paTeknikData['paTeknik'];
+
+        $dofData = DofController::getReportData($tahun, $bulan);
+        $dataLaporan['dof'] = $dofData['dof'];
+
+        // 15. Masalah & Kendala
+        $kendalaData = MasalahKendalaController::getReportData($tahun, $bulan);
+        $dataLaporan['kendala'] = $kendalaData['kendala'];
 
 
         // ==========================================
-        // 2. GENERATE GRAFIK BASE64 (DIJAMIN MUNCUL DI PDF)
+        // 2. GENERATE GRAFIK BASE64 VIA QUICKCHART
         // ==========================================
         $generateChart = function($type, $labels, $datasets, $w = 500, $h = 250) {
             $config = ['type' => $type, 'data' => ['labels' => $labels, 'datasets' => $datasets], 'options' => ['legend' => ['position' => 'bottom'], 'plugins' => ['datalabels' => ['color' => '#ffffff', 'font' => ['weight' => 'bold']]]]];
@@ -100,78 +173,181 @@ class CetakLaporanController extends Controller
             return null;
         };
 
-        // SDM (Pie)
-        $org = $karyawan->where('keterangan', 'Organik')->count();
-        $nonOrg = $karyawan->where('keterangan', 'Non Organik')->count();
+        // SDM Charts
+        $org = $karyawanData['countOrganik'];
+        $nonOrg = $karyawanData['countNonOrganik'];
         $dataLaporan['chartSdm'] = ($org > 0 || $nonOrg > 0) ? $generateChart('pie', ['Organik', 'Non Organik'], [['data' => [$org, $nonOrg], 'backgroundColor' => ['#F97316', '#1E3A8A']]], 300, 300) : null;
 
-        $dinas = $ketidakhadiran->sum('dinas'); $cuti = $ketidakhadiran->sum('cuti'); $izin = $ketidakhadiran->sum('izin'); $training = $ketidakhadiran->sum('training');
-        $dataLaporan['chartAbsensi'] = ($dinas > 0 || $cuti > 0 || $izin > 0 || $training > 0) ? $generateChart('pie', ['Dinas', 'Cuti', 'Izin', 'Training'], [['data' => [$dinas, $cuti, $izin, $training], 'backgroundColor' => ['#1E3A8A', '#3B82F6', '#F97316', '#FDE047']]], 300, 300) : null;
+        // Pensiun Chart (from karyawanData)
+        $pensiunCounts = $karyawanData['chartPensiunData'];
+        if (array_sum($pensiunCounts) > 0) {
+            $dataLaporan['chartPensiun'] = $generateChart('pie', array_keys($pensiunCounts), [['data' => array_values($pensiunCounts), 'backgroundColor' => ['#ef4444', '#f97316', '#eab308', '#22c55e']]], 300, 300);
+        } else { $dataLaporan['chartPensiun'] = null; }
 
-        // Anggaran (Pie)
-        foreach(['Dikelola', 'Rutin', 'Investasi'] as $kat) {
-            $real = $anggaran->where('kategori', "Anggaran $kat")->sum('realisasi') + $anggaran->where('kategori', "Anggaran $kat")->sum('komitmen');
-            $sisa = $anggaran->where('kategori', "Anggaran $kat")->sum('rkap') - $real;
-            $dataLaporan["chartAnggaran$kat"] = ($real > 0 || $sisa > 0) ? $generateChart('pie', ['Sisa', 'Penggunaan'], [['data' => [$sisa, $real], 'backgroundColor' => ['#1E3A8A', '#F97316']]], 300, 300) : null;
+        // Absensi Chart
+        $absenTotals = $absenData['totalPerKategori'];
+        $dinas = $absenTotals['Dinas']; $cuti = $absenTotals['Cuti']; $izin = $absenTotals['Izin'];
+        $training = $absenTotals['Training']; $dispensasi = $absenTotals['Dispensasi']; $detasering = $absenTotals['Detasering'];
+        $dataLaporan['chartAbsensi'] = ($dinas > 0 || $cuti > 0 || $izin > 0 || $training > 0 || $dispensasi > 0 || $detasering > 0) 
+            ? $generateChart('pie', ['Dinas', 'Cuti', 'Izin', 'Training', 'Dispensasi', 'Detasering'], [['data' => [$dinas, $cuti, $izin, $training, $dispensasi, $detasering], 'backgroundColor' => ['#1E3A8A', '#3B82F6', '#F97316', '#FDE047', '#22c55e', '#ef4444']]], 300, 300) : null;
+
+        // Anggaran Charts (per kategori)
+        foreach($anggaranData['perKategori'] as $kat => $items) {
+            $real = $items->sum('realisasi') + $items->sum('komitmen');
+            $sisa = $items->sum('rkap') - $real;
+            $safeKat = str_replace([' ', '&'], '', $kat);
+            $dataLaporan["chartAnggaran$safeKat"] = ($real > 0 || $sisa > 0) ? $generateChart('pie', ['Sisa', 'Penggunaan'], [['data' => [$sisa, $real], 'backgroundColor' => ['#1E3A8A', '#F97316']]], 300, 300) : null;
         }
+        // Ensure all chart keys exist even if empty
+        foreach (['Dikelola', 'Rutin', 'Investasi'] as $kat) {
+            $safeKat = str_replace([' ', '&'], '', $kat);
+            if (!isset($dataLaporan["chartAnggaran$safeKat"])) $dataLaporan["chartAnggaran$safeKat"] = null;
+        }
+        $dataLaporan['chartAnggaranDikelola'] = $dataLaporan['chartAnggaranDikelola'] ?? null;
+        $dataLaporan['chartAnggaranRutin'] = $dataLaporan['chartAnggaranRutin'] ?? null;
+        $dataLaporan['chartAnggaranInvestasi'] = $dataLaporan['chartAnggaranInvestasi'] ?? null;
 
-        // BAR SK Memo (Bar)
+        // BAR SK Memo Charts
         if ($barSkMemo) {
             $dataLaporan['imgBarSkMemoTerbit'] = $generateChart('bar', [$bulan], [
-                ['label' => 'BAR Monitoring', 'data' => [$barSkMemo->bar_monitoring_terbit], 'backgroundColor' => '#BAE6FD'],
-                ['label' => 'Memo Direksi', 'data' => [$barSkMemo->memo_direksi_terbit], 'backgroundColor' => '#3B82F6'],
-                ['label' => 'SKD Kep. Bersama', 'data' => [$barSkMemo->skd_keputusan_bersama_terbit], 'backgroundColor' => '#22C55E'],
-                ['label' => 'SKD Non Ratifikasi', 'data' => [$barSkMemo->skd_non_ratifikasi_terbit], 'backgroundColor' => '#F97316'],
-                ['label' => 'SKD Ratifikasi', 'data' => [$barSkMemo->skd_ratifikasi_terbit], 'backgroundColor' => '#1E3A8A'],
-                ['label' => 'BAR Manajemen', 'data' => [$barSkMemo->bar_manajemen_terbit], 'backgroundColor' => '#FDE047']
+                ['label' => 'BAR Monitoring', 'data' => [$barSkMemo->bar_monitoring_terbit ?? 0], 'backgroundColor' => '#BAE6FD'],
+                ['label' => 'Memo Direksi', 'data' => [$barSkMemo->memo_direksi_terbit ?? 0], 'backgroundColor' => '#3B82F6'],
+                ['label' => 'SKD Kep. Bersama', 'data' => [$barSkMemo->skd_keputusan_bersama_terbit ?? 0], 'backgroundColor' => '#22C55E'],
+                ['label' => 'SKD Non Ratifikasi', 'data' => [$barSkMemo->skd_non_ratifikasi_terbit ?? 0], 'backgroundColor' => '#F97316'],
+                ['label' => 'SKD Ratifikasi', 'data' => [$barSkMemo->skd_ratifikasi_terbit ?? 0], 'backgroundColor' => '#1E3A8A'],
+                ['label' => 'BAR Manajemen', 'data' => [$barSkMemo->bar_manajemen_terbit ?? 0], 'backgroundColor' => '#FDE047']
             ]);
             $dataLaporan['imgBarSkMemoProses'] = $generateChart('bar', [$bulan], [
-                ['label' => 'Proses BAR Monitor', 'data' => [$barSkMemo->proses_bar_monitoring], 'backgroundColor' => '#BAE6FD'],
-                ['label' => 'Proses Memo Direksi', 'data' => [$barSkMemo->proses_memo_direksi], 'backgroundColor' => '#3B82F6'],
-                ['label' => 'Proses SKD Kep. Bersama', 'data' => [$barSkMemo->proses_skd_keputusan_bersama], 'backgroundColor' => '#22C55E'],
-                ['label' => 'Proses SKD Non Ratifikasi', 'data' => [$barSkMemo->proses_skd_non_ratifikasi], 'backgroundColor' => '#F97316'],
-                ['label' => 'Proses SKD Ratifikasi', 'data' => [$barSkMemo->proses_skd_ratifikasi], 'backgroundColor' => '#1E3A8A'],
-                ['label' => 'Proses BAR Manajemen', 'data' => [$barSkMemo->proses_bar_manajemen], 'backgroundColor' => '#FDE047']
+                ['label' => 'Proses BAR Monitor', 'data' => [$barSkMemo->proses_bar_monitoring ?? 0], 'backgroundColor' => '#BAE6FD'],
+                ['label' => 'Proses Memo Direksi', 'data' => [$barSkMemo->proses_memo_direksi ?? 0], 'backgroundColor' => '#3B82F6'],
+                ['label' => 'Proses SKD Kep. Bersama', 'data' => [$barSkMemo->proses_skd_keputusan_bersama ?? 0], 'backgroundColor' => '#22C55E'],
+                ['label' => 'Proses SKD Non Ratifikasi', 'data' => [$barSkMemo->proses_skd_non_ratifikasi ?? 0], 'backgroundColor' => '#F97316'],
+                ['label' => 'Proses SKD Ratifikasi', 'data' => [$barSkMemo->proses_skd_ratifikasi ?? 0], 'backgroundColor' => '#1E3A8A'],
+                ['label' => 'Proses BAR Manajemen', 'data' => [$barSkMemo->proses_bar_manajemen ?? 0], 'backgroundColor' => '#FDE047']
             ]);
         } else { $dataLaporan['imgBarSkMemoTerbit'] = null; $dataLaporan['imgBarSkMemoProses'] = null; }
 
-        // Modul Lainnya (Bar Chart Biasa)
+        // Surat Chart
+        $surat = $dataLaporan['surat'];
         $dataLaporan['chartSurat'] = $surat->count() > 0 ? $generateChart('bar', [$bulan], [
             ['label' => 'Surat Masuk', 'data' => [$surat->where('jenis_surat', 'Surat Masuk')->count()], 'backgroundColor' => '#1E3A8A'],
             ['label' => 'Surat Keluar', 'data' => [$surat->where('jenis_surat', 'Surat Keluar')->count()], 'backgroundColor' => '#F97316']
         ]) : null;
 
-        $dataLaporan['chartUndangan'] = $undangan->count() > 0 ? $generateChart('bar', [$bulan], [
-            ['label' => 'Undangan Intern', 'data' => [$undangan->where('jenis', 'Internal')->count()], 'backgroundColor' => '#1E3A8A'],
-            ['label' => 'Undangan Ekstern', 'data' => [$undangan->where('jenis', 'Eksternal')->count()], 'backgroundColor' => '#F97316']
+        // Undangan Chart
+        $dataLaporan['chartUndangan'] = ($undanganData['totalIntern'] > 0 || $undanganData['totalEkstern'] > 0) ? $generateChart('bar', [$bulan], [
+            ['label' => 'Undangan Intern', 'data' => [$undanganData['totalIntern']], 'backgroundColor' => '#1E3A8A'],
+            ['label' => 'Undangan Ekstern', 'data' => [$undanganData['totalEkstern']], 'backgroundColor' => '#F97316']
         ]) : null;
 
-        $dataLaporan['chartFotocopy'] = $fotocopy->count() > 0 ? $generateChart('bar', [$bulan], [['label' => 'Jumlah Pemakaian Jasa Fotocopy', 'data' => [$fotocopy->sum('pemakaian_lembar')], 'backgroundColor' => '#F97316']]) : null;
-        
-        $dataLaporan['chartKearsipan'] = ($dataLaporan['paTekstual']->count() > 0 || $dataLaporan['dof']->count() > 0) ? $generateChart('bar', [$bulan], [
-            ['label' => 'Pusat Arsip', 'data' => [$dataLaporan['paTekstual']->sum('jumlah')], 'backgroundColor' => '#3B82F6'],
-            ['label' => 'Teknikal File', 'data' => [$dataLaporan['paTeknik']->sum('jumlah')], 'backgroundColor' => '#F97316'],
-            ['label' => 'DOF', 'data' => [$dataLaporan['dof']->sum('jumlah')], 'backgroundColor' => '#FDE047']
+        // Fotocopy Chart
+        $dataLaporan['chartFotocopy'] = $jasaFotocopySemua->count() > 0 ? $generateChart('bar', [$bulan], [['label' => 'Jumlah Pemakaian Jasa Fotocopy', 'data' => [$jasaFotocopySemua->sum('pemakaian_lembar')], 'backgroundColor' => '#F97316']]) : null;
+
+        // Kearsipan Chart
+        $paTekstualCollection = $dataLaporan['paTekstual']['tabel1']->concat($dataLaporan['paTekstual']['tabel2']);
+        $dofCollection = $dataLaporan['dof']['tabel1']->concat($dataLaporan['dof']['tabel2']);
+        $paTeknikCollection = $dataLaporan['paTeknik']['tabel1']->concat($dataLaporan['paTeknik']['tabel2']);
+        $dataLaporan['chartKearsipan'] = ($paTekstualCollection->count() > 0 || $dofCollection->count() > 0) ? $generateChart('bar', [$bulan], [
+            ['label' => 'Pusat Arsip', 'data' => [$paTekstualCollection->sum('jumlah')], 'backgroundColor' => '#3B82F6'],
+            ['label' => 'Teknikal File', 'data' => [$paTeknikCollection->sum('jumlah')], 'backgroundColor' => '#F97316'],
+            ['label' => 'DOF', 'data' => [$dofCollection->sum('jumlah')], 'backgroundColor' => '#FDE047']
         ]) : null;
 
-        $dataLaporan['chartPerizinan'] = $perizinan->count() > 0 ? $generateChart('bar', [$bulan], [['label' => 'Perizinan Terbit', 'data' => [$perizinan->count()], 'backgroundColor' => '#22C55E']]) : null;
+        // Perizinan Chart - Statistik Perizinan Terbit (Semua Tahun), tidak terikat filter tahun/bulan laporan
+        $statistikTerbitSemuaTahun = $dataLaporan['statistikTerbitSemuaTahun'];
+        $dataLaporan['chartPerizinan'] = $statistikTerbitSemuaTahun->count() > 0 ? $generateChart('bar', $statistikTerbitSemuaTahun->pluck('tahun')->map(fn($t) => (string) $t)->toArray(), [
+            ['label' => 'Produk', 'data' => $statistikTerbitSemuaTahun->pluck('produk')->toArray(), 'backgroundColor' => '#1E3A8A'],
+            ['label' => 'Aset', 'data' => $statistikTerbitSemuaTahun->pluck('aset')->toArray(), 'backgroundColor' => '#3B82F6'],
+            ['label' => 'Proyek', 'data' => $statistikTerbitSemuaTahun->pluck('proyek')->toArray(), 'backgroundColor' => '#F97316'],
+            ['label' => 'Peralatan Pabrik', 'data' => $statistikTerbitSemuaTahun->pluck('peralatan_pabrik')->toArray(), 'backgroundColor' => '#FDE047'],
+            ['label' => 'Adm & Lainnya', 'data' => $statistikTerbitSemuaTahun->pluck('adm')->toArray(), 'backgroundColor' => '#22C55E'],
+        ], 600, 280) : null;
+
+        // Pelaporan Chart
         $dataLaporan['chartPelaporan'] = $pelaporan->count() > 0 ? $generateChart('bar', [$bulan], [
             ['label' => 'Laporan Internal', 'data' => [$pelaporan->where('tujuan', 'Internal')->count()], 'backgroundColor' => '#1E3A8A'],
             ['label' => 'Laporan Eksternal', 'data' => [$pelaporan->where('tujuan', 'Eksternal')->count()], 'backgroundColor' => '#F97316']
         ]) : null;
-        $dataLaporan['chartKurir'] = $jasaKurir->count() > 0 ? $generateChart('bar', [$bulan], [['label' => 'Pengiriman Kurir', 'data' => [$jasaKurir->sum('jumlah')], 'backgroundColor' => '#F97316']]) : null;
-        $dataLaporan['chartPemeliharaan'] = ($pemeliharaanRutin->count() > 0 || $pemeliharaanPeralatan->count() > 0) ? $generateChart('bar', [$bulan], [
-            ['label' => 'Pemeliharaan Furnitur', 'data' => [$pemeliharaanRutin->sum('jumlah')], 'backgroundColor' => '#F97316'],
-            ['label' => 'Penyiapan Peralatan', 'data' => [$pemeliharaanPeralatan->sum('jumlah')], 'backgroundColor' => '#3B82F6']
+
+        // Kurir Chart
+        $jasaKurirChartData = [];
+        foreach ($jasaKurirMaster as $master) {
+            $sum = $jasaKurirRaw->where('jasa_kurir_id', $master->id)->sum('jumlah');
+            if ($sum > 0) {
+                $jasaKurirChartData[] = ['label' => $master->nama_kurir, 'data' => [$sum], 'backgroundColor' => '#F97316'];
+            }
+        }
+        $dataLaporan['chartKurir'] = count($jasaKurirChartData) > 0 ? $generateChart('bar', [$bulan], $jasaKurirChartData) : null;
+
+        // Pemeliharaan Chart
+        $pemRutin = $dataLaporan['pemeliharaanRutin'];
+        $pemPeralatan = $dataLaporan['pemeliharaanPeralatan'];
+        $dataLaporan['chartPemeliharaan'] = ($pemRutin->count() > 0 || $pemPeralatan->count() > 0) ? $generateChart('bar', [$bulan], [
+            ['label' => 'Pemeliharaan Furnitur', 'data' => [$pemRutin->sum('jumlah')], 'backgroundColor' => '#F97316'],
+            ['label' => 'Penyiapan Peralatan', 'data' => [$pemPeralatan->sum('jumlah')], 'backgroundColor' => '#3B82F6']
         ]) : null;
 
+        // Pengiriman Chart
+        if ($pengirimanDokumen) {
+            $dataLaporan['chartPengiriman'] = $generateChart('bar', [$bulan], [
+                ['label' => 'Penerimaan Mailroom', 'data' => [$pengirimanDokumen->penerimaan_mailroom ?? 0], 'backgroundColor' => '#0056A3'],
+                ['label' => 'Pengiriman Dalam Negeri', 'data' => [$pengirimanDokumen->pengiriman_dalam_negeri ?? 0], 'backgroundColor' => '#22C55E'],
+                ['label' => 'Pengiriman Luar Negeri', 'data' => [$pengirimanDokumen->pengiriman_luar_negeri ?? 0], 'backgroundColor' => '#F87171'],
+                ['label' => 'Reg. Surat Masuk DOF', 'data' => [$pengirimanDokumen->registrasi_surat_masuk_dof ?? 0], 'backgroundColor' => '#F7941E'],
+            ]);
+        } else {
+            $dataLaporan['chartPengiriman'] = null;
+        }
+
         // ==========================================
-        // 3. GENERATE PDF
+        // 3. GENERATE REPORT DENGAN DOMPDF (LANDSCAPE)
         // ==========================================
-        $pdf = Pdf::setOptions(['isHtml5ParserEnabled' => true, 'isRemoteEnabled' => true])
+        $dompdf = Pdf::setOptions(['isHtml5ParserEnabled' => true, 'isRemoteEnabled' => true])
                   ->loadView('pdf.laporan-kinerja-bulanan', $dataLaporan)
                   ->setPaper('A4', 'landscape');
         
-        return $pdf->stream("Laporan_Kinerja_ADKOR_{$bulan}_{$tahun}.pdf");
+        $tempDomPdf = tempnam(sys_get_temp_dir(), 'dompdf_');
+        file_put_contents($tempDomPdf, $dompdf->output());
+
+        // ==========================================
+        // 4. GABUNGKAN DENGAN COVER MENGGUNAKAN MPDF (PORTRAIT)
+        // ==========================================
+        $mpdf = new \Mpdf\Mpdf(['format' => 'A4-P']);
+        
+        $mpdf->AddPage();
+        $mpdf->Image(public_path('images/cover-laporan.png'), 0, 0, 210, 297, 'png', '', true, false);
+        
+        $boxX = 18;  $boxY_Bulan = 182;  $boxY_Tahun = 208;
+        $boxW = 80;  $boxH = 25;
+
+        $mpdf->SetFillColor(43, 73, 143); 
+        $mpdf->Rect($boxX, $boxY_Bulan, $boxW, $boxH, 'F');
+        
+        $mpdf->SetFillColor(255, 255, 255); 
+        $mpdf->Rect($boxX, $boxY_Tahun, $boxW, $boxH, 'F');
+        
+        $mpdf->SetXY($boxX, $boxY_Bulan + 4);
+        $mpdf->SetFont('Arial', 'B', 28);
+        $mpdf->SetTextColor(255, 255, 255);
+        $mpdf->Cell($boxW, 15, strtoupper($bulan), 0, 0, 'C');
+        
+        $mpdf->SetXY($boxX, $boxY_Tahun + 2);
+        $mpdf->SetFont('Arial', 'B', 46);
+        $mpdf->SetTextColor(30, 58, 138);
+        $mpdf->Cell($boxW, 15, $tahun, 0, 0, 'C');
+
+        $pageCount = $mpdf->setSourceFile($tempDomPdf);
+        for ($i = 1; $i <= $pageCount; $i++) {
+            $mpdf->AddPage('L');
+            $tplId = $mpdf->importPage($i);
+            $mpdf->UseTemplate($tplId);
+        }
+
+        unlink($tempDomPdf);
+
+        return response($mpdf->Output('', 'S'), 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="Laporan_Kinerja_ADKOR_'.$bulan.'_'.$tahun.'.pdf"'
+        ]);
     }
 }

@@ -7,15 +7,13 @@ use Maatwebsite\Excel\Events\BeforeImport;
 use Maatwebsite\Excel\Concerns\RegistersEventListeners;
 use Illuminate\Support\Facades\Cache;
 
-use App\Models\JasaFotocopyMaster;
-use App\Models\JasaFotocopyData;
+use App\Models\JasaFotocopy;
 use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\ToCollection;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
 use Maatwebsite\Excel\Concerns\WithChunkReading;
 use Maatwebsite\Excel\Concerns\SkipsEmptyRows;
 use Maatwebsite\Excel\Concerns\WithBatchInserts;
-
 
 class JasaFotocopyImport implements ToCollection, WithHeadingRow, WithChunkReading, WithEvents, WithBatchInserts, SkipsEmptyRows
 {
@@ -36,36 +34,37 @@ class JasaFotocopyImport implements ToCollection, WithHeadingRow, WithChunkReadi
         }
     }
 
-
     public function collection(Collection $rows)
     {
         foreach ($rows as $row) {
             if (isset($row['tahun']) && isset($row['bulan']) && isset($row['unit_kerja'])) {
-                $master = JasaFotocopyMaster::firstOrCreate(
-                    ['unit_kerja' => trim($row['unit_kerja'])],
-                    ['cost_centre' => $row['cost_centre'] ?? 'D000000', 'tipe_mesin' => 'Bizhub-TBD']
-                );
-
-                JasaFotocopyData::updateOrCreate(
-                    ['master_id' => $master->id, 'tahun' => $row['tahun'], 'bulan' => trim($row['bulan'])],
+                JasaFotocopy::updateOrCreate(
                     [
+                        'tahun' => $row['tahun'],
+                        'bulan' => trim($row['bulan']),
+                        'unit_kerja' => trim($row['unit_kerja'])
+                    ],
+                    [
+                        'cost_centre' => $row['cost_centre'] ?? null,
+                        'keterangan' => $row['keterangan'] ?? 'KOPKAR',
+                        'tipe_mesin' => $row['tipe_mesin'] ?? null,
                         'pemakaian_lembar' => (int) ($row['pemakaian_lbr'] ?? 0),
                         'biaya_fee_per_lembar' => (float) ($row['fee_lbr'] ?? 47.22),
                         'biaya_sewa_mesin' => (float) ($row['sewa_bln'] ?? 909000)
                     ]
                 );
-
-    }
+            }
+        }
+        
+        $uuid = request('import_uuid');
+        if ($uuid) {
+            Cache::increment('import_current_' . $uuid, count($rows));
         }
     }
 
     public function batchSize(): int
     {
         return 500;
-            $uuid = request('import_uuid');
-        if ($uuid) {
-            Cache::increment('import_current_' . $uuid, count($rows));
-        }
     }
 
     public function chunkSize(): int

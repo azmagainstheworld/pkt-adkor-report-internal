@@ -47,16 +47,21 @@ class MasalahKendalaImport implements ToCollection, WithHeadingRow, WithChunkRea
     public function collection(Collection $rows)
     {
         foreach ($rows as $row) {
+            // Maatwebsite normalizes 'Masalah/Kendala' -> 'masalah_kendala' (slashes become underscores)
+            // Try both variants for compatibility
+            $masalahValue = $row['masalah_kendala'] ?? $row['masalahkendala'] ?? null;
+
             // Lewati jika Masalah kosong
-            if (!isset($row['masalahkendala']) || trim($row['masalahkendala']) === '') {
+            if (empty($masalahValue) || trim($masalahValue) === '') {
                 continue;
             }
 
             // Tangkap data tambahan berdasarkan kolom dinamis
             $dataTambahan = [];
             foreach ($this->kolomDinamis as $kolom) {
-                $keyExcel = strtolower(str_replace(' ', '_', $kolom->nama_kolom));
-                if (array_key_exists($keyExcel, $row)) {
+                // Normalize: lowercase, replace spaces & special chars with underscore
+                $keyExcel = strtolower(preg_replace('/[^a-z0-9]+/i', '_', $kolom->nama_kolom));
+                if (array_key_exists($keyExcel, $row->toArray())) {
                     $dataTambahan[$kolom->nama_kolom] = $row[$keyExcel];
                 }
             }
@@ -68,7 +73,7 @@ class MasalahKendalaImport implements ToCollection, WithHeadingRow, WithChunkRea
                 [
                     'tahun'           => $row['tahun'] ?? now()->year,
                     'bulan'           => $row['bulan'] ?? 'Januari',
-                    'masalah_kendala' => $row['masalahkendala'],
+                    'masalah_kendala' => $masalahValue,
                 ],
                 [
                     'solusi'        => $row['solusi'] ?? '-',

@@ -7,116 +7,6 @@
         body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 10px; color: #333; margin: 0; padding: 20px; }
         .page-break { page-break-after: always; }
         
-        /* ================= COVER PAGE DESIGN (MIRIP GAMBAR REFERENSI) ================= */
-        .cover-page { 
-            position: relative;
-            height: 95vh; 
-            width: 100%;
-            background-color: white;
-            overflow: hidden;
-            border: 4px solid #1E3A8A; /* Border luar biru */
-        }
-        
-        /* Lengkungan Biru Atas Kiri */
-        .shape-top-left {
-            position: absolute;
-            top: -50px;
-            left: -50px;
-            width: 300px;
-            height: 300px;
-            background-color: #1E3A8A;
-            border-radius: 50%;
-        }
-        .shape-top-left-orange {
-            position: absolute;
-            top: -40px;
-            left: -40px;
-            width: 320px;
-            height: 320px;
-            border: 15px solid #F97316;
-            border-radius: 50%;
-            clip-path: polygon(0 0, 100% 0, 100% 50%, 0 50%);
-            transform: rotate(-45deg);
-        }
-
-        /* Lengkungan Biru Bawah Kanan */
-        .shape-bottom-right {
-            position: absolute;
-            bottom: -150px;
-            right: -100px;
-            width: 800px;
-            height: 300px;
-            background-color: #1E3A8A;
-            border-top-left-radius: 500px;
-            border-top-right-radius: 500px;
-        }
-        .shape-bottom-right-orange {
-            position: absolute;
-            bottom: 140px;
-            right: -100px;
-            width: 800px;
-            height: 300px;
-            border-top: 15px solid #F97316;
-            border-top-left-radius: 500px;
-            border-top-right-radius: 500px;
-        }
-
-        /* Lingkaran Logo Kanan */
-        .circle-image {
-            position: absolute;
-            right: 40px;
-            top: 40%;
-            width: 250px;
-            height: 250px;
-            border-radius: 50%;
-            border: 8px solid #F97316;
-            background-color: #eee;
-            overflow: hidden;
-            z-index: 10;
-        }
-        .circle-image-small {
-            position: absolute;
-            right: 40px;
-            top: 30%;
-            width: 120px;
-            height: 120px;
-            border-radius: 50%;
-            border: 5px solid #F97316;
-            background-color: #ddd;
-            overflow: hidden;
-            z-index: 11;
-        }
-
-        /* Teks Judul Cover */
-        .cover-text-container {
-            position: absolute;
-            top: 15%;
-            width: 100%;
-            text-align: center;
-            z-index: 5;
-        }
-        .cover-title-orange { font-size: 48px; font-weight: 900; color: #F97316; margin: 0; line-height: 1.1; }
-        .cover-title-blue { font-size: 48px; font-weight: 900; color: #1E3A8A; margin: 0; line-height: 1.1; }
-
-        /* Badge Bulan Tahun Kiri */
-        .badge-container {
-            position: absolute;
-            left: 80px;
-            bottom: 25%;
-            text-align: center;
-        }
-        .badge-blue {
-            background-color: #1E3A8A;
-            color: white;
-            padding: 10px 40px;
-            border-radius: 30px;
-            font-size: 24px;
-            font-weight: bold;
-            margin-bottom: 5px;
-            text-transform: uppercase;
-        }
-        .badge-year { font-size: 28px; font-weight: 900; color: #1E3A8A; }
-
         /* ================= KONTEN HALAMAN ================= */
         .header-title { font-size: 16px; font-weight: bold; color: #1E3A8A; margin-bottom: 2px; }
         .header-subtitle { font-size: 11px; margin-bottom: 15px; color: #555; }
@@ -141,36 +31,6 @@
 </head>
 <body>
 
-    <!-- ================= COVER PAGE ================= -->
-    <div class="cover-page">
-        <!-- Bentuk Geometris -->
-        <div class="shape-top-left"></div>
-        <div class="shape-top-left-orange"></div>
-        
-        <div class="shape-bottom-right-orange"></div>
-        <div class="shape-bottom-right"></div>
-        
-        <!-- Placeholder Lingkaran Kanan (Bisa diisi logo/gambar kantor PKT kalau kamu punya URL-nya) -->
-        <div class="circle-image"></div>
-        <div class="circle-image-small"></div>
-
-        <!-- Teks Tengah -->
-        <div class="cover-text-container">
-            <h1 class="cover-title-orange">LAPORAN</h1>
-            <h1 class="cover-title-blue">KINERJA</h1>
-            <h1 class="cover-title-blue">BULANAN</h1>
-        </div>
-
-        <!-- Badge Bulan Kiri Bawah -->
-        <div class="badge-container">
-            <div style="font-size: 40px; color: #1E3A8A; margin-bottom: -10px;">❦</div> <!-- Simbol daun PKT -->
-            <div class="badge-blue">{{ $bulan }}</div>
-            <div class="badge-year">{{ $tahun }}</div>
-        </div>
-    </div>
-    
-    <div class="page-break"></div>
-
     <!-- ================= HALAMAN 1: PROGRAM STRATEGIS ================= -->
     <div class="header-title">LAPORAN KINERJA BULANAN ADKOR</div>
     <div class="header-subtitle">Periode: {{ strtoupper($bulan) }} {{ $tahun }}</div>
@@ -178,13 +38,37 @@
     <div class="section-header">1. PROGRAM STRATEGIS</div>
     <table>
         <thead>
-            <tr><th style="width: 5%">No</th><th style="width: 25%">Program Strategis</th><th style="width: 30%">Deskripsi Kegiatan</th><th style="width: 15%">Target Waktu</th><th style="width: 25%">Realisasi</th></tr>
+            <tr>
+                <th>Tahun</th>
+                <th>Bulan</th>
+                <th>Sasaran</th>
+                <th>Program Strategis</th>
+                <th>Program Kegiatan</th>
+                <th>Target Waktu</th>
+                <th>Realisasi (%)</th>
+                <th>Progress Saat Ini</th>
+                <th>Kendala</th>
+                <th>Keterangan</th>
+                <th>Status</th>
+            </tr>
         </thead>
         <tbody>
-            @forelse($programStrategis as $index => $ps)
-            <tr><td class="text-center">{{ $index + 1 }}</td><td>{{ $ps->program_strategis ?? '-' }}</td><td>{{ $ps->deskripsi_kegiatan ?? '-' }}</td><td class="text-center">{{ $ps->target_waktu ?? '-' }}</td><td>{{ $ps->realisasi ?? '-' }}</td></tr>
+            @forelse($programStrategis as $ps)
+            <tr>
+                <td class="text-center">{{ $ps->tahun ?? $tahun }}</td>
+                <td class="text-center">{{ $bulan }}</td>
+                <td>{{ $ps->sasaran ?? '-' }}</td>
+                <td>{{ $ps->program_strategis ?? '-' }}</td>
+                <td>{{ $ps->deskripsi_kegiatan ?? '-' }}</td>
+                <td class="text-center">{{ $ps->target_waktu_start ?? '-' }}@if($ps->target_waktu_end ?? null) - {{ $ps->target_waktu_end }}@endif</td>
+                <td class="text-center">{{ $ps->realisasi ?? '-' }}</td>
+                <td>{{ $ps->progress_saat_ini ?? '-' }}</td>
+                <td>{{ $ps->kendala ?? '-' }}</td>
+                <td>{{ $ps->keterangan_tambahan ?? '-' }}</td>
+                <td class="text-center">{{ $ps->status ?? '-' }}</td>
+            </tr>
             @empty
-            <tr><td colspan="5" class="text-center">Tidak ada data program strategis.</td></tr>
+            <tr><td colspan="11" class="text-center">Tidak ada data program strategis.</td></tr>
             @endforelse
         </tbody>
     </table>
@@ -197,16 +81,24 @@
 
     <div class="section-header">2. SUMBER DAYA MANUSIA</div>
     <div class="chart-container">
-        @if($chartSdm) <div class="chart-box-large"><div class="chart-title">Komposisi Karyawan</div><img src="{{ $chartSdm }}" style="width: 100%;"></div> @endif
-        @if($chartAbsensi) <div class="chart-box-large"><div class="chart-title">Ketidakhadiran</div><img src="{{ $chartAbsensi }}" style="width: 100%;"></div> @endif
+        @if($chartSdm ?? null) <div class="chart-box-large"><div class="chart-title">Komposisi Karyawan</div><img src="{{ $chartSdm }}" style="width: 100%;"></div> @endif
+        @if($chartAbsensi ?? null) <div class="chart-box-large"><div class="chart-title">Ketidakhadiran</div><img src="{{ $chartAbsensi }}" style="width: 100%;"></div> @endif
     </div>
     <table>
-        <thead><tr><th>No</th><th>Nama Karyawan</th><th>NPK</th><th>Dinas</th><th>Cuti</th><th>Izin</th><th>Training</th><th>Dispensasi</th></tr></thead>
+        <thead><tr><th>No</th><th>Nama</th><th>NPK</th><th>Gol/Grade</th><th>MPP/PBP</th><th>Ket. Pensiun</th><th>Keterangan</th></tr></thead>
         <tbody>
-            @forelse($ketidakhadiran as $index => $absen)
-            <tr><td class="text-center">{{ $index + 1 }}</td><td>{{ $absen->nama ?? '-' }}</td><td class="text-center">{{ $absen->npk ?? '-' }}</td><td class="text-center">{{ $absen->dinas ?? 0 }}</td><td class="text-center">{{ $absen->cuti ?? 0 }}</td><td class="text-center">{{ $absen->izin ?? 0 }}</td><td class="text-center">{{ $absen->training ?? 0 }}</td><td class="text-center">{{ $absen->dispensasi ?? 0 }}</td></tr>
+            @forelse($karyawan as $index => $k)
+            <tr>
+                <td class="text-center">{{ $index + 1 }}</td>
+                <td>{{ $k->nama ?? '-' }}</td>
+                <td class="text-center">{{ $k->npk ?? '-' }}</td>
+                <td class="text-center">{{ $k->gol_grade ?? '-' }}</td>
+                <td class="text-center">{{ $k->mpp_pbp ? \Carbon\Carbon::parse($k->mpp_pbp)->format('d-m-Y') : '-' }}</td>
+                <td class="text-center">{{ $k->ket_pensiun ?? '-' }}</td>
+                <td class="text-center">{{ $k->keterangan ?? '-' }}</td>
+            </tr>
             @empty
-            <tr><td colspan="8" class="text-center">Tidak ada data absensi.</td></tr>
+            <tr><td colspan="7" class="text-center">Tidak ada data karyawan.</td></tr>
             @endforelse
         </tbody>
     </table>
@@ -219,18 +111,107 @@
 
     <div class="section-header">3. ANGGARAN ADMINISTRASI KORPORAT</div>
     <div class="chart-container">
-        @if($chartAnggaranDikelola) <div class="chart-box"><div class="chart-title">Anggaran Dikelola</div><img src="{{ $chartAnggaranDikelola }}" style="width: 100%;"></div> @endif
-        @if($chartAnggaranRutin) <div class="chart-box"><div class="chart-title">Anggaran Rutin</div><img src="{{ $chartAnggaranRutin }}" style="width: 100%;"></div> @endif
-        @if($chartAnggaranInvestasi) <div class="chart-box"><div class="chart-title">Anggaran Investasi</div><img src="{{ $chartAnggaranInvestasi }}" style="width: 100%;"></div> @endif
+        @if($chartAnggaranDikelola ?? null) <div class="chart-box"><div class="chart-title">Anggaran Dikelola</div><img src="{{ $chartAnggaranDikelola }}" style="width: 100%;"></div> @endif
+        @if($chartAnggaranRutin ?? null) <div class="chart-box"><div class="chart-title">Anggaran Rutin</div><img src="{{ $chartAnggaranRutin }}" style="width: 100%;"></div> @endif
+        @if($chartAnggaranInvestasi ?? null) <div class="chart-box"><div class="chart-title">Anggaran Investasi</div><img src="{{ $chartAnggaranInvestasi }}" style="width: 100%;"></div> @endif
     </div>
+
+    <!-- Tabel 1: Rincian Realisasi Penggunaan dan Sisa Anggaran -->
+    <div class="font-bold" style="color:#1E3A8A; margin-bottom:5px;">Rincian Realisasi Penggunaan dan Sisa Anggaran</div>
     <table>
-        <thead><tr><th>Kategori</th><th>Detail Anggaran</th><th>RKAP</th><th>Realisasi</th><th>Komitmen</th><th>Sisa Anggaran</th></tr></thead>
+        <thead>
+            <tr>
+                <th>Tahun</th>
+                <th>Bulan</th>
+                <th>Detail</th>
+                <th>Anggaran RKAP</th>
+                <th>Komitmen</th>
+                <th>Realisasi</th>
+                <th>Realisasi + Komitmen</th>
+                <th>% Realisasi+Komitmen</th>
+                <th>Sisa Anggaran</th>
+                <th>% Sisa Anggaran</th>
+            </tr>
+        </thead>
         <tbody>
             @forelse($anggaran as $ang)
-            <tr><td class="font-bold">{{ $ang->kategori ?? '-' }}</td><td>{{ $ang->detail_anggaran ?? '-' }}</td><td class="text-right">Rp {{ number_format($ang->rkap ?? 0, 0, ',', '.') }}</td><td class="text-right">Rp {{ number_format($ang->realisasi ?? 0, 0, ',', '.') }}</td><td class="text-right">Rp {{ number_format($ang->komitmen ?? 0, 0, ',', '.') }}</td><td class="text-right font-bold">Rp {{ number_format(($ang->rkap??0)-(($ang->realisasi??0)+($ang->komitmen??0)), 0, ',', '.') }}</td></tr>
+            @php
+                $angRealKomit = ($ang->realisasi ?? 0) + ($ang->komitmen ?? 0);
+                $angSisa = ($ang->rkap ?? 0) - $angRealKomit;
+                $angPercRK = ($ang->rkap ?? 0) > 0 ? round($angRealKomit / $ang->rkap * 100, 1) : 0;
+                $angPercSisa = ($ang->rkap ?? 0) > 0 ? round($angSisa / $ang->rkap * 100, 1) : 0;
+            @endphp
+            <tr>
+                <td class="text-center">{{ $ang->tahun ?? $tahun }}</td>
+                <td class="text-center">{{ $ang->bulan ?? $bulan }}</td>
+                <td>{{ $ang->detail_anggaran ?? '-' }}</td>
+                <td class="text-right">Rp {{ number_format($ang->rkap ?? 0, 0, ',', '.') }}</td>
+                <td class="text-right">Rp {{ number_format($ang->komitmen ?? 0, 0, ',', '.') }}</td>
+                <td class="text-right">Rp {{ number_format($ang->realisasi ?? 0, 0, ',', '.') }}</td>
+                <td class="text-right">Rp {{ number_format($angRealKomit, 0, ',', '.') }}</td>
+                <td class="text-center">{{ $angPercRK }}%</td>
+                <td class="text-right font-bold">Rp {{ number_format($angSisa, 0, ',', '.') }}</td>
+                <td class="text-center">{{ $angPercSisa }}%</td>
+            </tr>
             @empty
-            <tr><td colspan="6" class="text-center">Tidak ada data anggaran.</td></tr>
+            <tr><td colspan="10" class="text-center">Tidak ada data anggaran.</td></tr>
             @endforelse
+        </tbody>
+    </table>
+
+    <!-- Tabel 2: Ringkasan Realisasi & Komitmen per Bulan -->
+    <div class="font-bold" style="color:#1E3A8A; margin:10px 0 5px;">Ringkasan Realisasi & Komitmen per Bulan</div>
+    <table>
+        <thead>
+            <tr>
+                <th>Tahun</th>
+                <th>Bulan</th>
+                <th>% Realisasi & Komitmen</th>
+                <th>% Sisa Anggaran</th>
+                <th>Anggaran RKAP</th>
+                <th>Komitmen</th>
+                <th>Realisasi</th>
+                <th>Realisasi + Komitmen</th>
+                <th>Sisa Anggaran</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td class="text-center">{{ $tahun }}</td>
+                <td class="text-center">{{ $bulan }}</td>
+                <td class="text-center">{{ $percRealisasiKomitmen ?? 0 }}%</td>
+                <td class="text-center">{{ $percSisaAnggaran ?? 0 }}%</td>
+                <td class="text-right">Rp {{ number_format($totalRkap ?? 0, 0, ',', '.') }}</td>
+                <td class="text-right">Rp {{ number_format($totalKomitmen ?? 0, 0, ',', '.') }}</td>
+                <td class="text-right">Rp {{ number_format($totalRealisasi ?? 0, 0, ',', '.') }}</td>
+                <td class="text-right">Rp {{ number_format(($totalKomitmen ?? 0) + ($totalRealisasi ?? 0), 0, ',', '.') }}</td>
+                <td class="text-right font-bold">Rp {{ number_format($totalSisa ?? 0, 0, ',', '.') }}</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- Tabel 3: Perbandingan Sisa Anggaran Antar Kategori -->
+    <div class="font-bold" style="color:#1E3A8A; margin:10px 0 5px;">Perbandingan Sisa Anggaran Antar Kategori</div>
+    <table>
+        <thead>
+            <tr>
+                <th>Tahun</th>
+                <th>Bulan</th>
+                <th>Keterangan</th>
+                <th>Anggaran Dikelola</th>
+                <th>Anggaran Rutin</th>
+                <th>Anggaran Investasi</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td class="text-center">{{ $tahun }}</td>
+                <td class="text-center">{{ $bulan }}</td>
+                <td class="text-center">Sisa</td>
+                <td class="text-right">Rp {{ number_format($sisaPerKategoriAnggaran['Dikelola'] ?? 0, 0, ',', '.') }}</td>
+                <td class="text-right">Rp {{ number_format($sisaPerKategoriAnggaran['Rutin'] ?? 0, 0, ',', '.') }}</td>
+                <td class="text-right">Rp {{ number_format($sisaPerKategoriAnggaran['Investasi'] ?? 0, 0, ',', '.') }}</td>
+            </tr>
         </tbody>
     </table>
 
@@ -242,14 +223,71 @@
 
     <div class="section-header">4. BAR SK MEMO (MONITORING SK DIREKSI)</div>
     <div class="chart-container">
-        @if($imgBarSkMemoTerbit) <div class="chart-box-large"><div class="chart-title">BAR SK MEMO TERBIT</div><img src="{{ $imgBarSkMemoTerbit }}" style="width: 100%;"></div> @endif
-        @if($imgBarSkMemoProses) <div class="chart-box-large"><div class="chart-title">BAR SK MEMO PROSES</div><img src="{{ $imgBarSkMemoProses }}" style="width: 100%;"></div> @endif
+        @if($imgBarSkMemoTerbit ?? null) <div class="chart-box-large"><div class="chart-title">BAR SK MEMO TERBIT</div><img src="{{ $imgBarSkMemoTerbit }}" style="width: 100%;"></div> @endif
+        @if($imgBarSkMemoProses ?? null) <div class="chart-box-large"><div class="chart-title">BAR SK MEMO PROSES</div><img src="{{ $imgBarSkMemoProses }}" style="width: 100%;"></div> @endif
     </div>
+
+    <div class="font-bold" style="color:#1E3A8A; margin-bottom:5px;">Proses</div>
     <table>
-        <thead><tr><th>Status</th><th>Bulan</th><th>SKD Kep. Bersama</th><th>SKD Non Ratif</th><th>SKD Ratif</th><th>Memo Direksi</th><th>BAR Monitor</th><th>BAR Manajemen</th></tr></thead>
+        <thead>
+            <tr>
+                <th>Tahun</th>
+                <th>Bulan</th>
+                <th>Proses SKD Kep. Bersama</th>
+                <th>Proses SKD Non Ratifikasi</th>
+                <th>Proses SKD Ratifikasi</th>
+                <th>Proses Memo Direksi</th>
+                <th>Proses BAR Monitoring</th>
+                <th>Proses BAR Manajemen</th>
+            </tr>
+        </thead>
         <tbody>
-            <tr><td class="font-bold text-center">TERBIT</td><td class="text-center">{{ $bulan }}</td><td class="text-center">{{ $barSkMemo->skd_keputusan_bersama_terbit ?? 0 }}</td><td class="text-center">{{ $barSkMemo->skd_non_ratifikasi_terbit ?? 0 }}</td><td class="text-center">{{ $barSkMemo->skd_ratifikasi_terbit ?? 0 }}</td><td class="text-center">{{ $barSkMemo->memo_direksi_terbit ?? 0 }}</td><td class="text-center">{{ $barSkMemo->bar_monitoring_terbit ?? 0 }}</td><td class="text-center">{{ $barSkMemo->bar_manajemen_terbit ?? 0 }}</td></tr>
-            <tr><td class="font-bold text-center">PROSES</td><td class="text-center">{{ $bulan }}</td><td class="text-center">{{ $barSkMemo->proses_skd_keputusan_bersama ?? 0 }}</td><td class="text-center">{{ $barSkMemo->proses_skd_non_ratifikasi ?? 0 }}</td><td class="text-center">{{ $barSkMemo->proses_skd_ratifikasi ?? 0 }}</td><td class="text-center">{{ $barSkMemo->proses_memo_direksi ?? 0 }}</td><td class="text-center">{{ $barSkMemo->proses_bar_monitoring ?? 0 }}</td><td class="text-center">{{ $barSkMemo->proses_bar_manajemen ?? 0 }}</td></tr>
+            @if($barSkMemo)
+            <tr>
+                <td class="text-center">{{ $barSkMemo->tahun ?? $tahun }}</td>
+                <td class="text-center">{{ $barSkMemo->bulan ?? $bulan }}</td>
+                <td class="text-center">{{ $barSkMemo->proses_skd_keputusan_bersama ?? 0 }}</td>
+                <td class="text-center">{{ $barSkMemo->proses_skd_non_ratifikasi ?? 0 }}</td>
+                <td class="text-center">{{ $barSkMemo->proses_skd_ratifikasi ?? 0 }}</td>
+                <td class="text-center">{{ $barSkMemo->proses_memo_direksi ?? 0 }}</td>
+                <td class="text-center">{{ $barSkMemo->proses_bar_monitoring ?? 0 }}</td>
+                <td class="text-center">{{ $barSkMemo->proses_bar_manajemen ?? 0 }}</td>
+            </tr>
+            @else
+            <tr><td colspan="8" class="text-center">Tidak ada data proses BAR SK Memo.</td></tr>
+            @endif
+        </tbody>
+    </table>
+
+    <div class="font-bold" style="color:#1E3A8A; margin:10px 0 5px;">Terbit</div>
+    <table>
+        <thead>
+            <tr>
+                <th>Tahun</th>
+                <th>Bulan</th>
+                <th>SKD Keputusan Bersama</th>
+                <th>SKD Non Ratifikasi</th>
+                <th>SKD Ratifikasi</th>
+                <th>Memo Direksi</th>
+                <th>BAR Monitoring</th>
+                <th>BAR Manajemen</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if($barSkMemo)
+            <tr>
+                <td class="text-center">{{ $barSkMemo->tahun ?? $tahun }}</td>
+                <td class="text-center">{{ $barSkMemo->bulan ?? $bulan }}</td>
+                <td class="text-center">{{ $barSkMemo->skd_keputusan_bersama_terbit ?? 0 }}</td>
+                <td class="text-center">{{ $barSkMemo->skd_non_ratifikasi_terbit ?? 0 }}</td>
+                <td class="text-center">{{ $barSkMemo->skd_ratifikasi_terbit ?? 0 }}</td>
+                <td class="text-center">{{ $barSkMemo->memo_direksi_terbit ?? 0 }}</td>
+                <td class="text-center">{{ $barSkMemo->bar_monitoring_terbit ?? 0 }}</td>
+                <td class="text-center">{{ $barSkMemo->bar_manajemen_terbit ?? 0 }}</td>
+            </tr>
+            @else
+            <tr><td colspan="8" class="text-center">Tidak ada data terbit BAR SK Memo.</td></tr>
+            @endif
         </tbody>
     </table>
 
@@ -260,14 +298,42 @@
     <div class="header-subtitle">Periode: {{ strtoupper($bulan) }} {{ $tahun }}</div>
 
     <div class="section-header">5. SURAT MASUK & KELUAR</div>
-    @if($chartSurat) <div class="chart-container"><div class="chart-title">Grafik Surat</div><img src="{{ $chartSurat }}" style="width: 60%;"></div> @endif
+    @if($chartSurat ?? null) <div class="chart-container"><div class="chart-title">Grafik Surat</div><img src="{{ $chartSurat }}" style="width: 60%;"></div> @endif
+
+    <div class="font-bold" style="color:#1E3A8A; margin-bottom:5px;">Akumulasi Laporan Surat Masuk dan Keluar</div>
     <table>
-        <thead><tr><th>No</th><th>Tanggal</th><th>Nomor Surat</th><th>Judul Surat</th><th>Jenis Surat</th><th>Status</th></tr></thead>
+        <thead><tr><th>Tahun</th><th>Bulan</th><th>Surat Masuk</th><th>Surat Keluar</th></tr></thead>
+        <tbody>
+            @forelse($suratRekapData as $rk)
+            <tr>
+                <td class="text-center">{{ $rk->tahun ?? $tahun }}</td>
+                <td class="text-center">{{ $rk->bulan ?? $bulan }}</td>
+                <td class="text-center">{{ $rk->total_masuk ?? 0 }}</td>
+                <td class="text-center">{{ $rk->total_keluar ?? 0 }}</td>
+            </tr>
+            @empty
+            <tr><td colspan="4" class="text-center">Tidak ada data rekap surat.</td></tr>
+            @endforelse
+        </tbody>
+    </table>
+
+    <div class="font-bold" style="color:#1E3A8A; margin:10px 0 5px;">Arsip Detail Surat Satuan</div>
+    <table>
+        <thead><tr><th>No</th><th>Tahun</th><th>Bulan</th><th>Nomor Surat</th><th>Tanggal Surat</th><th>Judul Surat</th><th>Status</th><th>Jenis Surat</th></tr></thead>
         <tbody>
             @forelse($surat as $index => $srt)
-            <tr><td class="text-center">{{ $index + 1 }}</td><td class="text-center">{{ $srt->tanggal_surat ?? '-' }}</td><td>{{ $srt->nomor_surat ?? '-' }}</td><td>{{ $srt->judul_surat ?? '-' }}</td><td class="text-center">{{ $srt->jenis_surat ?? '-' }}</td><td class="text-center font-bold">{{ $srt->status ?? '-' }}</td></tr>
+            <tr>
+                <td class="text-center">{{ $index + 1 }}</td>
+                <td class="text-center">{{ $srt->tahun ?? $tahun }}</td>
+                <td class="text-center">{{ $srt->bulan ?? $bulan }}</td>
+                <td>{{ $srt->nomor_surat ?? '-' }}</td>
+                <td class="text-center">{{ $srt->tanggal_surat ?? '-' }}</td>
+                <td>{{ $srt->judul_surat ?? '-' }}</td>
+                <td class="text-center font-bold">{{ $srt->status ?? '-' }}</td>
+                <td class="text-center">{{ $srt->jenis_surat ?? '-' }}</td>
+            </tr>
             @empty
-            <tr><td colspan="6" class="text-center">Tidak ada data surat.</td></tr>
+            <tr><td colspan="8" class="text-center">Tidak ada data surat.</td></tr>
             @endforelse
         </tbody>
     </table>
@@ -279,145 +345,592 @@
     <div class="header-subtitle">Periode: {{ strtoupper($bulan) }} {{ $tahun }}</div>
 
     <div class="section-header">6. UNDANGAN</div>
-    @if($chartUndangan) <div class="chart-container"><div class="chart-title">Grafik Undangan</div><img src="{{ $chartUndangan }}" style="width: 60%;"></div> @endif
+    @if($chartUndangan ?? null) <div class="chart-container"><div class="chart-title">Statistik Distribusi Undangan per Bulan</div><img src="{{ $chartUndangan }}" style="width: 60%;"></div> @endif
+
+    <div class="font-bold" style="color:#1E3A8A; margin-bottom:5px;">Rekapitulasi Undangan Intern & Ekstern</div>
     <table>
-        <thead><tr><th>No</th><th>Bulan</th><th>Undangan Internal</th><th>Undangan Eksternal</th></tr></thead>
+        <thead><tr><th>Tahun</th><th>Bulan</th><th>Undangan Intern</th><th>Undangan Ekstern</th></tr></thead>
         <tbody>
-            <tr><td class="text-center">1</td><td class="text-center">{{ $bulan }}</td><td class="text-center">{{ $undangan->where('jenis', 'Internal')->count() }}</td><td class="text-center">{{ $undangan->where('jenis', 'Eksternal')->count() }}</td></tr>
+            <tr>
+                <td class="text-center">{{ $tahun }}</td>
+                <td class="text-center">{{ $bulan }}</td>
+                <td class="text-center">{{ $totalIntern ?? 0 }}</td>
+                <td class="text-center">{{ $totalEkstern ?? 0 }}</td>
+            </tr>
         </tbody>
     </table>
 
-    <div class="page-break"></div>
-
-    <!-- ================= HALAMAN 7: JASA KURIR ================= -->
-    <div class="header-title">LAPORAN KINERJA BULANAN ADKOR</div>
-    <div class="header-subtitle">Periode: {{ strtoupper($bulan) }} {{ $tahun }}</div>
-
-    <div class="section-header">7. PENGIRIMAN JASA KURIR</div>
-    @if($chartKurir) <div class="chart-container"><div class="chart-title">Grafik Jasa Kurir</div><img src="{{ $chartKurir }}" style="width: 60%;"></div> @endif
+    <div class="font-bold" style="color:#1E3A8A; margin:10px 0 5px;">Rincian Agenda Undangan</div>
     <table>
-        <thead><tr><th>No</th><th>Nama Vendor Kurir</th><th>Bulan</th><th>Jumlah Pengiriman</th></tr></thead>
+        <thead><tr><th>No</th><th>Tahun</th><th>Bulan</th><th>Jenis Undangan</th><th>Agenda</th></tr></thead>
         <tbody>
-            @forelse($jasaKurir as $index => $kurir)
-            <tr><td class="text-center">{{ $index + 1 }}</td><td>{{ $kurir->nama_kurir ?? '-' }}</td><td class="text-center">{{ $kurir->bulan ?? '-' }}</td><td class="text-center">{{ $kurir->jumlah ?? 0 }}</td></tr>
+            @forelse($detailUndangan as $index => $du)
+            <tr>
+                <td class="text-center">{{ $index + 1 }}</td>
+                <td class="text-center">{{ $du->tahun ?? $tahun }}</td>
+                <td class="text-center">{{ $du->bulan ?? $bulan }}</td>
+                <td class="text-center">{{ $du->jenis_undangan ?? '-' }}</td>
+                <td>{{ $du->agenda ?? '-' }}</td>
+            </tr>
             @empty
-            <tr><td colspan="4" class="text-center">Tidak ada data jasa kurir.</td></tr>
+            <tr><td colspan="5" class="text-center">Tidak ada data rincian agenda undangan.</td></tr>
             @endforelse
         </tbody>
     </table>
 
     <div class="page-break"></div>
 
-    <!-- ================= HALAMAN 8: FOTOCOPY ================= -->
+    <!-- ================= HALAMAN 7: PENGIRIMAN DOKUMEN ================= -->
     <div class="header-title">LAPORAN KINERJA BULANAN ADKOR</div>
     <div class="header-subtitle">Periode: {{ strtoupper($bulan) }} {{ $tahun }}</div>
 
-    <div class="section-header">8. PENYEDIAAN FOTOCOPY</div>
-    @if($chartFotocopy) <div class="chart-container"><div class="chart-title">Grafik Pemakaian Fotocopy</div><img src="{{ $chartFotocopy }}" style="width: 60%;"></div> @endif
+    <div class="section-header">7. PENGIRIMAN DOKUMEN</div>
+    @if($chartPengiriman ?? null) <div class="chart-container"><div class="chart-title">Grafik Volume Pengiriman</div><img src="{{ $chartPengiriman }}" style="width: 60%;"></div> @endif
+
+    <div class="font-bold" style="color:#1E3A8A; margin-bottom:5px;">Rincian Volume Dokumen</div>
     <table>
-        <thead><tr><th>No</th><th>Unit Kerja</th><th>Cost Centre</th><th>Tipe Mesin</th><th>Pemakaian (Lembar)</th><th>Total Biaya (Rp)</th></tr></thead>
+        <thead>
+            <tr>
+                <th>Tahun</th>
+                <th>Bulan</th>
+                <th>Penerimaan Mailroom</th>
+                <th>Pengiriman Dalam Negeri</th>
+                <th>Pengiriman Luar Negeri</th>
+                <th>Reg. Surat Masuk DOF</th>
+            </tr>
+        </thead>
         <tbody>
-            @php $grandTotalLembar = 0; $grandTotalBiaya = 0; @endphp
-            @forelse($fotocopy as $index => $fc)
-            @php $totalBiaya = ($fc->pemakaian_lembar * $fc->biaya_fee_per_lembar) + $fc->biaya_sewa_mesin; $grandTotalLembar += $fc->pemakaian_lembar; $grandTotalBiaya += $totalBiaya; @endphp
-            <tr><td class="text-center">{{ $index + 1 }}</td><td>{{ $fc->unit_kerja ?? '-' }}</td><td class="text-center">{{ $fc->cost_centre ?? '-' }}</td><td class="text-center">{{ $fc->tipe_mesin ?? '-' }}</td><td class="text-center">{{ number_format($fc->pemakaian_lembar ?? 0, 0, ',', '.') }}</td><td class="text-right">Rp {{ number_format($totalBiaya, 2, ',', '.') }}</td></tr>
+            @if($pengirimanDokumen ?? null)
+            <tr>
+                <td class="text-center">{{ $pengirimanDokumen->tahun ?? $tahun }}</td>
+                <td class="text-center">{{ $pengirimanDokumen->bulan ?? $bulan }}</td>
+                <td class="text-center">{{ $pengirimanDokumen->penerimaan_mailroom ?? 0 }}</td>
+                <td class="text-center">{{ $pengirimanDokumen->pengiriman_dalam_negeri ?? 0 }}</td>
+                <td class="text-center">{{ $pengirimanDokumen->pengiriman_luar_negeri ?? 0 }}</td>
+                <td class="text-center">{{ $pengirimanDokumen->registrasi_surat_masuk_dof ?? 0 }}</td>
+            </tr>
+            @else
+            <tr><td colspan="6" class="text-center">Tidak ada data volume dokumen.</td></tr>
+            @endif
+        </tbody>
+    </table>
+
+    <div class="font-bold" style="color:#1E3A8A; margin:10px 0 5px;">Rincian Total Ongkir Pengiriman Bulanan</div>
+    <table>
+        <thead>
+            <tr>
+                <th>Tahun</th>
+                <th>Bulan</th>
+                <th>Total Ongkir Dalam Negeri</th>
+                <th>Total Ongkir Luar Negeri</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if($pengirimanOngkir ?? null)
+            <tr>
+                <td class="text-center">{{ $pengirimanOngkir->tahun ?? $tahun }}</td>
+                <td class="text-center">{{ $pengirimanOngkir->bulan ?? $bulan }}</td>
+                <td class="text-right">Rp {{ number_format($pengirimanOngkir->ongkir_dalam_negeri ?? 0, 0, ',', '.') }}</td>
+                <td class="text-right">Rp {{ number_format($pengirimanOngkir->ongkir_luar_negeri ?? 0, 0, ',', '.') }}</td>
+            </tr>
+            @else
+            <tr><td colspan="4" class="text-center">Tidak ada data ongkir pengiriman.</td></tr>
+            @endif
+        </tbody>
+    </table>
+
+    <div class="page-break"></div>
+
+    <!-- ================= HALAMAN 8: JASA KURIR ================= -->
+    <div class="header-title">LAPORAN KINERJA BULANAN ADKOR</div>
+    <div class="header-subtitle">Periode: {{ strtoupper($bulan) }} {{ $tahun }}</div>
+
+    <div class="section-header">8. PENGIRIMAN JASA KURIR</div>
+    @if($chartKurir ?? null) <div class="chart-container"><div class="chart-title">Statistik Penggunaan Jasa Kurir</div><img src="{{ $chartKurir }}" style="width: 60%;"></div> @endif
+
+    <div class="font-bold" style="color:#1E3A8A; margin-bottom:5px;">Detail Pengiriman per Ekspedisi</div>
+    <table>
+        <thead>
+            <tr>
+                <th>Tahun</th>
+                <th>Bulan</th>
+                @foreach($jasaKurirMaster as $master)
+                <th>{{ $master->nama_kurir }}</th>
+                @endforeach
+                <th>Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if($jasaKurirTableData ?? null)
+            <tr>
+                <td class="text-center">{{ $jasaKurirTableData['tahun'] ?? $tahun }}</td>
+                <td class="text-center">{{ $jasaKurirTableData['bulan'] ?? $bulan }}</td>
+                @foreach($jasaKurirMaster as $master)
+                <td class="text-center">{{ $jasaKurirTableData['kurir_' . $master->id] ?? 0 }}</td>
+                @endforeach
+                <td class="text-center font-bold">{{ $jasaKurirTableData['total_semua'] ?? 0 }}</td>
+            </tr>
+            @else
+            <tr><td colspan="{{ $jasaKurirMaster->count() + 3 }}" class="text-center">Tidak ada data jasa kurir.</td></tr>
+            @endif
+        </tbody>
+    </table>
+
+    <div class="page-break"></div>
+
+    <!-- ================= HALAMAN 9: FOTOCOPY ================= -->
+    <div class="header-title">LAPORAN KINERJA BULANAN ADKOR</div>
+    <div class="header-subtitle">Periode: {{ strtoupper($bulan) }} {{ $tahun }}</div>
+
+    <div class="section-header">9. PENYEDIAAN FOTOCOPY</div>
+    @if($chartFotocopy ?? null) <div class="chart-container"><div class="chart-title">Statistik Pemakaian Jasa Fotocopy</div><img src="{{ $chartFotocopy }}" style="width: 60%;"></div> @endif
+
+    <div class="font-bold" style="color:#1E3A8A; margin-bottom:5px;">Rekapitulasi Utama (Otomatis)</div>
+    <table>
+        <thead>
+            <tr>
+                <th>Tahun</th>
+                <th>Bulan</th>
+                <th>Mesin FC</th>
+                <th>Jumlah Pemakaian Jasa Penyediaan Fotocopy</th>
+                <th>Nilai Jasa Penyediaan Fotocopy</th>
+            </tr>
+        </thead>
+        <tbody>
+            @forelse($jasaFotocopy['dataTable1'] as $dt1)
+            <tr>
+                <td class="text-center">{{ $dt1['tahun'] ?? $tahun }}</td>
+                <td class="text-center">{{ $dt1['bulan'] ?? $bulan }}</td>
+                <td class="text-center">{{ $dt1['mesin_fc'] ?? 0 }}</td>
+                <td class="text-center">{{ number_format($dt1['jumlah_pemakaian'] ?? 0, 0, ',', '.') }}</td>
+                <td class="text-right">Rp {{ number_format($dt1['nilai_jasa'] ?? 0, 2, ',', '.') }}</td>
+            </tr>
             @empty
-            <tr><td colspan="6" class="text-center">Tidak ada data penggunaan fotocopy.</td></tr>
+            <tr><td colspan="5" class="text-center">Tidak ada data pemakaian fotocopy.</td></tr>
+            @endforelse
+        </tbody>
+    </table>
+
+    <div class="font-bold" style="color:#1E3A8A; margin:10px 0 5px;">Rekapitulasi Pemakaian Mesin Fotocopy Biaya Fee & Sewa Bulan</div>
+    <table>
+        <thead>
+            <tr>
+                <th>No</th>
+                <th>Tahun</th>
+                <th>Bulan</th>
+                <th>Unit Kerja</th>
+                <th>Cost Centre</th>
+                <th>Jlh Pemakaian (Bln Terkait)</th>
+                <th>Jlh Pemakaian (s.d. Bln Terkait)</th>
+                <th>Ket.</th>
+                <th>Type Mesin</th>
+                <th>Biaya Fee Bulan Terkait</th>
+                <th>Biaya Fee s.d. Bulan Terkait</th>
+                <th>Biaya Fee/Lbr</th>
+                <th>Biaya Sewa/Bulan</th>
+                <th>Biaya Jasa Sewa & Fee Bln Terkait</th>
+                <th>Total Biaya Sewa & Fee s.d. Bln Terkait</th>
+            </tr>
+        </thead>
+        <tbody>
+            @forelse($jasaFotocopy['dataTable2'] as $index => $dt2)
+            <tr>
+                <td class="text-center">{{ $index + 1 }}</td>
+                <td class="text-center">{{ $dt2['tahun'] ?? $tahun }}</td>
+                <td class="text-center">{{ $dt2['bulan'] ?? $bulan }}</td>
+                <td>{{ $dt2['unit_kerja'] ?? '-' }}</td>
+                <td class="text-center">{{ $dt2['cost_centre'] ?? '-' }}</td>
+                <td class="text-center">{{ number_format($dt2['pemakaian_bln_ini'] ?? 0, 0, ',', '.') }}</td>
+                <td class="text-center">{{ number_format($dt2['pemakaian_sd'] ?? 0, 0, ',', '.') }}</td>
+                <td class="text-center">{{ $dt2['keterangan'] ?? '-' }}</td>
+                <td class="text-center">{{ $dt2['tipe_mesin'] ?? '-' }}</td>
+                <td class="text-right">Rp {{ number_format($dt2['fee_bln_ini'] ?? 0, 2, ',', '.') }}</td>
+                <td class="text-right">Rp {{ number_format($dt2['fee_sd'] ?? 0, 2, ',', '.') }}</td>
+                <td class="text-right">Rp {{ number_format($dt2['fee_per_lbr'] ?? 0, 2, ',', '.') }}</td>
+                <td class="text-right">Rp {{ number_format($dt2['sewa_bln_ini'] ?? 0, 0, ',', '.') }}</td>
+                <td class="text-right">Rp {{ number_format($dt2['total_bln_ini'] ?? 0, 2, ',', '.') }}</td>
+                <td class="text-right font-bold">Rp {{ number_format($dt2['total_sd'] ?? 0, 2, ',', '.') }}</td>
+            </tr>
+            @empty
+            <tr><td colspan="15" class="text-center">Tidak ada data rekapitulasi mesin fotocopy.</td></tr>
             @endforelse
         </tbody>
     </table>
 
     <div class="page-break"></div>
 
-    <!-- ================= HALAMAN 9: KEARSIPAN ================= -->
+    <!-- ================= HALAMAN 10: KEARSIPAN ================= -->
     <div class="header-title">LAPORAN KINERJA BULANAN ADKOR</div>
     <div class="header-subtitle">Periode: {{ strtoupper($bulan) }} {{ $tahun }}</div>
 
-    <div class="section-header">9. KEARSIPAN (TEKNIK, NON TEKNIK, DOF)</div>
-    @if($chartKearsipan) <div class="chart-container"><div class="chart-title">Grafik Kearsipan</div><img src="{{ $chartKearsipan }}" style="width: 60%;"></div> @endif
+    <div class="section-header">10. KEARSIPAN (TEKNIK, NON TEKNIK, DOF)</div>
+    @if($chartKearsipan ?? null) <div class="chart-container"><div class="chart-title">Grafik Kearsipan</div><img src="{{ $chartKearsipan }}" style="width: 60%;"></div> @endif
+
+    <!-- 10a. PA NON TEKNIK (TEKSTUAL) -->
+    <div class="font-bold" style="color:#1E3A8A; margin-bottom:5px;">PA Non Teknik (Tekstual)</div>
     <table>
-        <thead><tr><th>No</th><th>Kategori Kearsipan</th><th>Nama Dokumen / Jenis</th><th>Jumlah</th></tr></thead>
+        <thead>
+            <tr>
+                <th>Tahun</th>
+                <th>Bulan</th>
+                @foreach($paTekstual['tabel1'] as $pt)
+                <th>{{ $pt->nama_dokumen ?? '-' }}</th>
+                @endforeach
+            </tr>
+        </thead>
         <tbody>
-            @foreach($paTekstual as $index => $pt)
-            <tr><td class="text-center">{{ $index + 1 }}</td><td>PA Tekstual</td><td>{{ $pt->nama_dokumen ?? '-' }}</td><td class="text-center">{{ $pt->jumlah ?? 0 }}</td></tr>
-            @endforeach
-            @foreach($paNonTekstual as $index => $pnt)
-            <tr><td class="text-center">{{ $index + count($paTekstual) + 1 }}</td><td>PA Non Tekstual</td><td>{{ $pnt->jenis ?? '-' }}</td><td class="text-center">{{ $pnt->jumlah ?? 0 }}</td></tr>
-            @endforeach
-            @foreach($paTeknik as $index => $ptk)
-            <tr><td class="text-center">{{ $index + count($paTekstual) + count($paNonTekstual) + 1 }}</td><td>PA Teknik</td><td>{{ $ptk->nama_kegiatan ?? '-' }}</td><td class="text-center">{{ $ptk->jumlah ?? 0 }}</td></tr>
-            @endforeach
-            @foreach($dof as $index => $df)
-            <tr><td class="text-center">{{ $index + count($paTekstual) + count($paNonTekstual) + count($paTeknik) + 1 }}</td><td>Digital Office (DOF)</td><td>{{ $df->nama_kegiatan ?? '-' }}</td><td class="text-center">{{ $df->jumlah ?? 0 }}</td></tr>
-            @endforeach
+            @if($paTekstual['tabel1']->count() > 0)
+            <tr>
+                <td class="text-center">{{ $tahun }}</td>
+                <td class="text-center">{{ $bulan }}</td>
+                @foreach($paTekstual['tabel1'] as $pt)
+                <td class="text-center">{{ $pt->jumlah ?? 0 }}</td>
+                @endforeach
+            </tr>
+            @else
+            <tr><td colspan="2" class="text-center">Tidak ada data PA Non Teknik (Tekstual).</td></tr>
+            @endif
+        </tbody>
+    </table>
+    @if($paTekstual['tabel2']->count() > 0)
+    <table>
+        <thead>
+            <tr>
+                <th>Tahun</th>
+                <th>Bulan</th>
+                @foreach($paTekstual['tabel2'] as $pt)
+                <th>{{ $pt->nama_dokumen ?? '-' }}</th>
+                @endforeach
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td class="text-center">{{ $tahun }}</td>
+                <td class="text-center">{{ $bulan }}</td>
+                @foreach($paTekstual['tabel2'] as $pt)
+                <td class="text-center">{{ $pt->jumlah ?? 0 }}</td>
+                @endforeach
+            </tr>
+        </tbody>
+    </table>
+    @endif
+
+    <!-- 10b. PA NON TEKNIK (NON TEKSTUAL) -->
+    <div class="font-bold" style="color:#1E3A8A; margin-bottom:5px;">PA Non Teknik (Non Tekstual)</div>
+    <table>
+        <thead>
+            <tr>
+                <th>Tahun</th>
+                <th>Bulan</th>
+                @foreach($paNonTekstual as $pnt)
+                <th>{{ $pnt->jenis ?? '-' }}</th>
+                @endforeach
+            </tr>
+        </thead>
+        <tbody>
+            @if($paNonTekstual->count() > 0)
+            <tr>
+                <td class="text-center">{{ $tahun }}</td>
+                <td class="text-center">{{ $bulan }}</td>
+                @foreach($paNonTekstual as $pnt)
+                <td class="text-center">{{ $pnt->jumlah ?? 0 }}</td>
+                @endforeach
+            </tr>
+            @else
+            <tr><td colspan="2" class="text-center">Tidak ada data PA Non Teknik (Non Tekstual).</td></tr>
+            @endif
         </tbody>
     </table>
 
+    <!-- 10c. PA TEKNIK -->
+    <div class="font-bold" style="color:#1E3A8A; margin-bottom:5px;">PA Teknik</div>
+    <table>
+        <thead>
+            <tr>
+                <th>Tahun</th>
+                <th>Bulan</th>
+                @foreach($paTeknik['tabel1'] as $ptk)
+                <th>{{ $ptk->nama_kegiatan ?? '-' }}</th>
+                @endforeach
+            </tr>
+        </thead>
+        <tbody>
+            @if($paTeknik['tabel1']->count() > 0)
+            <tr>
+                <td class="text-center">{{ $tahun }}</td>
+                <td class="text-center">{{ $bulan }}</td>
+                @foreach($paTeknik['tabel1'] as $ptk)
+                <td class="text-center">{{ $ptk->jumlah ?? 0 }}</td>
+                @endforeach
+            </tr>
+            @else
+            <tr><td colspan="2" class="text-center">Tidak ada data PA Teknik.</td></tr>
+            @endif
+        </tbody>
+    </table>
+    @if($paTeknik['tabel2']->count() > 0)
+    <table>
+        <thead>
+            <tr>
+                <th>Tahun</th>
+                <th>Bulan</th>
+                @foreach($paTeknik['tabel2'] as $ptk)
+                <th>{{ $ptk->nama_kegiatan ?? '-' }}</th>
+                @endforeach
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td class="text-center">{{ $tahun }}</td>
+                <td class="text-center">{{ $bulan }}</td>
+                @foreach($paTeknik['tabel2'] as $ptk)
+                <td class="text-center">{{ $ptk->jumlah ?? 0 }}</td>
+                @endforeach
+            </tr>
+        </tbody>
+    </table>
+    @endif
+
+    <!-- 10d. DIGITAL OFFICE (DOF) -->
+    <div class="font-bold" style="color:#1E3A8A; margin-bottom:5px;">Digital Office (DOF)</div>
+    <table>
+        <thead>
+            <tr>
+                <th>Tahun</th>
+                <th>Bulan</th>
+                @foreach($dof['tabel1'] as $df)
+                <th>{{ $df->nama_kegiatan ?? '-' }}</th>
+                @endforeach
+            </tr>
+        </thead>
+        <tbody>
+            @if($dof['tabel1']->count() > 0)
+            <tr>
+                <td class="text-center">{{ $tahun }}</td>
+                <td class="text-center">{{ $bulan }}</td>
+                @foreach($dof['tabel1'] as $df)
+                <td class="text-center">{{ $df->jumlah ?? 0 }}</td>
+                @endforeach
+            </tr>
+            @else
+            <tr><td colspan="2" class="text-center">Tidak ada data DOF.</td></tr>
+            @endif
+        </tbody>
+    </table>
+    @if($dof['tabel2']->count() > 0)
+    <table>
+        <thead>
+            <tr>
+                <th>Tahun</th>
+                <th>Bulan</th>
+                @foreach($dof['tabel2'] as $df)
+                <th>{{ $df->nama_kegiatan ?? '-' }}</th>
+                @endforeach
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td class="text-center">{{ $tahun }}</td>
+                <td class="text-center">{{ $bulan }}</td>
+                @foreach($dof['tabel2'] as $df)
+                <td class="text-center">{{ $df->jumlah ?? 0 }}</td>
+                @endforeach
+            </tr>
+        </tbody>
+    </table>
+    @endif
+
     <div class="page-break"></div>
 
-    <!-- ================= HALAMAN 10: PERIZINAN ================= -->
+    <!-- ================= HALAMAN 11: PERIZINAN ================= -->
     <div class="header-title">LAPORAN KINERJA BULANAN ADKOR</div>
     <div class="header-subtitle">Periode: {{ strtoupper($bulan) }} {{ $tahun }}</div>
 
-    <div class="section-header">10. PERIZINAN PERKANTORAN</div>
-    @if($chartPerizinan) <div class="chart-container"><div class="chart-title">Grafik Perizinan</div><img src="{{ $chartPerizinan }}" style="width: 60%;"></div> @endif
+    <div class="section-header">11. PERIZINAN PERKANTORAN</div>
+    @if($chartPerizinan ?? null) <div class="chart-container"><div class="chart-title">Statistik Perizinan Terbit (Semua Tahun)</div><img src="{{ $chartPerizinan }}" style="width: 60%;"></div> @endif
+
+    <!-- Ringkasan Kegiatan Perizinan Terbit -->
+    <div class="font-bold" style="color:#1E3A8A; margin-bottom:5px;">Ringkasan Kegiatan Perizinan Terbit</div>
     <table>
-        <thead><tr><th>No</th><th>Nomor Izin</th><th>Kegiatan</th><th>Instansi Penerbit</th><th>Berlaku</th><th>Berakhir</th></tr></thead>
+        <thead>
+            <tr>
+                <th>Tahun</th>
+                <th>Bulan</th>
+                <th>Produk</th>
+                <th>Aset</th>
+                <th>Proyek</th>
+                <th>Peralatan Pabrik</th>
+                <th>Adm & Lainnya</th>
+                <th>Total Perizinan Terbit</th>
+            </tr>
+        </thead>
         <tbody>
-            @forelse($perizinan as $index => $izin)
-            <tr><td class="text-center">{{ $index + 1 }}</td><td>{{ $izin->nomor ?? '-' }}</td><td>{{ $izin->kegiatan ?? '-' }}</td><td>{{ $izin->instansi_penerbit ?? '-' }}</td><td class="text-center">{{ $izin->tanggal_sejak ?? '-' }}</td><td class="text-center">{{ $izin->tanggal_akhir ?? '-' }}</td></tr>
+            <tr>
+                <td class="text-center">{{ $ringkasanTerbit->tahun ?? $tahun }}</td>
+                <td class="text-center">{{ $ringkasanTerbit->bulan ?? $bulan }}</td>
+                <td class="text-center">{{ $ringkasanTerbit->produk ?? 0 }}</td>
+                <td class="text-center">{{ $ringkasanTerbit->aset ?? 0 }}</td>
+                <td class="text-center">{{ $ringkasanTerbit->proyek ?? 0 }}</td>
+                <td class="text-center">{{ $ringkasanTerbit->peralatan_pabrik ?? 0 }}</td>
+                <td class="text-center">{{ $ringkasanTerbit->adm ?? 0 }}</td>
+                <td class="text-center font-bold">{{ $ringkasanTerbit->total_terbit ?? 0 }}</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- Daftar Perizinan Terbit -->
+    <div class="font-bold" style="color:#1E3A8A; margin:10px 0 5px;">Daftar Perizinan Terbit</div>
+    <table>
+        <thead>
+            <tr>
+                <th>No</th>
+                <th>Tahun</th>
+                <th>Perizinan Terbit</th>
+                <th>Nomor</th>
+                <th>Terbit</th>
+                <th>Berakhir</th>
+                <th>Instansi Penerbit</th>
+                <th>Bulan</th>
+                <th>Kegiatan</th>
+            </tr>
+        </thead>
+        <tbody>
+            @forelse($perizinanTerbit as $index => $izin)
+            <tr>
+                <td class="text-center">{{ $index + 1 }}</td>
+                <td class="text-center">{{ $tahun }}</td>
+                <td>{{ $izin->nama_perizinan ?? '-' }}</td>
+                <td class="text-center">{{ $izin->nomor ?? '-' }}</td>
+                <td class="text-center">{{ $izin->tanggal_sejak ?? '-' }}</td>
+                <td class="text-center">{{ $izin->tanggal_akhir ?? '-' }}</td>
+                <td>{{ $izin->instansi_penerbit ?? '-' }}</td>
+                <td class="text-center">{{ $bulan }}</td>
+                <td class="text-center">{{ $izin->kegiatan ?? '-' }}</td>
+            </tr>
             @empty
-            <tr><td colspan="6" class="text-center">Tidak ada data perizinan.</td></tr>
+            <tr><td colspan="9" class="text-center">Tidak ada data perizinan terbit.</td></tr>
             @endforelse
         </tbody>
     </table>
 
     <div class="page-break"></div>
 
-    <!-- ================= HALAMAN 11: PELAPORAN ================= -->
+    <!-- ================= HALAMAN 12: PELAPORAN ================= -->
     <div class="header-title">LAPORAN KINERJA BULANAN ADKOR</div>
     <div class="header-subtitle">Periode: {{ strtoupper($bulan) }} {{ $tahun }}</div>
 
-    <div class="section-header">11. PELAPORAN KORPORASI</div>
-    @if($chartPelaporan) <div class="chart-container"><div class="chart-title">Grafik Pelaporan</div><img src="{{ $chartPelaporan }}" style="width: 60%;"></div> @endif
+    <div class="section-header">12. PELAPORAN KORPORASI</div>
+    @if($chartPelaporan ?? null) <div class="chart-container"><div class="chart-title">Grafik Pelaporan</div><img src="{{ $chartPelaporan }}" style="width: 60%;"></div> @endif
+
+    <!-- Ringkasan Akumulasi Laporan -->
+    <div class="font-bold" style="color:#1E3A8A; margin-bottom:5px;">Ringkasan Akumulasi Laporan</div>
+    @php
+        $pelTotalEksternal = $pelaporan->where('tujuan', 'Eksternal')->count();
+        $pelTotalInternal = $pelaporan->where('tujuan', 'Internal')->count();
+    @endphp
     <table>
-        <thead><tr><th>No</th><th>Nomor Laporan</th><th>Tujuan</th><th>Nama Laporan</th><th>Tanggal</th><th>Jenis</th></tr></thead>
+        <thead>
+            <tr>
+                <th>Tahun</th>
+                <th>Bulan</th>
+                <th>Tujuan Eksternal</th>
+                <th>Tujuan Internal</th>
+                <th>Total Laporan</th>
+            </tr>
+        </thead>
         <tbody>
-            @forelse($pelaporan as $index => $lap)
-            <tr><td class="text-center">{{ $index + 1 }}</td><td>{{ $lap->nomor ?? '-' }}</td><td class="text-center font-bold">{{ $lap->tujuan ?? '-' }}</td><td>{{ $lap->laporan ?? '-' }}</td><td class="text-center">{{ $lap->tanggal ?? '-' }}</td><td class="text-center">{{ $lap->jenis ?? '-' }}</td></tr>
+            <tr>
+                <td class="text-center">{{ $tahun }}</td>
+                <td class="text-center">{{ $bulan }}</td>
+                <td class="text-center">{{ $pelTotalEksternal }}</td>
+                <td class="text-center">{{ $pelTotalInternal }}</td>
+                <td class="text-center font-bold">{{ $pelTotalEksternal + $pelTotalInternal }}</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- Daftar Rincian Pelaporan -->
+    <div class="font-bold" style="color:#1E3A8A; margin:10px 0 5px;">Daftar Rincian Pelaporan</div>
+    <table>
+        <thead><tr><th>Tujuan Laporan</th><th>Nomor Laporan</th><th>Laporan</th><th>Tanggal</th><th>Jenis</th></tr></thead>
+        <tbody>
+            @forelse($pelaporan as $lap)
+            <tr>
+                <td class="text-center font-bold">{{ $lap->tujuan ?? '-' }}</td>
+                <td class="text-center">{{ $lap->nomor ?? '-' }}</td>
+                <td>{{ $lap->laporan ?? '-' }}</td>
+                <td class="text-center">{{ $lap->tanggal ?? '-' }}</td>
+                <td class="text-center">{{ $lap->jenis ?? '-' }}</td>
+            </tr>
             @empty
-            <tr><td colspan="6" class="text-center">Tidak ada data pelaporan.</td></tr>
+            <tr><td colspan="5" class="text-center">Tidak ada data pelaporan.</td></tr>
             @endforelse
         </tbody>
     </table>
 
     <div class="page-break"></div>
 
-    <!-- ================= HALAMAN 12: PEMELIHARAAN ================= -->
+    <!-- ================= HALAMAN 13: PEMELIHARAAN ================= -->
     <div class="header-title">LAPORAN KINERJA BULANAN ADKOR</div>
     <div class="header-subtitle">Periode: {{ strtoupper($bulan) }} {{ $tahun }}</div>
 
-    <div class="section-header">12. PEMELIHARAAN PERALATAN & FURNITUR</div>
-    @if($chartPemeliharaan) <div class="chart-container"><div class="chart-title">Grafik Pemeliharaan</div><img src="{{ $chartPemeliharaan }}" style="width: 60%;"></div> @endif
+    <div class="section-header">13. PEMELIHARAAN PERALATAN & FURNITUR</div>
+    @if($chartPemeliharaan ?? null) <div class="chart-container"><div class="chart-title">Grafik Pemeliharaan</div><img src="{{ $chartPemeliharaan }}" style="width: 60%;"></div> @endif
     <table>
-        <thead><tr><th>No</th><th>Kategori Pemeliharaan</th><th>Nama Item / Kegiatan</th><th>Jumlah</th></tr></thead>
+        <thead>
+            <tr>
+                <th>Tahun</th>
+                <th>Bulan</th>
+                @foreach($pemeliharaanRutin as $pr)
+                <th>{{ $pr->nama_pemeliharaan ?? '-' }}</th>
+                @endforeach
+            </tr>
+        </thead>
         <tbody>
-            @foreach($pemeliharaanRutin as $index => $pr)
-            <tr><td class="text-center">{{ $index + 1 }}</td><td>Pemeliharaan Rutin</td><td>{{ $pr->nama_pemeliharaan ?? '-' }}</td><td class="text-center">{{ $pr->jumlah ?? 0 }}</td></tr>
-            @endforeach
-            @foreach($pemeliharaanPeralatan as $index => $pp)
-            <tr><td class="text-center">{{ $index + count($pemeliharaanRutin) + 1 }}</td><td>Peralatan Kantor</td><td>{{ $pp->nama_peralatan ?? '-' }}</td><td class="text-center">{{ $pp->jumlah ?? 0 }}</td></tr>
-            @endforeach
+            @if($pemeliharaanRutin->count() > 0)
+            <tr>
+                <td class="text-center">{{ $tahun }}</td>
+                <td class="text-center">{{ $bulan }}</td>
+                @foreach($pemeliharaanRutin as $pr)
+                <td class="text-center">{{ $pr->jumlah ?? 0 }}</td>
+                @endforeach
+            </tr>
+            @else
+            <tr><td colspan="2" class="text-center">Tidak ada data pemeliharaan rutin.</td></tr>
+            @endif
         </tbody>
     </table>
 
+    @if($pemeliharaanPeralatan->count() > 0)
+    <table>
+        <thead>
+            <tr>
+                <th>Tahun</th>
+                <th>Bulan</th>
+                @foreach($pemeliharaanPeralatan as $pp)
+                <th>{{ $pp->nama_peralatan ?? '-' }}</th>
+                @endforeach
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td class="text-center">{{ $tahun }}</td>
+                <td class="text-center">{{ $bulan }}</td>
+                @foreach($pemeliharaanPeralatan as $pp)
+                <td class="text-center">{{ $pp->jumlah ?? 0 }}</td>
+                @endforeach
+            </tr>
+        </tbody>
+    </table>
+    @endif
+
     <div class="page-break"></div>
 
-    <!-- ================= HALAMAN 13: MASALAH DAN KENDALA (TANDA TANGAN DI SINI) ================= -->
+    <!-- ================= HALAMAN 14: MASALAH DAN KENDALA (TANDA TANGAN DI SINI) ================= -->
     <div class="header-title">LAPORAN KINERJA BULANAN ADKOR</div>
     <div class="header-subtitle">Periode: {{ strtoupper($bulan) }} {{ $tahun }}</div>
 
-    <div class="section-header">13. MASALAH & KENDALA OPERASIONAL</div>
+    <div class="section-header">14. MASALAH & KENDALA OPERASIONAL</div>
     <table>
         <thead><tr><th style="width: 5%;">No</th><th style="width: 45%;">Masalah / Kendala</th><th style="width: 50%;">Tindak Lanjut / Solusi</th></tr></thead>
         <tbody>

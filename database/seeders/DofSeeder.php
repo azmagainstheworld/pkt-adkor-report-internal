@@ -9,24 +9,23 @@ class DofSeeder extends Seeder
 {
     public function run(): void
     {
-        // Tabel 1: Laporan DOF (Sesuai Gambar 3 Excel)
+        // Tabel 1: Digital Signature
         $tabel1 = [
-            'Registrasi Surat Masuk via DOF', 
+            'Approval Stempel Digital',
             'Approval File Scan',
-            'Revisi DOF', // Dari Gambar 2
+            'Digital Signature',
+            'Pendaftaran Akun',
+            'Perekaman Akun'
+        ];
+
+        // Tabel 2: Laporan DOF
+        $tabel2 = [
+            'Revisi DOF',
             'Pembatalan DOF',
             'Pembuatan Template',
             'Cek Error',
             'Problem DOF',
             'E-meterai'
-        ];
-
-        // Tabel 2: Digital Signature
-        $tabel2 = [
-            'Approval Stempel Digital',
-            'Pendaftaran Akun',
-            'Perekaman Akun',
-            'Digital Signature'
         ];
 
         foreach ($tabel1 as $nama) {

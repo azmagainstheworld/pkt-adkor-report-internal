@@ -6,15 +6,45 @@
     <title>Masuk - AdkorReport PKT</title>
     <!-- Menggunakan CDN Tailwind untuk render instan -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Import Font Inter (Standar) dan Merriweather (Untuk Judul SIPAKAR) -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Merriweather:wght@700;900&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Inter', sans-serif; }
+        .font-merriweather { font-family: 'Merriweather', serif; }
+
+        /* --- ANIMASI CAHAYA MENGKILAP (SHIMMER) --- */
+        .shimmer-wrapper {
+            position: relative;
+            display: inline-block;
+            overflow: hidden;
+            padding: 4px 10px; 
+            margin: -4px -10px;
+        }
+
+        .shimmer-wrapper::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 40%;
+            height: 100%;
+            background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.7) 50%, rgba(255,255,255,0) 100%);
+            transform: skewX(-25deg);
+            animation: shine 4s infinite; /* Mengulang setiap 4 detik */
+            pointer-events: none;
+        }
+
+        @keyframes shine {
+            0% { left: -100%; }
+            15% { left: 200%; }
+            100% { left: 200%; }
+        }
     </style>
 </head>
 <body class="min-h-screen flex bg-gray-50 antialiased">
 
     <!-- ================= SISI KIRI (60%): BRANDING KORPORAT ================= -->
-    <div class="hidden lg:flex lg:w-[60%] relative overflow-visible flex-col items-center justify-center p-12">
+    <div class="hidden lg:flex lg:w-[60%] relative overflow-hidden flex-col items-center justify-center p-12">
         
         <!-- Background Gradient Utama (Biru Kaltim) -->
         <div class="absolute inset-0 bg-gradient-to-br from-[#003D73] via-[#0056A3] to-[#0056A3] z-0"></div>
@@ -32,19 +62,24 @@
         <!-- Konten Kiri (Logo & Judul) -->
         <div class="relative z-10 flex flex-col items-center text-center">
             
-            <!-- Frame Logo (Placeholder) -->
-            <div class="w-28 h-28 border border-white/30 rounded-xl flex items-center justify-center mb-10 backdrop-blur-sm bg-white/5 shadow-lg">
-                <span class="text-white/70 text-xs font-semibold tracking-[0.2em]">LOGO</span>
+            <!-- Logo SIPAKAR -->
+            <div class="w-56 h-56 flex items-center justify-center mb-6 flex-shrink-0 drop-shadow-2xl">
+                <img src="{{ asset('images/logo-sipakar.png') }}" alt="Logo SIPAKAR" class="w-full h-full object-contain">
             </div>
 
-            <!-- Judul Besar -->
-            <h1 class="text-3xl xl:text-4xl font-bold text-white leading-snug max-w-2xl mb-4">
-                Sistem Pelaporan Internal<br>Departemen Administrasi Korporat
+            <!-- Judul SIPAKAR (Disamakan dengan Sidebar: SI Oranye, PAKAR Putih Solid) -->
+            <h1 class="text-4xl xl:text-5xl font-bold leading-snug max-w-2xl mb-4 font-merriweather tracking-wide">
+                <span class="shimmer-wrapper drop-shadow-sm">
+                    <span class="text-[#F7941E]">SI</span><span class="text-white">PAKAR</span>
+                </span>
+                <br>
+                <!-- Sub-judul -->
+                <span class="text-2xl font-semibold opacity-90 mt-3 block text-white" style="font-family: 'Inter', sans-serif;">Sistem Informasi Pelaporan Internal<br>Administrasi Korporat</span>
             </h1>
             
-            <!-- Sub-judul -->
-            <p class="text-[17px] text-white/70 max-w-xl font-medium tracking-wide">
-                PT Pupuk Kalimantan Timur — Departemen Administrasi Korporat
+            <!-- Nama Perusahaan -->
+            <p class="text-[17px] text-white/70 max-w-xl font-medium tracking-wide mt-2">
+                PT Pupuk Kalimantan Timur
             </p>
         </div>
     </div>
@@ -53,9 +88,17 @@
     <div class="w-full lg:w-[40%] bg-white flex flex-col justify-center px-8 sm:px-16 lg:px-12 xl:px-20 relative z-10 shadow-[-10px_0_30px_rgba(0,0,0,0.05)]">
         <div class="w-full max-w-sm mx-auto">
             
-            <!-- Mobile Logo Placeholder (Hanya terlihat di layar kecil) -->
-            <div class="lg:hidden w-16 h-16 border border-gray-200 rounded-lg flex items-center justify-center mb-8 bg-gray-50 shadow-sm">
-                <span class="text-gray-400 text-[10px] font-semibold tracking-widest">LOGO</span>
+            <!-- Mobile Logo Placeholder -->
+            <div class="lg:hidden flex flex-col items-center mb-10">
+                <div class="w-40 h-40 flex items-center justify-center mb-4 drop-shadow-xl">
+                     <img src="{{ asset('images/logo-sipakar.png') }}" alt="Logo SIPAKAR" class="w-full h-full object-contain">
+                </div>
+                <!-- Judul Mobile (PAKAR tetap biru karena background-nya putih) -->
+                <h1 class="text-3xl font-bold font-merriweather tracking-wide">
+                    <span class="shimmer-wrapper">
+                        <span class="text-[#F7941E]">SI</span><span class="text-[#003D73]">PAKAR</span>
+                    </span>
+                </h1>
             </div>
 
             <!-- Header Form -->
@@ -80,7 +123,6 @@
                 <div>
                     <label for="password" class="block text-sm font-medium text-gray-700 mb-2">Kata Sandi</label>
                     <div class="relative">
-                        <!-- ATRIBUT REQUIRED DIKEMBALIKAN -->
                         <input type="password" id="password" name="password" required
                             class="w-full px-4 py-3 rounded-md border {{ $errors->has('email') ? 'border-red-500 text-red-900 bg-red-50/30' : 'border-gray-300 focus:border-[#0056A3]' }} focus:outline-none focus:ring-1 focus:ring-[#0056A3] text-gray-900 shadow-sm transition-colors text-sm pr-12"
                             placeholder="Masukkan kata sandi Anda">

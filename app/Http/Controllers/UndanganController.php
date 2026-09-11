@@ -34,10 +34,10 @@ class UndanganController extends Controller
         
         // Custom Sort Bulan agar urut dari Januari -> Desember (Atau kebalikannya)
         $query->orderBy('tahun', 'desc')->orderByRaw("FIELD(bulan, '" . implode("','", $masterMonths) . "') DESC");
-        $tableData = $query->get();
+        $tableData = $query->paginate(10, ['*'], 'rekap_page')->withQueryString();
 
-        $totalIntern = $tableData->sum('undangan_intern');
-        $totalEkstern = $tableData->sum('undangan_ekstern');
+        $totalIntern = (clone $query)->sum('undangan_intern');
+        $totalEkstern = (clone $query)->sum('undangan_ekstern');
 
         // 3. QUERY CHART.JS
         $chartData = [];
@@ -84,7 +84,7 @@ class UndanganController extends Controller
             ->orderByRaw("FIELD(undangan.bulan, '" . implode("','", $masterMonths) . "') DESC")
             ->orderBy('undangan_details.created_at', 'desc');
             
-        $detailsData = $detailQuery->get();
+        $detailsData = $detailQuery->paginate(10, ['*'], 'detail_page')->withQueryString();
 
         return view('undangan', compact(
             'tableData', 'chartData', 
@@ -304,6 +304,21 @@ class UndanganController extends Controller
         }
     }
 
+    public function importDetail(Request $request) {
+        $request->validate([
+            'file' => 'required|mimes:xlsx,xls|max:5120'
+        ]);
+
+        try {
+            \Maatwebsite\Excel\Facades\Excel::import(new \App\Imports\UndanganDetailImport, $request->file('file'));
+            $this->recalculateRekap();
+            return redirect()->back()->with('success', 'Data Rincian Agenda Undangan berhasil diimpor!');
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Import Undangan Detail error: ' . $e->getMessage());
+            return redirect()->back()->with('error_modal', 'Gagal mengimpor rincian: ' . $e->getMessage());
+        }
+    }
+
     public function exportExcel(Request $request) {
         return \Maatwebsite\Excel\Facades\Excel::download(new \App\Exports\UndanganExport(false), 'Data_Undangan.xlsx');
     }
@@ -326,5 +341,41 @@ class UndanganController extends Controller
             return redirect()->back()->with('success', 'Berhasil menghapus data rincian secara massal.');
         }
         return redirect()->back()->with('error_modal', 'Tidak ada data yang dipilih.');
+    }
+
+    /**
+     * Mengambil data Undangan untuk laporan PDF bulanan.
+     * Single source of truth: identik dengan dashboard.
+     */
+    public static function getReportData($tahun, $bulan)
+    {
+        $undangan = \App\Models\Undangan::where('tahun', $tahun)
+            ->where('bulan', $bulan)
+            ->get();
+
+        $totalIntern = $undangan->sum('undangan_intern');
+        $totalEkstern = $undangan->sum('undangan_ekstern');
+
+        // Untuk tabel rincian
+        $detailUndangan = \App\Models\UndanganDetail::join('undangan', 'undangan_details.undangan_id', '=', 'undangan.id')
+            ->select('undangan_details.*', 'undangan.tahun', 'undangan.bulan')
+            ->where('undangan.tahun', $tahun)
+            ->where('undangan.bulan', $bulan)
+            ->orderBy('undangan_details.created_at', 'desc')
+            ->get();
+
+        \Log::info('[PDF Section] Undangan', [
+            'bulan' => $bulan, 'tahun' => $tahun,
+            'count' => $undangan->count(),
+            'totalIntern' => $totalIntern,
+            'totalEkstern' => $totalEkstern
+        ]);
+
+        return [
+            'undangan'       => $undangan,
+            'detailUndangan' => $detailUndangan,
+            'totalIntern'    => $totalIntern,
+            'totalEkstern'   => $totalEkstern,
+        ];
     }
 }

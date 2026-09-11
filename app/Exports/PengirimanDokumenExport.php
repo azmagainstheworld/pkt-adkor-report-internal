@@ -38,7 +38,7 @@ class PengirimanDokumenExport implements FromCollection, WithHeadings, WithMappi
     {
         if ($this->isTemplate) return collect([]);
 
-        $query = PengirimanDokumen::query();
+        $query = $this->jenis === 'ongkir' ? \App\Models\PengirimanOngkir::query() : PengirimanDokumen::query();
         if ($this->year !== 'semua') $query->where('tahun', $this->year);
         if ($this->month !== 'semua') $query->where('bulan', $this->month);
 

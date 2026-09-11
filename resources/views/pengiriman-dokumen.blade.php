@@ -2,7 +2,7 @@
 
 @section('content')
 <style>
-.hide-bulk th:first-child, .hide-bulk td:first-child { display: none !important; }
+.hide-bulk .bulk-checkbox-col { display: none !important; }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
@@ -141,7 +141,7 @@
                 @forelse($volumeRecords as $record)
                     @php $tambahan = is_string($record->data_tambahan) ? json_decode($record->data_tambahan, true) : ($record->data_tambahan ?? []); @endphp
                     <tr class="hover:bg-gray-50 transition-colors text-sm">
-                        <td class="px-6 py-4 text-center align-middle"><input type="checkbox" name="ids[]" class="cb-bulk-volume" value="{{ $record->id }}" onclick="toggleCheckboxVolume()"></td>
+                        <td class="px-6 py-4 text-center align-middle bulk-checkbox-col"><input type="checkbox" name="ids[]" class="cb-bulk-volume" value="{{ $record->id }}" onclick="toggleCheckboxVolume()"></td>
                         <td class="px-6 py-4 text-gray-700 font-medium align-middle text-center">{{ $record->tahun }}</td>
                         <td class="px-6 py-4 text-gray-900 font-medium align-middle text-center">{{ $record->bulan }}</td>
                         <td class="px-6 py-4 text-gray-700 font-mono align-middle text-center">{{ number_format($record->penerimaan_mailroom, 0, ',', '.') }}</td>
@@ -180,7 +180,7 @@
         </form>
         <!-- PAGINATION TABEL 1 -->
         <div class="p-4 border-t border-gray-100 bg-gray-50 rounded-b-xl">
-            {{ $ongkirRecords->links() }}
+            {{ $volumeRecords->links() }}
         </div>
     </x-card>
 
@@ -261,7 +261,7 @@
                 <x-table :headers="['<input type=\'checkbox\' id=\'selectAllBulkOngkir\' onclick=\'toggleSelectAllOngkir()\'>', 'Tahun', 'Bulan', 'Total Ongkir Dalam Negeri', 'Total Ongkir Luar Negeri', 'Aksi']">
             @forelse($ongkirRecords as $cost)
                 <tr class="hover:bg-gray-50 transition-colors text-sm">
-                        <td class="px-6 py-4 text-center align-middle"><input type="checkbox" name="ids[]" class="cb-bulk-ongkir" value="{{ $cost->id }}" onclick="toggleCheckboxOngkir()"></td>
+                        <td class="px-6 py-4 text-center align-middle bulk-checkbox-col"><input type="checkbox" name="ids[]" class="cb-bulk-ongkir" value="{{ $cost->id }}" onclick="toggleCheckboxOngkir()"></td>
                     <td class="px-6 py-4 text-gray-700 font-medium text-center align-middle">{{ $cost->tahun }}</td>
                     <td class="px-6 py-4 text-gray-900 font-medium text-center align-middle">{{ $cost->bulan }}</td>
                     <td class="px-6 py-4 text-gray-700 font-mono font-semibold text-center align-middle">Rp {{ number_format($cost->ongkir_dalam_negeri, 0, ',', '.') }}</td>
@@ -281,7 +281,8 @@
                 <tr><td colspan="6" class="px-6 py-10 text-center text-gray-500">Belum ada data biaya ongkir.</td></tr>
             @endforelse
             <tr class="bg-gray-100 border-t border-gray-200 font-bold text-blue-900 text-sm">
-                <td colspan="3" class="px-6 py-4 text-right">Total Keseluruhan {{ $selectedMonth == 'semua' ? "Filter" : "$selectedMonth $selectedYear" }} :</td>
+                <td class="bulk-checkbox-col"></td>
+                <td colspan="2" class="px-6 py-4 text-right">Total Keseluruhan {{ $selectedMonth == 'semua' ? "Filter" : "$selectedMonth $selectedYear" }} :</td>
                 <td class="px-6 py-4 text-pkt-biru font-mono text-center">Rp {{ number_format($totalDomestikOverall, 0, ',', '.') }}</td>
                 <td class="px-6 py-4 text-pkt-biru font-mono text-center">Rp {{ number_format($totalInternasionalOverall, 0, ',', '.') }}</td>
                 <td></td>

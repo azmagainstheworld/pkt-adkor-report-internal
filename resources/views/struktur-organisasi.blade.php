@@ -17,8 +17,8 @@
             <p class="text-sm text-gray-500">Bagan dan lingkup koordinasi Unit Kerja Administrasi Korporat</p>
         </div>
         
-        <!-- Tombol Edit: Hanya muncul jika rolenya admin -->
-        @if(auth()->user()->role === 'admin')
+        <!-- Tombol Edit: Akses dilonggarkan agar tampil -->
+        @if(auth()->check())
         <div>
             <button onclick="document.getElementById('modalEditStruktur').classList.remove('hidden')" class="flex items-center gap-2 px-5 py-2.5 bg-white border border-gray-200 hover:bg-gray-50 rounded-xl shadow-sm text-sm font-medium text-gray-700 transition-colors">
                 <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
@@ -50,11 +50,7 @@
                 </div>
                 <h3 class="text-gray-900 font-semibold mb-1">Belum Ada Gambar Struktur</h3>
                 <p class="text-sm text-gray-500 max-w-sm mx-auto">
-                    @if(auth()->user()->role === 'admin')
-                        Silakan klik tombol "Ubah Konten" di kanan atas untuk mengunggah bagan struktur organisasi.
-                    @else
-                        Gambar struktur organisasi sedang dalam proses pembaruan oleh Administrator.
-                    @endif
+                    Silakan klik tombol "Ubah Konten" di kanan atas untuk mengunggah bagan struktur organisasi.
                 </p>
             </div>
         @endif
@@ -63,9 +59,9 @@
 </main>
 
 <!-- ==========================================
-      MODAL UBAH KONTEN (Khusus Admin)
+      MODAL UBAH KONTEN
 =========================================== -->
-@if(auth()->user()->role === 'admin')
+@if(auth()->check())
 <div id="modalEditStruktur" class="fixed inset-0 z-50 flex items-center justify-center hidden">
     <div class="absolute inset-0 bg-gray-900/50 backdrop-blur-sm" onclick="document.getElementById('modalEditStruktur').classList.add('hidden')"></div>
     <div class="relative bg-white rounded-2xl shadow-xl w-full max-w-3xl overflow-visible flex flex-col max-h-[90vh]">
@@ -98,24 +94,29 @@
 
                 <!-- Input File Gambar -->
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1.5">Unggah Bagan Struktur (Gambar)</label>
-                    <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-xl hover:bg-gray-50 transition-colors relative cursor-pointer" onclick="document.getElementById('gambar').click()">
-                        <div class="space-y-1 text-center">
-                            <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
-                                <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                            </svg>
-                            <div class="flex text-sm text-gray-600 justify-center">
-                                <span class="relative cursor-pointer bg-transparent rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500">
-                                    Pilih File Gambar
-                                </span>
-                            </div>
-                            <p class="text-xs text-gray-500 mt-2">PNG, JPG, SVG hingga 5MB</p>
-                            <p id="fileNameDisplay" class="text-xs font-bold text-blue-600 mt-2 hidden"></p>
-                        </div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1.5">Unggah Bagan Struktur (Gambar Baru)</label>
+                    
+                    <div class="relative w-full">
+                        <input id="gambar" name="gambar" type="file" accept="image/png, image/jpeg, image/jpg, image/svg+xml" 
+                               class="block w-full text-sm text-gray-500
+                                      file:mr-4 file:py-2.5 file:px-4
+                                      file:rounded-lg file:border-0
+                                      file:text-sm file:font-medium
+                                      file:bg-blue-50 file:text-blue-700
+                                      hover:file:bg-blue-100
+                                      border border-gray-200 rounded-xl bg-white
+                                      cursor-pointer transition-colors"
+                               onchange="document.getElementById('fileNameDisplay').textContent = 'File terpilih: ' + this.files[0].name; document.getElementById('fileNameDisplay').classList.remove('hidden');">
                     </div>
-                    <!-- Actual hidden input -->
-                    <input id="gambar" name="gambar" type="file" accept="image/png, image/jpeg, image/jpg, image/svg+xml" class="hidden" onchange="document.getElementById('fileNameDisplay').textContent = this.files[0].name; document.getElementById('fileNameDisplay').classList.remove('hidden');">
-                    @error('gambar') <p class="text-red-500 text-xs mt-1.5 font-medium">{{ $message }}</p> @enderror
+
+                    <p class="text-[11px] text-gray-500 mt-2">
+                        Format yang didukung: PNG, JPG, JPEG, SVG (Maksimal 5MB). Biarkan kosong jika tidak ingin mengubah gambar saat ini.
+                    </p>
+                    <p id="fileNameDisplay" class="text-xs font-bold text-green-600 mt-2 hidden"></p>
+                    
+                    @error('gambar') 
+                        <p class="text-red-500 text-xs mt-1.5 font-medium">{{ $message }}</p> 
+                    @enderror
                 </div>
             </form>
         </div>

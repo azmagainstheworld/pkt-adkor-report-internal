@@ -381,24 +381,20 @@ class PemeliharaanController extends Controller
         }
     }
 
-    public function exportExcelPeralatan(Request $request) {
-        $tahun = $request->input('tahun', 'semua');
-        $bulan = $request->input('bulan', 'semua');
-        return Excel::download(new \App\Exports\PemeliharaanPeralatanExport($tahun, $bulan), 'Laporan_Perbaikan_Peralatan.xlsx');
-    }
-
-    public function exportPdfPeralatan(Request $request) {
-        $filterTahun = $request->input('tahun', 'semua');
-        $filterBulan = $request->input('bulan', 'semua');
-
-        $masterPeralatan = PemeliharaanPeralatanMaster::orderBy('id', 'asc')->get();
-        $kolomPeralatan = DB::table('dynamic_columns')->where('modul', 'pemeliharaan_peralatan')->get();
+    public function exportPeralatanPdf(Request $request)
+    {
+        $filterTahun = $request->query('tahun', 'semua');
+        $filterBulan = $request->query('bulan', 'semua');
 
         $query = PemeliharaanPeralatanData::with('pemeliharaanPeralatanMaster');
         if ($filterTahun !== 'semua') $query->where('tahun', $filterTahun);
         if ($filterBulan !== 'semua') $query->where('bulan', $filterBulan);
-        
-        $grouped = $query->get()->groupBy(function($item) { return $item->tahun . '_' . $item->bulan; });
+
+        $rawData = $query->get();
+        $masterPeralatan = PemeliharaanPeralatanMaster::orderBy('id', 'asc')->get();
+        $kolomPeralatan = DB::table('dynamic_columns')->where('modul', 'pemeliharaan_peralatan')->get();
+
+        $grouped = $rawData->groupBy(function($item) { return $item->tahun . '_' . $item->bulan; });
         
         $dataTable = [];
         foreach($grouped as $key => $items) {
@@ -419,5 +415,74 @@ class PemeliharaanController extends Controller
 
         $pdf = Pdf::loadView('pdf.pemeliharaan-peralatan', compact('filterTahun', 'filterBulan', 'dataTable', 'masterPeralatan', 'kolomPeralatan'))->setPaper('a4', 'landscape');
         return $pdf->download('Laporan_Perbaikan_Peralatan.pdf');
+    }
+
+    public function exportExcelPeralatan(Request $request) {
+        $tahun = $request->input('tahun', 'semua');
+        $bulan = $request->input('bulan', 'semua');
+        return Excel::download(new \App\Exports\PemeliharaanPeralatanExport($tahun, $bulan), 'Laporan_Perbaikan_Peralatan.xlsx');
+    }
+
+    /**
+     * Mengambil data Pemeliharaan untuk laporan PDF bulanan.
+     * Single source of truth: identik dengan dashboard.
+     */
+    public static function getReportData($tahun, $bulan)
+    {
+        $mapBulanNum = [
+            'Januari' => 1, 'Februari' => 2, 'Maret' => 3, 'April' => 4,
+            'Mei' => 5, 'Juni' => 6, 'Juli' => 7, 'Agustus' => 8,
+            'September' => 9, 'Oktober' => 10, 'November' => 11, 'Desember' => 12
+        ];
+        $bulanNum = $mapBulanNum[$bulan] ?? null;
+        $matchBulan = function($q) use ($bulan, $bulanNum) {
+            $q->whereRaw('LOWER(TRIM(bulan)) = ?', [strtolower(trim($bulan))]);
+            if ($bulanNum) {
+                $q->orWhereRaw('CAST(bulan AS UNSIGNED) = ?', [$bulanNum]);
+            }
+        };
+
+        // Ambil master kolom dengan urutan yang sama seperti tabel di menu (Tahun | Bulan | <tiap item>)
+        $masterRutin = \App\Models\PemeliharaanRutinMaster::orderBy('id', 'asc')->get();
+        $masterPeralatan = \App\Models\PemeliharaanPeralatanMaster::orderBy('id', 'asc')->get();
+
+        // Index data aktual bulan berjalan per rutin_id / peralatan_id
+        $rawRutin = \App\Models\PemeliharaanRutinData::where('tahun', $tahun)
+            ->where($matchBulan)
+            ->get()
+            ->keyBy('rutin_id');
+
+        $rawPeralatan = \App\Models\PemeliharaanPeralatanData::where('tahun', $tahun)
+            ->where($matchBulan)
+            ->get()
+            ->keyBy('peralatan_id');
+
+        // Susun SEMUA item master sebagai kolom, persis seperti tabel di menu.
+        // Item yang belum punya baris data bulan ini tetap tampil dengan jumlah 0
+        // (bukan hilang begitu saja seperti sebelumnya).
+        $pemeliharaanRutin = $masterRutin->map(function ($m) use ($rawRutin) {
+            return (object) [
+                'nama_pemeliharaan' => $m->nama_pemeliharaan ?? '-',
+                'jumlah' => optional($rawRutin->get($m->id))->jumlah ?? 0,
+            ];
+        });
+
+        $pemeliharaanPeralatan = $masterPeralatan->map(function ($m) use ($rawPeralatan) {
+            return (object) [
+                'nama_peralatan' => $m->nama_peralatan ?? '-',
+                'jumlah' => optional($rawPeralatan->get($m->id))->jumlah ?? 0,
+            ];
+        });
+
+        \Log::info('[PDF Section] Pemeliharaan', [
+            'bulan' => $bulan, 'tahun' => $tahun,
+            'count_rutin' => $pemeliharaanRutin->count(),
+            'count_peralatan' => $pemeliharaanPeralatan->count()
+        ]);
+
+        return [
+            'pemeliharaanRutin'     => $pemeliharaanRutin,
+            'pemeliharaanPeralatan' => $pemeliharaanPeralatan,
+        ];
     }
 }

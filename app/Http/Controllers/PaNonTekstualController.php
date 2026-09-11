@@ -166,6 +166,43 @@ class PaNonTekstualController extends Controller
         return back()->with('success', "Data periode $bulan $tahun berhasil diperbarui.");
     }
 
+
+    /**
+     * Mengambil data PA Non Tekstual untuk laporan PDF bulanan.
+     */
+    public static function getReportData($tahun, $bulan)
+    {
+        $mapBulanNum = [
+            'Januari' => 1, 'Februari' => 2, 'Maret' => 3, 'April' => 4,
+            'Mei' => 5, 'Juni' => 6, 'Juli' => 7, 'Agustus' => 8,
+            'September' => 9, 'Oktober' => 10, 'November' => 11, 'Desember' => 12
+        ];
+        $bulanNum = $mapBulanNum[$bulan] ?? null;
+
+        // Master kolom PERSIS seperti di menu (semua tipe aktif)
+        $availableTypes = \App\Models\PaNonTekstualType::where('is_active', true)->orderBy('id', 'asc')->get();
+
+        $rawData = \App\Models\PaNonTekstualValue::where('tahun', $tahun)
+            ->where(function($q) use ($bulan, $bulanNum) {
+                $q->whereRaw('LOWER(TRIM(bulan)) = ?', [strtolower(trim($bulan))]);
+                if ($bulanNum) {
+                    $q->orWhereRaw('CAST(bulan AS UNSIGNED) = ?', [$bulanNum]);
+                }
+            })
+            ->get()
+            ->keyBy('type_id');
+
+        $paNonTekstual = $availableTypes->map(function ($type) use ($rawData) {
+            return (object) [
+                'jenis'  => $type->name ?? '-',
+                'jumlah' => optional($rawData->get($type->id))->jumlah ?? 0,
+            ];
+        });
+
+        \Log::info('[PDF Section] PA Non Tekstual', ['bulan' => $bulan, 'tahun' => $tahun, 'count' => $paNonTekstual->count()]);
+
+        return ['paNonTekstual' => $paNonTekstual];
+    }
     public function destroyBulk(\Illuminate\Http\Request $request)
     {
         if ($request->input('delete_all') == '1') {

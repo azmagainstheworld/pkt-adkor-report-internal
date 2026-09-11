@@ -105,28 +105,12 @@ class ProgramStrategisController extends Controller
         $data['bulan'] = $parts[1] ?? '';
         $data['sasaran'] = $parts[2] ?? '';
         $data['program_strategis'] = $parts[3] ?? '';
-
         $data['data_tambahan'] = $request->input('data_tambahan', []);
 
-        // AMBIL ATRIBUT DARI PARENT (Baris Pertama yang Cocok)
-        $parent = ProgramStrategis::where('tahun', $data['tahun'])
-            ->where('bulan', $data['bulan'])
-            ->where('sasaran', $data['sasaran'])
-            ->where('program_strategis', $data['program_strategis'])
-            ->first();
-
-        if ($parent) {
-            $data['target_waktu_start'] = $parent->target_waktu_start;
-            $data['target_waktu_end'] = $parent->target_waktu_end;
-            $data['kendala'] = $parent->kendala;
-            $data['keterangan_tambahan'] = $parent->keterangan_tambahan;
-            $data['status'] = $parent->status;
-        } else {
-            // Jaga-jaga jika parent tidak ada
-            $data['status'] = '-';
-            $data['kendala'] = '-';
-            $data['keterangan_tambahan'] = '-';
-        }
+        // Berikan default agar baris ini independen
+        if (!isset($data['status'])) $data['status'] = 'In Progress';
+        if (!isset($data['kendala'])) $data['kendala'] = '-';
+        if (!isset($data['keterangan_tambahan'])) $data['keterangan_tambahan'] = '-';
 
         // Cek jika parent hanyalah placeholder kosong ("Belum ada rincian kegiatan"), kita timpakan langsung.
         $placeholder = ProgramStrategis::where('tahun', $data['tahun'])
@@ -162,29 +146,15 @@ class ProgramStrategisController extends Controller
         $data['bulan'] = $parts[1] ?? '';
         $data['sasaran'] = $parts[2] ?? '';
         $data['program_strategis'] = $parts[3] ?? '';
-
         $data['data_tambahan'] = $request->input('data_tambahan', []);
 
-        // Update baris ini
+        // Update baris ini secara independen
         $programModel->update($data);
-
-        // Update atribut PARENT secara massal untuk semua kegiatan yang satu grup
-        ProgramStrategis::where('tahun', $data['tahun'])
-            ->where('bulan', $data['bulan'])
-            ->where('sasaran', $data['sasaran'])
-            ->where('program_strategis', $data['program_strategis'])
-            ->update([
-                'target_waktu_start' => $data['target_waktu_start'] ?? null,
-                'target_waktu_end' => $data['target_waktu_end'] ?? null,
-                'status' => $data['status'],
-                'kendala' => $data['kendala'] ?? null,
-                'keterangan_tambahan' => $data['keterangan_tambahan'] ?? null,
-            ]);
 
         return back()->with('success', 'Data Program Strategis berhasil diperbarui.');
     }
 
-        public function destroyBulk(\Illuminate\Http\Request $request)
+    public function destroyBulk(\Illuminate\Http\Request $request)
     {
         $request->validate([
             'ids' => 'required|array',
@@ -284,5 +254,42 @@ class ProgramStrategisController extends Controller
 
         $pdf = Pdf::loadView('pdf.program-strategis', compact('groupedProgram', 'tahun', 'kolomDinamis'))->setPaper('a4', 'landscape');
         return $pdf->download('Data_Program_Strategis_'.$tahun.'.pdf');
+    }
+
+    public static function getReportData($tahun, $bulan)
+    {
+        $mapBulan = [
+            'Januari' => 1, 'Februari' => 2, 'Maret' => 3, 'April' => 4,
+            'Mei' => 5, 'Juni' => 6, 'Juli' => 7, 'Agustus' => 8,
+            'September' => 9, 'Oktober' => 10, 'November' => 11, 'Desember' => 12
+        ];
+        $bulanNum = $mapBulan[$bulan] ?? null;
+
+        $query = ProgramStrategis::where('tahun', $tahun)
+            ->where(function($q) use ($bulanNum) {
+                $q->whereRaw('CAST(bulan AS UNSIGNED) = ?', [$bulanNum])
+                  ->orWhereNull('bulan')
+                  ->orWhere('bulan', '');
+            })
+            ->orderBy('id', 'asc');
+
+        $dataProgramRaw = $query->get();
+
+        $groupedProgram = $dataProgramRaw->groupBy(function($item) {
+            $sasaran = $item->sasaran ? strtolower(trim($item->sasaran)) : 'tanpa_sasaran';
+            $bulanItem = $item->bulan ? $item->bulan : 'tanpa_bulan';
+            return $item->tahun . '_' . $bulanItem . '_' . $sasaran . '_' . strtolower(trim($item->program_strategis));
+        });
+
+        \Log::info('[PDF Section] Program Strategis', [
+            'bulan' => $bulan, 'tahun' => $tahun,
+            'count_raw' => $dataProgramRaw->count(),
+            'count_groups' => $groupedProgram->count()
+        ]);
+
+        return [
+            'rawData'       => $dataProgramRaw,
+            'groupedProgram'=> $groupedProgram,
+        ];
     }
 }

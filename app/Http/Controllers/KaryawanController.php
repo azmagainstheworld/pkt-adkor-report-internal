@@ -344,4 +344,57 @@ class KaryawanController extends Controller
         }
         return redirect()->back()->with('error_modal', 'Tidak ada data yang dipilih.');
     }
+
+    /**
+     * Mengambil data Karyawan untuk laporan PDF bulanan.
+     * Single source of truth: identik dengan dashboard.
+     * Karyawan tidak difilter bulan karena data bersifat point-in-time.
+     */
+    public static function getReportData($tahun, $bulan)
+    {
+        $karyawan = \App\Models\Karyawan::where('status', 'aktif')
+            ->whereNull('deleted_at')
+            ->orderBy('nama', 'asc')
+            ->get();
+
+        $now = \Carbon\Carbon::now()->toDateString();
+        $limaTahunLagi = \Carbon\Carbon::now()->addYears(5)->toDateString();
+        $sepuluhTahunLagi = \Carbon\Carbon::now()->addYears(10)->toDateString();
+
+        $rawSelectPensiun = "
+            COUNT(CASE WHEN mpp_pbp <= :now THEN 1 END) as sudah_pensiun,
+            COUNT(CASE WHEN mpp_pbp > :now2 AND mpp_pbp <= :limaTahun THEN 1 END) as kurang_5_tahun,
+            COUNT(CASE WHEN mpp_pbp > :limaTahun2 AND mpp_pbp <= :sepuluhTahun THEN 1 END) as kurang_10_tahun,
+            COUNT(CASE WHEN mpp_pbp > :sepuluhTahun2 THEN 1 END) as lebih_10_tahun
+        ";
+
+        $pensiunCountsDB = \Illuminate\Support\Facades\DB::table('karyawan')
+            ->selectRaw($rawSelectPensiun)
+            ->setBindings([
+                'now' => $now, 'now2' => $now,
+                'limaTahun' => $limaTahunLagi, 'limaTahun2' => $limaTahunLagi,
+                'sepuluhTahun' => $sepuluhTahunLagi, 'sepuluhTahun2' => $sepuluhTahunLagi,
+            ])
+            ->whereNull('deleted_at')
+            ->first();
+
+        $chartPensiunData = [
+            'Sudah Pensiun' => $pensiunCountsDB->sudah_pensiun ?? 0,
+            '< 5 Tahun'     => $pensiunCountsDB->kurang_5_tahun ?? 0,
+            '< 10 Tahun'    => $pensiunCountsDB->kurang_10_tahun ?? 0,
+            '> 10 Tahun'    => $pensiunCountsDB->lebih_10_tahun ?? 0,
+        ];
+
+        \Log::info('[PDF Section] Karyawan', [
+            'tahun' => $tahun, 'bulan' => $bulan,
+            'count' => $karyawan->count()
+        ]);
+
+        return [
+            'karyawan'         => $karyawan,
+            'chartPensiunData' => $chartPensiunData,
+            'countOrganik'     => $karyawan->where('keterangan', 'Organik')->count(),
+            'countNonOrganik'  => $karyawan->where('keterangan', 'Non Organik')->count(),
+        ];
+    }
 }

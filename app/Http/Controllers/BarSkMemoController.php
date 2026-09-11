@@ -396,4 +396,37 @@ class BarSkMemoController extends Controller
         }
         return back()->with('success', 'Data Proses berhasil diimport!');
     }
+
+    /**
+     * Mengambil data BAR SK Memo untuk laporan PDF bulanan.
+     * Single source of truth: identik dengan dashboard.
+     */
+    public static function getReportData($tahun, $bulan)
+    {
+        $mapBulanNum = [
+            'Januari' => 1, 'Februari' => 2, 'Maret' => 3, 'April' => 4,
+            'Mei' => 5, 'Juni' => 6, 'Juli' => 7, 'Agustus' => 8,
+            'September' => 9, 'Oktober' => 10, 'November' => 11, 'Desember' => 12
+        ];
+        $bulanNum = $mapBulanNum[$bulan] ?? null;
+
+        $barSkMemo = DB::table('bar_sk_memo')
+            ->where('tahun', $tahun)
+            ->where(function($q) use ($bulan, $bulanNum) {
+                $q->whereRaw('LOWER(TRIM(bulan)) = ?', [strtolower(trim($bulan))]);
+                if ($bulanNum) {
+                    $q->orWhereRaw('CAST(bulan AS UNSIGNED) = ?', [$bulanNum]);
+                }
+            })
+            ->first();
+
+        \Log::info('[PDF Section] BAR SK Memo', [
+            'bulan' => $bulan, 'tahun' => $tahun,
+            'found' => $barSkMemo ? 'yes' : 'no'
+        ]);
+
+        return [
+            'barSkMemo' => $barSkMemo,
+        ];
+    }
 }

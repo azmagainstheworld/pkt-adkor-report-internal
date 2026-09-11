@@ -149,6 +149,55 @@ class PaTeknikController extends Controller
         return back()->with('success', "Data periode {$request->bulan} {$request->tahun} berhasil diperbarui.");
     }
 
+
+    /**
+     * Mengambil data PA Teknik untuk laporan PDF bulanan.
+     */
+    public static function getReportData($tahun, $bulan)
+    {
+        $mapBulanNum = [
+            'Januari' => 1, 'Februari' => 2, 'Maret' => 3, 'April' => 4,
+            'Mei' => 5, 'Juni' => 6, 'Juli' => 7, 'Agustus' => 8,
+            'September' => 9, 'Oktober' => 10, 'November' => 11, 'Desember' => 12
+        ];
+        $bulanNum = $mapBulanNum[$bulan] ?? null;
+        $matchBulan = function($q) use ($bulan, $bulanNum) {
+            $q->whereRaw('LOWER(TRIM(bulan)) = ?', [strtolower(trim($bulan))]);
+            if ($bulanNum) {
+                $q->orWhereRaw('CAST(bulan AS UNSIGNED) = ?', [$bulanNum]);
+            }
+        };
+
+        // Master kolom PERSIS seperti di menu: Tabel 1 & Tabel 2 terpisah
+        $masterTabel1 = \App\Models\PaTeknikMaster::where('kelompok_tabel', 1)->orderBy('id', 'asc')->get();
+        $masterTabel2 = \App\Models\PaTeknikMaster::where('kelompok_tabel', 2)->orderBy('id', 'asc')->get();
+
+        $rawData = \App\Models\PaTeknikData::where('tahun', $tahun)
+            ->where($matchBulan)
+            ->get()
+            ->keyBy('master_id');
+
+        $buildKolom = function ($masters) use ($rawData) {
+            return $masters->map(function ($m) use ($rawData) {
+                return (object) [
+                    'nama_kegiatan' => $m->nama_kegiatan ?? '-',
+                    'jumlah' => optional($rawData->get($m->id))->jumlah ?? 0,
+                ];
+            });
+        };
+
+        $paTeknik = [
+            'tabel1' => $buildKolom($masterTabel1),
+            'tabel2' => $buildKolom($masterTabel2),
+        ];
+
+        \Log::info('[PDF Section] PA Teknik', [
+            'bulan' => $bulan, 'tahun' => $tahun,
+            'tabel1' => $paTeknik['tabel1']->count(), 'tabel2' => $paTeknik['tabel2']->count()
+        ]);
+
+        return ['paTeknik' => $paTeknik];
+    }
     public function destroyBulk(\Illuminate\Http\Request $request)
     {
         if ($request->input('delete_all') == '1') {
